@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 import { createGeminiHandler } from '../api/gemini.js';
 
 function createMockRes() {
@@ -58,18 +60,28 @@ test('POST /api/gemini returns clean 503 with fallback flag and zero secret leak
 
   assert.equal(res.statusCode, 503);
   assert.equal(res.body.fallback, true);
+  assert.equal(res.body.statusCode, 503);
   const serialized = JSON.stringify(res.body);
   assert.doesNotMatch(serialized, /GEMINI_API_KEY/i);
   assert.doesNotMatch(serialized, /Error:|at\s+\w+\s+\(/);
 });
 
-test('POST /api/gemini returns clean 503 on upstream error and AbortController timeout', async () => {
-  const failingFetch = async () => ({ ok: false, status: 500, json: async () => ({}) });
+test('POST /api/gemini returns clean 503 with upstream statusCode on failure and AbortController timeout', async () => {
+  const failingUrls = [];
+  const failingFetch = async (url) => {
+    failingUrls.push(url);
+    return { ok: false, status: 500, json: async () => ({}) };
+  };
   const handlerErr = createGeminiHandler({ env: { GEMINI_API_KEY: 'test-secret' }, fetchImpl: failingFetch });
   const resErr = createMockRes();
   await handlerErr({ method: 'POST', body: { prompt: 'Test prompt' } }, resErr);
   assert.equal(resErr.statusCode, 503);
   assert.equal(resErr.body.fallback, true);
+  assert.equal(resErr.body.statusCode, 500);
+  assert.deepEqual(failingUrls, [
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent',
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent',
+  ]);
   assert.doesNotMatch(JSON.stringify(resErr.body), /test-secret|GEMINI_API_KEY/);
 
   const slowFetch = (_url, opts) => new Promise((_resolve, reject) => {
@@ -84,9 +96,53 @@ test('POST /api/gemini returns clean 503 on upstream error and AbortController t
   await handlerTimeout({ method: 'POST', body: { prompt: 'Slow request' } }, resTimeout);
   assert.equal(resTimeout.statusCode, 503);
   assert.equal(resTimeout.body.fallback, true);
+  assert.equal(resTimeout.body.statusCode, 504);
 });
 
-test('POST /api/gemini calls Gemini 2.5 Flash server-side and normalizes SCAM & CIVIC structured JSON', async () => {
+test('POST /api/gemini retries gemini-3.8-flash if gemini-3.5-flash-lite fails and returns 200 on recovery', async () => {
+  const attempted = [];
+  const retryFetch = async (url) => {
+    attempted.push(url);
+    if (url.includes('gemini-3.5-flash-lite')) {
+      return { ok: false, status: 404, json: async () => ({}) };
+    }
+    return {
+      ok: true,
+      status: 200,
+      async json() {
+        return {
+          candidates: [{
+            content: {
+              parts: [{
+                text: JSON.stringify({
+                  intent: 'SCAM',
+                  confidence_score: 91,
+                  active_agents: ['vani', 'gemini', 'kavach', 'netra'],
+                  summary: 'Retry model classified phishing message.',
+                  action_draft: 'Dial 1930 immediately.',
+                  checklist: ['Do not click links', 'Call 1930'],
+                }),
+              }],
+            },
+          }],
+        };
+      },
+    };
+  };
+
+  const handler = createGeminiHandler({ env: { GEMINI_API_KEY: 'live-secret-value' }, fetchImpl: retryFetch });
+  const res = createMockRes();
+  await handler({ method: 'POST', body: { prompt: 'Share OTP now', language: 'en', mode: 'chat' } }, res);
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(attempted, [
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent',
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent',
+  ]);
+  assert.equal(res.body.intent, 'SCAM');
+  assert.equal(res.body.confidence_score, 91);
+});
+
+test('POST /api/gemini calls Gemini 3.5 Flash-Lite server-side and normalizes SCAM & CIVIC structured JSON', async () => {
   const calls = [];
   const mockFetch = async (url, init) => {
     calls.push({ url, init });
@@ -130,7 +186,7 @@ test('POST /api/gemini calls Gemini 2.5 Flash server-side and normalizes SCAM & 
   const scamRes = createMockRes();
   await handler({ method: 'POST', body: { prompt: 'My CBI officer is calling me for digital arrest', language: 'ta', mode: 'auto_demo' } }, scamRes);
   assert.equal(scamRes.statusCode, 200);
-  assert.equal(calls[0].url, 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent');
+  assert.equal(calls[0].url, 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent');
   assert.equal(calls[0].init.headers['x-goog-api-key'], 'live-secret-value');
   assert.deepEqual(Object.keys(scamRes.body).sort(), [
     'active_agents',
@@ -152,4 +208,11 @@ test('POST /api/gemini calls Gemini 2.5 Flash server-side and normalizes SCAM & 
   assert.equal(civicRes.body.confidence_score, 94);
   assert.ok(!civicRes.body.active_agents.includes('kavach'));
   assert.deepEqual(civicRes.body.active_agents, ['vani', 'gemini', 'urimai', 'setu']);
+});
+
+test('manifest.webmanifest specifies valid share_target enctype', () => {
+  const manifestPath = path.resolve(import.meta.dirname, '..', 'public', 'manifest.webmanifest');
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  assert.equal(manifest.share_target.method, 'GET');
+  assert.equal(manifest.share_target.enctype, 'application/x-www-form-urlencoded');
 });

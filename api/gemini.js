@@ -1,4 +1,7 @@
-const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+const GEMINI_ENDPOINTS = [
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent',
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent',
+];
 const REQUEST_TIMEOUT_MS = 8_500;
 const CANONICAL_AGENTS = new Set(['vani', 'gemini', 'kavach', 'urimai', 'netra', 'setu']);
 
@@ -71,7 +74,7 @@ function normalizeAgents(rawAgents, intent, confidenceScore) {
 /**
  * Normalizes and validates parsed Gemini JSON into the guaranteed proxy response shape.
  *
- * @param {Record<string, unknown>} parsed Raw parsed JSON object from Gemini 2.5 Flash.
+ * @param {Record<string, unknown>} parsed Raw parsed JSON object from the Gemini API.
  * @param {string} cleanPrompt Sanitized user prompt fallback.
  * @returns {{intent: 'SCAM'|'CIVIC', confidence_score: number, active_agents: string[], summary: string, action_draft: string, checklist: string[]}}
  */
@@ -164,64 +167,76 @@ export function createGeminiHandler(deps = {}) {
       return res.status(503).json({
         error: 'Live AI proxy is currently unavailable. Use local fallback simulator.',
         fallback: true,
+        statusCode: 503,
       });
     }
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const requestPayload = JSON.stringify({
+      systemInstruction: {
+        parts: [{ text: SYSTEM_INSTRUCTION }],
+      },
+      contents: [{
+        role: 'user',
+        parts: [{
+          text: `Preferred Language: ${cleanLang}\nInteraction Mode: ${cleanMode}\n<user_input>\n${cleanPrompt}\n</user_input>`,
+        }],
+      }],
+      generationConfig: {
+        temperature: 0.2,
+        responseMimeType: 'application/json',
+        responseSchema: RESPONSE_SCHEMA,
+      },
+    });
 
+    let lastStatusCode = null;
     try {
-      const upstreamRes = await fetchFn(GEMINI_ENDPOINT, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey,
-        },
-        signal: controller.signal,
-        body: JSON.stringify({
-          systemInstruction: {
-            parts: [{ text: SYSTEM_INSTRUCTION }],
-          },
-          contents: [{
-            role: 'user',
-            parts: [{
-              text: `Preferred Language: ${cleanLang}\nInteraction Mode: ${cleanMode}\n<user_input>\n${cleanPrompt}\n</user_input>`,
-            }],
-          }],
-          generationConfig: {
-            temperature: 0.2,
-            responseMimeType: 'application/json',
-            responseSchema: RESPONSE_SCHEMA,
-          },
-        }),
-      });
+      for (const endpoint of GEMINI_ENDPOINTS) {
+        if (controller.signal.aborted) break;
+        try {
+          const upstreamRes = await fetchFn(endpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-goog-api-key': apiKey,
+            },
+            signal: controller.signal,
+            body: requestPayload,
+          });
 
-      if (!upstreamRes.ok) {
-        return res.status(503).json({
-          error: 'Live AI proxy temporarily unavailable. Falling back to local simulator.',
-          fallback: true,
-        });
+          if (!upstreamRes?.ok) {
+            if (Number.isInteger(upstreamRes?.status)) {
+              lastStatusCode = upstreamRes.status;
+            }
+            continue;
+          }
+
+          const upstreamJson = await upstreamRes.json();
+          const rawText = upstreamJson?.candidates?.[0]?.content?.parts
+            ?.map((part) => (typeof part?.text === 'string' ? part.text : ''))
+            .join('') || '';
+
+          if (!rawText) {
+            lastStatusCode = upstreamRes.status || 502;
+            continue;
+          }
+
+          const parsed = JSON.parse(rawText);
+          const normalized = normalizeProxyPayload(parsed, cleanPrompt);
+          return res.status(200).json(normalized);
+        } catch {
+          if (controller.signal.aborted) {
+            lastStatusCode = lastStatusCode ?? 504;
+            break;
+          }
+        }
       }
 
-      const upstreamJson = await upstreamRes.json();
-      const rawText = upstreamJson?.candidates?.[0]?.content?.parts
-        ?.map((part) => (typeof part?.text === 'string' ? part.text : ''))
-        .join('') || '';
-
-      if (!rawText) {
-        return res.status(503).json({
-          error: 'Live AI proxy returned an empty response. Falling back to local simulator.',
-          fallback: true,
-        });
-      }
-
-      const parsed = JSON.parse(rawText);
-      const normalized = normalizeProxyPayload(parsed, cleanPrompt);
-      return res.status(200).json(normalized);
-    } catch {
       return res.status(503).json({
         error: 'Live AI proxy temporarily unavailable. Falling back to local simulator.',
         fallback: true,
+        statusCode: lastStatusCode ?? (controller.signal.aborted ? 504 : 503),
       });
     } finally {
       clearTimeout(timer);

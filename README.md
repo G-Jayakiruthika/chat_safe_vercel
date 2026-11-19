@@ -68,7 +68,7 @@ No API key prompt or blocking modal interrupts startup—open `/app.html` and ev
 ## 3. `/api/gemini` Serverless Contract (`api/gemini.js`)
 
 - **Endpoint**: `POST /api/gemini`
-- **Upstream Model**: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`
+- **Upstream Model**: `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent` (with automatic retry on `gemini-3.8-flash:generateContent`)
 - **Request JSON**:
   ```json
   {
