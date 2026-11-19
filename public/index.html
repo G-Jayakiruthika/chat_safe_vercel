@@ -8,10 +8,10 @@
   <title>Chat_Safe × Urimai — Stop Cyber Scams &amp; Generate Local Legal Petitions</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="styles.css?v=315">
-  <link rel="stylesheet" href="palettes.css?v=315">
-  <link rel="stylesheet" href="landing.css?v=315">
-  <script src="theme.js?v=310"></script>
+  <link rel="stylesheet" href="styles.css?v=320">
+  <link rel="stylesheet" href="palettes.css?v=320">
+  <link rel="stylesheet" href="landing.css?v=320">
+  <script src="theme.js?v=320"></script>
 </head>
 <body class="landing" data-default-palette="mantis">
   <!-- Preloader -->
@@ -72,7 +72,8 @@
     </div>
   </header>
 
-  <!-- HUD: section counter, ruler and scroll % -->
+  <!-- HUD: bottom safe-zone bar, section counter, ruler and scroll % -->
+  <div class="hud-safe-bar" aria-hidden="true"></div>
   <div class="hud-rail" aria-hidden="true">
     <span id="hudIndex" class="mono">0001 / 0010</span>
     <span class="ruler">+++++×++++</span>
@@ -155,33 +156,94 @@
         </ol>
 
         <div class="demo-stage-visual">
-          <div class="phone-3d" role="img" aria-label="3D smartphone preview showing Speed-Dial 9 listening, Gemini intent classification, and Family Hub action kit">
+          <div class="phone-3d" role="img" aria-label="3D smartphone preview showing Speed-Dial 9 IVR call, Kavach Scam X-Ray and Gemini Router, and Multi-Modal O2O Handoff kit">
             <div class="phone-screen">
-              <div class="ps ps-0">
-                <p class="ps-head">Speed-Dial 9 · Listening</p>
+              <div class="ps-status" aria-hidden="true">
+                <span>9:41</span>
+                <span class="ps-notch"></span>
+                <span>5G · IVR</span>
+              </div>
+
+              <!-- Step 01: Button-Phone Speed-Dial 9 IVR Call Screen -->
+              <div class="ps ps-0 on">
+                <div class="ps-top-row">
+                  <span class="ps-pill ps-pill-cyan">SPEED-DIAL 9 · LIVE IVR</span>
+                  <span class="ps-badge-lang">தமிழ் · 23 Langs</span>
+                </div>
+                <div class="ps-call-card">
+                  <span class="ps-call-key">9</span>
+                  <div>
+                    <strong>Vani IVR Connected</strong>
+                    <small>Button Phone Voice Bridge</small>
+                  </div>
+                </div>
                 <div class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-                <p class="ps-line">"Vanakkam. Tell me what happened."</p>
-                <p class="ps-line">"Water pipe broke 3 days ago…"</p>
+                <p class="ps-line ps-line-bot">"Vanakkam. Tell me what happened."</p>
+                <p class="ps-line ps-line-user">"Panchayat water pipe broke 3 days ago in Ward 12…"</p>
+                <div class="ps-mini-foot">
+                  <span class="ps-tag-red">Kavach Scam Shield</span>
+                  <span class="ps-tag-blue">Urimai Petition</span>
+                </div>
               </div>
+
+              <!-- Step 02: Kavach Scam X-Ray 99% Alert vs Urimai Civic Router Screen -->
               <div class="ps ps-1">
-                <p class="ps-head">Gemini Intent Router</p>
-                <div class="ps-gauge">92</div>
-                <p class="ps-line bad">SCAM → Kavach Red + 1930</p>
-                <p class="ps-line ok">CIVIC → Urimai Blue + Kit</p>
+                <div class="ps-top-row">
+                  <span class="ps-pill ps-pill-purple">GEMINI ROUTER · JSON</span>
+                  <span class="ps-badge-lang">Auto Triage</span>
+                </div>
+                <div class="ps-xray-card">
+                  <div class="ps-gauge" aria-label="99% Scam Threat Score">99%</div>
+                  <div class="ps-xray-meta">
+                    <span class="ps-xray-tag">KAVACH SCAM X-RAY</span>
+                    <p class="ps-line bad">CBI Digital Arrest → Call 1930</p>
+                  </div>
+                </div>
+                <div class="ps-civic-card">
+                  <span class="ps-civic-tag">URIMAI CIVIC ROUTE</span>
+                  <p class="ps-line ok">Ward 12 Water Pipe · TWAD Draft</p>
+                </div>
+                <div class="ps-bus-mini">
+                  <span>Vani</span><span>Gemini</span><span>Kavach</span><span>Urimai</span>
+                </div>
               </div>
+
+              <!-- Step 03: Multi-Modal O2O Handoff Card -->
               <div class="ps ps-2">
-                <p class="ps-head">Family Hub Ready</p>
-                <p class="ps-line ok">Voice transcript attached</p>
-                <p class="ps-line ok">Photo + 5-signature PDF</p>
-                <p class="ps-line">CM Helpline / Proxy link</p>
+                <div class="ps-top-row">
+                  <span class="ps-pill ps-pill-blue">MULTI-MODAL O2O KIT</span>
+                  <span class="ps-badge-lang">Ref #URM-12</span>
+                </div>
+                <div class="ps-voice-row">
+                  <span class="ps-play-dot" aria-hidden="true">▶</span>
+                  <div class="ps-voice-meta">
+                    <strong>Father's Voice Note</strong>
+                    <span>0:18 · Tamil Speed-Dial 9</span>
+                  </div>
+                  <div class="ps-mini-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+                </div>
+                <div class="ps-petition">
+                  <span class="ps-pet-ta" lang="ta">உரிமை மனு · Ward 12 Water Pipe</span>
+                  <span class="ps-pet-en">To: Executive Officer, TWAD Board — Urgent 48h pipe repair…</span>
+                </div>
+                <div class="ps-sigs">
+                  <span>5-Resident Signature Block</span>
+                  <div class="ps-sig-slots">
+                    <b>1 ✓</b><b>2 ✓</b><b>3 ✓</b><b>4 _</b><b>5 _</b>
+                  </div>
+                </div>
+                <div class="ps-cta-row">
+                  <span class="ps-btn-blue">CM Helpline 1100</span>
+                  <span class="ps-btn-green">WhatsApp Proxy</span>
+                </div>
               </div>
             </div>
           </div>
 
-          <div class="chip chip-a" aria-hidden="true"><b>Speed-Dial 9</b><span>Keypad phone IVR</span></div>
-          <div class="chip chip-b" aria-hidden="true"><b>Gemini Router</b><span>Scam vs Civic JSON</span></div>
-          <div class="chip chip-c" aria-hidden="true"><b>23 Languages</b><span>English + 22 Eighth Schedule</span></div>
-          <div class="chip chip-d" aria-hidden="true"><b>O2O + CM Portal</b><span>Photo + 5 signatures</span></div>
+          <button type="button" class="chip chip-a" data-target-step="0" aria-label="Jump to Step 01: Speed-Dial 9 Keypad phone IVR"><b>Speed-Dial 9</b><span>Keypad phone IVR</span></button>
+          <button type="button" class="chip chip-b" data-target-step="1" aria-label="Jump to Step 02: Gemini Router Scam vs Civic JSON"><b>Gemini Router</b><span>Scam vs Civic JSON</span></button>
+          <button type="button" class="chip chip-c" data-target-step="0" aria-label="Jump to Step 01: 23 Languages English + 22 Eighth Schedule"><b>23 Languages</b><span>English + 22 Eighth Schedule</span></button>
+          <button type="button" class="chip chip-d" data-target-step="2" aria-label="Jump to Step 03: O2O + CM Portal Photo + 5 signatures"><b>O2O + CM Portal</b><span>Photo + 5 signatures</span></button>
         </div>
 
         <div class="demo-copy">
@@ -278,14 +340,14 @@
     <p>Chat_Safe × Urimai · <a href="privacy.html">Privacy Policy</a> · <a href="connect.html">Connect Apps</a> · Emergency: <a href="tel:1930">1930</a> · <a href="tel:112">112</a></p>
   </footer>
 
-  <script src="sound.js?v=310" defer></script>
-  <script src="icons.js?v=310" defer></script>
-  <script src="scamtypes.js?v=310" defer></script>
-  <script src="videoExplainer.js?v=310" defer></script>
-  <script src="avatar.js?v=310" defer></script>
-  <script src="agentAvatars.js?v=310" defer></script>
-  <script src="morph.js?v=310" defer></script>
-  <script src="landing.js?v=310" defer></script>
-  <script src="cursor.js?v=310" defer></script>
+  <script src="sound.js?v=320" defer></script>
+  <script src="icons.js?v=320" defer></script>
+  <script src="scamtypes.js?v=320" defer></script>
+  <script src="videoExplainer.js?v=320" defer></script>
+  <script src="avatar.js?v=320" defer></script>
+  <script src="agentAvatars.js?v=320" defer></script>
+  <script src="morph.js?v=320" defer></script>
+  <script src="landing.js?v=320" defer></script>
+  <script src="cursor.js?v=320" defer></script>
 </body>
 </html>

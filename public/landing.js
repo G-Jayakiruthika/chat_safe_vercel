@@ -193,6 +193,16 @@
       }),
     );
 
+    chips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        const target = Number(chip.dataset.targetStep);
+        if (Number.isInteger(target) && target >= 0 && target < pills.length) {
+          show(target);
+          clearInterval(timer);
+        }
+      });
+    });
+
     new IntersectionObserver(
       ([e]) => {
         if (e.isIntersecting) {

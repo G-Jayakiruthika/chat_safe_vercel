@@ -275,12 +275,12 @@
       const sy = Math.sin(ry);
       const cx = Math.cos(rx);
       const sx = Math.sin(rx);
-      // Place the object on the right on wide screens, centred on phones.
-      const ox = w > 900 ? w * 0.68 : w / 2;
-      const oy = h / 2;
-      const scale = Math.min(w, h) * (w > 900 ? 0.28 : 0.32);
+      // Place the object slightly upward and toward the right margin so text remains unobstructed.
+      const ox = w > 1180 ? w * 0.78 : w > 900 ? w * 0.74 : w / 2;
+      const oy = w > 900 ? h * 0.30 : h * 0.34;
+      const scale = Math.min(w, h) * (w > 900 ? 0.25 : 0.28);
       const persp = 3.4;
-      const alphaBase = dark ? 0.85 : 0.75;
+      const alphaBase = dark ? 0.27 : 0.25;
 
       ctx.clearRect(0, 0, w, h);
 
@@ -289,10 +289,10 @@
       const modeB = names[Math.min(names.length - 1, i + 1)];
       const mode = k < 0.5 ? modeA : modeB;
       const turbulence = 0.6 + Math.sin(k * Math.PI) * 0.8;
-      const ribScale = Math.min(w, h) * 0.75;
+      const ribScale = Math.min(w, h) * 0.72;
       const rcx = w * 0.5;
-      const rcy = h * 0.5;
-      const ribAlpha = (dark ? 1 : 0.55) * (mode === 'eye' ? 0.6 : 1);
+      const rcy = h * 0.42;
+      const ribAlpha = (dark ? 0.5 : 0.32) * (mode === 'eye' ? 0.6 : 1);
       for (let r = 0; r < RIBBONS; r++) {
         const pts = [];
         for (let pI = 0; pI < RIB_POINTS; pI++) {
@@ -326,12 +326,13 @@
         const px = ox + x1 * scale * s;
         const py = oy + y2 * scale * s;
         const depth = (z2 + 1.4) / 2.8;
-        ctx.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},${(0.12 + depth * alphaBase).toFixed(3)})`;
-        const size = 1 + depth * 1.8;
+        const dotAlpha = Math.min(0.35, 0.08 + depth * alphaBase);
+        ctx.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},${dotAlpha.toFixed(3)})`;
+        const size = 1 + depth * 1.6;
         ctx.fillRect(px - size / 2, py - size / 2, size, size);
       }
       // HUD crosshair ring around the object
-      ctx.strokeStyle = `rgba(${col[0]},${col[1]},${col[2]},0.18)`;
+      ctx.strokeStyle = `rgba(${col[0]},${col[1]},${col[2]},0.12)`;
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.arc(ox, oy, scale * 1.55, 0, TAU);
