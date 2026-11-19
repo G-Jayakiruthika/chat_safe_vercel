@@ -1,0 +1,14 @@
+{
+  "name": "chat_safe_vercel",
+  "version": "3.1.0",
+  "description": "Chat_Safe × Urimai — Vercel Serverless Gemini Proxy & Zero-Config Edge AI Cyber Guardian / Civic Grievance PWA in 23 Indian languages.",
+  "type": "module",
+  "private": true,
+  "license": "SEE LICENSE IN LICENSE",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  }
+}

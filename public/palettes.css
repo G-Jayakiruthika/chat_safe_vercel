@@ -1,0 +1,167 @@
+/* ===========================================================================
+   Sea-creature palettes — Dark mode uses deep creature hues; Bright (light) mode
+   uses crisp clean white (#ffffff) surfaces with each creature's vivid accents.
+   =========================================================================== */
+
+/* ---------------- 1. MOON JELLYFISH — lavender · lilac · pearl · blush · ice blue */
+[data-palette="jellyfish"][data-theme="light"] {
+  --bg: #ffffff; --bg2: #f9f7ff; --ink: #1e1633; --muted: #5a4d75;
+  --border: #d9c9ef; --glass: rgb(255 255 255 / .92);
+  --accent: #7a4fd4; --accent2: #b08ae8; --accent3: #d946a8; --accent4: #0284c7;
+  --shadow: 0 14px 40px rgb(122 79 212 / .12);
+}
+[data-palette="jellyfish"][data-theme="dark"] {
+  --bg: #19112e; --bg2: #241a3f; --ink: #f0e9ff; --muted: #b3a3d4;
+  --border: rgb(179 157 255 / .3); --glass: rgb(36 26 63 / .72);
+  --accent: #bda4ff; --accent2: #d9c6ff; --accent3: #ffd2e5; --accent4: #a5dcf5;
+  --shadow: 0 14px 44px rgb(0 0 0 / .5);
+}
+
+/* ---------------- 2. NAUTILUS — coral · ivory · champagne · navy */
+[data-palette="nautilus"][data-theme="light"] {
+  --bg: #ffffff; --bg2: #fffaf5; --ink: #15263f; --muted: #526075;
+  --border: #e4cfb0; --glass: rgb(255 255 255 / .92);
+  --accent: #d94832; --accent2: #b07d42; --accent3: #1e3a5f; --accent4: #0f766e;
+  --shadow: 0 14px 40px rgb(30 58 95 / .11);
+}
+[data-palette="nautilus"][data-theme="dark"] {
+  --bg: #0e1d33; --bg2: #172b48; --ink: #f7ecdb; --muted: #a8bdd6;
+  --border: rgb(255 141 121 / .3); --glass: rgb(23 43 72 / .76);
+  --accent: #ff8d79; --accent2: #e8c39e; --accent3: #9fc4ee; --accent4: #fff2dd;
+  --shadow: 0 14px 44px rgb(0 0 0 / .5);
+}
+
+/* ---------------- 3. MANDARIN FISH — royal blue · orange · turquoise · gold */
+[data-palette="mandarin"][data-theme="light"] {
+  --bg: #ffffff; --bg2: #f7faff; --ink: #0f1f3d; --muted: #475c80;
+  --border: #c3d6f5; --glass: rgb(255 255 255 / .92);
+  --accent: #2251d1; --accent2: #0d9488; --accent3: #ef6c12; --accent4: #c98a06;
+  --shadow: 0 14px 40px rgb(42 85 214 / .12);
+}
+[data-palette="mandarin"][data-theme="dark"] {
+  --bg: #081633; --bg2: #102449; --ink: #e9f1ff; --muted: #9db6dd;
+  --border: rgb(91 140 255 / .32); --glass: rgb(16 36 73 / .74);
+  --accent: #5b8cff; --accent2: #2ee0d8; --accent3: #ff9442; --accent4: #ffc53d;
+  --shadow: 0 14px 44px rgb(0 0 0 / .52);
+}
+
+/* ---------------- 4. LIONFISH — rust · burgundy · cream · black */
+[data-palette="lionfish"][data-theme="light"] {
+  --bg: #ffffff; --bg2: #fff9f6; --ink: #240c12; --muted: #66423f;
+  --border: #e3c6ab; --glass: rgb(255 255 255 / .92);
+  --accent: #b8431f; --accent2: #851236; --accent3: #d98a5a; --accent4: #2a0d14;
+  --shadow: 0 14px 40px rgb(133 18 54 / .12);
+}
+[data-palette="lionfish"][data-theme="dark"] {
+  --bg: #190a10; --bg2: #2a1019; --ink: #f8e9d9; --muted: #cfa391;
+  --border: rgb(255 107 67 / .32); --glass: rgb(42 16 25 / .76);
+  --accent: #ff6f45; --accent2: #e9507a; --accent3: #f6ddc5; --accent4: #ffb088;
+  --shadow: 0 14px 44px rgb(0 0 0 / .58);
+}
+
+/* ---------------- 5. PEACOCK MANTIS SHRIMP — magenta · teal · purple · lime */
+[data-palette="mantis"][data-theme="light"] {
+  --bg: #ffffff; --bg2: #fdfaff; --ink: #1f0d2b; --muted: #5b416b;
+  --border: #dfc9ed; --glass: rgb(255 255 255 / .92);
+  --accent: #c71580; --accent2: #0a938c; --accent3: #7030dd; --accent4: #4f8f00;
+  --shadow: 0 14px 40px rgb(199 21 128 / .12);
+}
+[data-palette="mantis"][data-theme="dark"] {
+  --bg: #170a26; --bg2: #24103e; --ink: #f7eaff; --muted: #c2a3d9;
+  --border: rgb(255 61 154 / .32); --glass: rgb(36 16 62 / .74);
+  --accent: #ff3d9a; --accent2: #19e3c1; --accent3: #b06bff; --accent4: #c9f270;
+  --shadow: 0 14px 44px rgb(0 0 0 / .55);
+}
+
+/* ---------------- 6. SEA ANEMONE — fuchsia · coral · orange · aqua · lilac */
+[data-palette="anemone"][data-theme="light"] {
+  --bg: #ffffff; --bg2: #fff8fb; --ink: #330d23; --muted: #6e4157;
+  --border: #f0c6d6; --glass: rgb(255 255 255 / .92);
+  --accent: #cc1468; --accent2: #e05533; --accent3: #d97b06; --accent4: #0d8f9e;
+  --shadow: 0 14px 40px rgb(204 20 104 / .12);
+}
+[data-palette="anemone"][data-theme="dark"] {
+  --bg: #24081a; --bg2: #3a0f29; --ink: #ffe9f3; --muted: #e0a6c2;
+  --border: rgb(255 77 157 / .32); --glass: rgb(58 15 41 / .76);
+  --accent: #ff4d9d; --accent2: #ff7a5c; --accent3: #ffa33d; --accent4: #3ddbe8;
+  --shadow: 0 14px 44px rgb(0 0 0 / .55);
+}
+
+/* ---------------- 7. BLUE DRAGON — cobalt · ice blue · silver · white */
+[data-palette="bluedragon"][data-theme="light"] {
+  --bg: #ffffff; --bg2: #f6faff; --ink: #0d1b2e; --muted: #475a70;
+  --border: #c5d9ef; --glass: rgb(255 255 255 / .92);
+  --accent: #1544c4; --accent2: #0284c7; --accent3: #475569; --accent4: #0f172a;
+  --shadow: 0 14px 40px rgb(21 68 196 / .12);
+}
+[data-palette="bluedragon"][data-theme="dark"] {
+  --bg: #061430; --bg2: #0d2348; --ink: #eaf4ff; --muted: #9fb8d6;
+  --border: rgb(79 139 255 / .32); --glass: rgb(13 35 72 / .76);
+  --accent: #4f8bff; --accent2: #8fd3f4; --accent3: #cdd9e8; --accent4: #ffffff;
+  --shadow: 0 14px 44px rgb(0 0 0 / .54);
+}
+
+/* ---------------- 8. STARFISH — terracotta · peach · cream · seafoam */
+[data-palette="starfish"][data-theme="light"] {
+  --bg: #ffffff; --bg2: #fffaf5; --ink: #331e12; --muted: #6d4f3b;
+  --border: #e6cbb0; --glass: rgb(255 255 255 / .92);
+  --accent: #b7542f; --accent2: #1f8f84; --accent3: #d97745; --accent4: #8a5a3b;
+  --shadow: 0 14px 40px rgb(183 84 47 / .12);
+}
+[data-palette="starfish"][data-theme="dark"] {
+  --bg: #1d120c; --bg2: #2e1d15; --ink: #fcefe1; --muted: #d4ab8c;
+  --border: rgb(240 168 132 / .32); --glass: rgb(46 29 21 / .76);
+  --accent: #f0a884; --accent2: #4ecdc4; --accent3: #ffc9a8; --accent4: #ffe3c9;
+  --shadow: 0 14px 44px rgb(0 0 0 / .55);
+}
+
+/* ---------------------------------------------------------------------------
+   Shared background wash: rich creature hue in dark mode, clean crisp white
+   with whisper-light accent tint in bright/light mode.
+   --------------------------------------------------------------------------- */
+body {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(1100px 580px at 84% -10%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 68%),
+    radial-gradient(900px 520px at -10% 106%, color-mix(in srgb, var(--accent2) 20%, transparent), transparent 68%),
+    radial-gradient(700px 400px at 50% 50%, color-mix(in srgb, var(--accent3) 10%, transparent), transparent 70%);
+  background-attachment: fixed;
+  transition: background-color .5s ease, color .5s ease;
+}
+
+[data-theme="light"] body,
+html[data-theme="light"] body {
+  background-color: #ffffff;
+  background-image:
+    radial-gradient(900px 420px at 88% -8%, color-mix(in srgb, var(--accent) 7%, transparent), transparent 65%),
+    radial-gradient(800px 420px at -8% 105%, color-mix(in srgb, var(--accent2) 6%, transparent), transparent 65%);
+}
+
+[data-theme="light"] .top,
+[data-theme="light"] .landing-top {
+  background: rgb(255 255 255 / .9);
+  border-bottom-color: var(--border);
+}
+
+[data-theme="light"] .video-player {
+  background: #f8fafc;
+  border-color: var(--border);
+}
+[data-theme="light"] .player-caption {
+  background: #eef2ff;
+  color: #0f172a;
+}
+[data-theme="light"] .player-time {
+  color: #334155;
+}
+[data-theme="light"] .player-track {
+  background: rgb(15 23 42 / .14);
+}
+[data-theme="light"] .demo-sticky-phone {
+  background: #ffffff;
+}
+
+.top, .glass, .panel, .result, .type-card, .stat-tile, .feature, .step, .story,
+button, .button, .chip, .tabs [role="tab"], .daily, input, textarea, select {
+  transition: background-color .45s ease, border-color .45s ease, color .45s ease, box-shadow .45s ease;
+}

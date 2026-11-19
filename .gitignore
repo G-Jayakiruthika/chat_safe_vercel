@@ -1,0 +1,18 @@
+# Dependencies & environment
+node_modules/
+.vercel/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.db
+*.sqlite*
+
+# Build / logs
+dist/
+build/
+coverage/
+*.log
+.DS_Store
+Thumbs.db

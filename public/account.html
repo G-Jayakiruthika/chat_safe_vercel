@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" data-palette="jellyfish">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Create a free Chat_Safe × Urimai account to keep your daily streak, language, and learned scam badges across devices.">
+  <meta name="theme-color" content="#070b14">
+  <title>Chat_Safe × Urimai — Account &amp; Streak</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="palettes.css">
+  <script src="theme.js"></script>
+</head>
+<body data-default-palette="jellyfish">
+  <canvas id="bg" class="bg" aria-hidden="true"></canvas>
+  <a class="skip" href="#main">Skip to main content</a>
+
+  <header class="top">
+    <a class="brand" href="index.html" aria-label="Chat_Safe × Urimai home">
+      <img src="icon.svg" alt="Chat_Safe × Urimai shield logo" width="34" height="34">
+      <div>
+        <p class="logo">Chat<span>_</span>Safe</p>
+        <p class="tagline">Kavach × Urimai</p>
+      </div>
+    </a>
+    <nav class="mainnav" aria-label="Primary navigation">
+      <a href="index.html">Home</a>
+      <a href="index.html#how">About</a>
+      <a href="app.html">App</a>
+      <a href="account.html" aria-current="page">Account / Login</a>
+    </nav>
+    <div class="controls">
+      <button type="button" id="themeToggle" class="icon-btn" aria-label="Switch theme" data-tip="Theme Toggle (Light / Dark)">
+        <svg class="sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        <svg class="moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+      </button>
+      <button type="button" id="btn-settings" class="icon-btn" aria-label="Display &amp; accessibility settings" data-tip="Display &amp; Accessibility Settings">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+      </button>
+      <div class="cursor-picker">
+        <button type="button" id="btn-cursor" class="icon-btn" aria-label="AI Spark &amp; cursor style" data-tip="AI Spark / Cursor Mode">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4M22 5h-4M4 17v2M5 18H3"/></svg>
+        </button>
+        <div class="cursor-menu glass" id="cursor-menu" hidden>
+          <div class="menu-title">Cursor style</div>
+          <button type="button" data-mode="orb">Orbit ring</button>
+          <button type="button" data-mode="comet">Comet trail</button>
+          <button type="button" data-mode="neon">Neon ribbon</button>
+          <button type="button" data-mode="spark">Spark burst</button>
+          <button type="button" data-mode="system">System default</button>
+        </div>
+      </div>
+      <a class="button primary nav-launch-btn" href="app.html">Launch App →</a>
+    </div>
+  </header>
+
+  <main id="main" class="account-main">
+    <section id="authCard" class="panel glass" aria-labelledby="authTitle" hidden>
+      <p class="eyebrow">YOUR ACCOUNT</p>
+      <h1 id="authTitle">Keep your streak on every device</h1>
+      <p class="muted">An account is optional — Chat_Safe × Urimai works fully without one. Signing in remembers your language, daily streak, and learned scams.</p>
+
+      <div class="tabs auth-tabs" role="tablist" aria-label="Sign up or log in">
+        <button role="tab" id="tab-signup" aria-controls="panel-signup" aria-selected="true">Create account</button>
+        <button role="tab" id="tab-login" aria-controls="panel-login" aria-selected="false" tabindex="-1">Log in</button>
+      </div>
+
+      <form id="signupForm" class="auth-form" role="tabpanel" aria-labelledby="tab-signup" novalidate>
+        <input type="text" name="website" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <label for="suName">Your name</label>
+        <input id="suName" name="name" autocomplete="name" maxlength="60" required>
+        <label for="suEmail">Email</label>
+        <input id="suEmail" name="email" type="email" autocomplete="email" maxlength="254" required>
+        <label for="suCity">City / Ward (optional, for Urimai petitions)</label>
+        <input id="suCity" name="city" maxlength="80" placeholder="e.g., Ward 12, Coimbatore">
+        <label for="suPass">Password <span class="muted">(at least 8 characters, hashed with Argon2id)</span></label>
+        <input id="suPass" name="password" type="password" autocomplete="new-password" minlength="8" maxlength="200" required>
+        <label class="consent-check">
+          <input type="checkbox" name="consent" id="suConsent" required>
+          <span>I agree to the <a href="privacy.html#privacy-policy" target="_blank" rel="noopener">ISO 27701 Privacy Policy</a>, <a href="privacy.html#terms-of-service" target="_blank" rel="noopener">Terms</a> &amp; <a href="privacy.html#refund-policy" target="_blank" rel="noopener">₹0 Refund Policy</a>.</span>
+        </label>
+        <label class="consent-check">
+          <input type="checkbox" name="ageConsent" id="suAgeConsent" required>
+          <span>I confirm I am 18+ years old OR have parent/guardian consent for a minor.</span>
+        </label>
+        <label class="consent-check">
+          <input type="checkbox" name="marketingOptIn" id="suAlerts">
+          <span>Optional: Send me weekly scam alerts (unsubscribe anytime).</span>
+        </label>
+        <button type="submit" class="primary">Create my account</button>
+      </form>
+
+      <form id="loginForm" class="auth-form" role="tabpanel" aria-labelledby="tab-login" novalidate hidden>
+        <label for="liEmail">Email</label>
+        <input id="liEmail" name="email" type="email" autocomplete="email" maxlength="254" required>
+        <label for="liPass">Password</label>
+        <input id="liPass" name="password" type="password" autocomplete="current-password" maxlength="200" required>
+        <button type="submit" class="primary">Log in</button>
+      </form>
+
+      <details style="margin-top:.85rem">
+        <summary class="small">Forgot password? (15-minute expiring reset link)</summary>
+        <form id="resetReqForm" class="auth-form" style="margin-top:.5rem" novalidate>
+          <label for="rsEmail">Account Email</label>
+          <input id="rsEmail" name="email" type="email" maxlength="254" required>
+          <button type="submit" class="secondary sm">Request 15-min Reset Token</button>
+        </form>
+        <form id="resetConfirmForm" class="auth-form" style="margin-top:.5rem" novalidate>
+          <label for="rsToken">Reset Token</label>
+          <input id="rsToken" name="token" maxlength="128" required>
+          <label for="rsNewPass">New Password (8+ characters)</label>
+          <input id="rsNewPass" name="newPassword" type="password" minlength="8" maxlength="200" required>
+          <button type="submit" class="secondary sm">Reset Password</button>
+        </form>
+      </details>
+
+      <p id="authMsg" class="status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section id="profileCard" class="panel glass" aria-labelledby="profTitle" hidden>
+      <p class="eyebrow">SIGNED IN</p>
+      <h1 id="profTitle">Hello, <span id="profName">friend</span></h1>
+      <div class="stat-row">
+        <div class="stat-tile"><span class="big" id="statStreak">0</span><span>day streak</span></div>
+        <div class="stat-tile"><span class="big" id="statBest">0</span><span>best streak</span></div>
+        <div class="stat-tile"><span class="big" id="statScans">0</span><span>messages checked</span></div>
+        <div class="stat-tile"><span class="big" id="statLearned">0/8</span><span>scams learned</span></div>
+      </div>
+      <h2>Your learning card</h2>
+      <ul id="profLearned" class="learn-list"></ul>
+      <div class="actions">
+        <a class="button primary" href="app.html">Open Kavach × Urimai →</a>
+        <button type="button" id="exportDataBtn" class="secondary">Export My Data</button>
+        <button type="button" id="unsubBtn" class="secondary">Unsubscribe Alerts</button>
+        <button type="button" id="logoutBtn" class="secondary">Log out</button>
+        <button type="button" id="deleteAcctBtn" class="danger">Delete Account</button>
+      </div>
+      <p id="profMsg" class="status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section id="noAccounts" class="panel glass" hidden>
+      <h1>Browser-local mode active</h1>
+      <p class="muted">You are running the zero-install browser build. Your Daily Streak, Case Files, and Urimai Kits are stored safely on your device.</p>
+      <div class="actions">
+        <a class="button primary" href="app.html">Open Kavach × Urimai →</a>
+        <a class="button secondary" href="privacy.html">ISO Privacy &amp; Policies</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot"><p>Chat_Safe × Urimai · <a href="privacy.html">Privacy Policy</a> · Emergency: <a href="tel:1930">1930</a> · <a href="tel:112">112</a></p></footer>
+  <script src="scamtypes.js" defer></script>
+  <script src="api.js" defer></script>
+  <script src="fx.js" defer></script>
+  <script src="account.js" defer></script>
+  <script src="cursor.js" defer></script>
+</body>
+</html>

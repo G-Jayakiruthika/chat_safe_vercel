@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://maps.googleapis.com https://safebrowsing.googleapis.com; connect-src 'self' https://maps.googleapis.com https://safebrowsing.googleapis.com; img-src 'self' data: blob:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline';">
+  <meta name="description" content="Chat_Safe × Urimai — Stop cyber scams (Kavach) and generate automated local legal &amp; civic petitions (Urimai) from button phones in 23 Indian languages. Manage your family's village issues and rural scam threats remotely from any smartphone or laptop.">
+  <meta name="theme-color" content="#070b14">
+  <title>Chat_Safe × Urimai — Stop Scams &amp; Automate Local Legal Petitions</title>
+  <link rel="preload" href="icon.svg" as="image">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="palettes.css">
+  <script src="theme.js"></script>
+</head>
+<body data-default-palette="mandarin">
+  <canvas id="bg" class="bg" aria-hidden="true"></canvas>
+  <a class="skip" href="#main">Skip to main content</a>
+
+  <!-- Optional Zero-Data-Retention & Edge Privacy Governance Modal (Non-Blocking) -->
+  <div id="edgeConsentModal" class="consent-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="edgeConsentTitle" aria-describedby="edgeConsentDesc" hidden>
+    <div class="consent-modal-card glass">
+      <div class="consent-modal-badge">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+        <span>GDPR / ISO EDGE PRIVACY GOVERNANCE</span>
+      </div>
+      <h2 id="edgeConsentTitle">Zero-Data-Retention &amp; Stateless AI Proxy</h2>
+      <div id="edgeConsentDesc" class="consent-modal-body">
+        <p>Chat_Safe routes inference through a stateless Vercel Serverless proxy (<code>/api/gemini</code>) with automatic offline local fallback. Case files stay in your browser local memory with zero server-side PII retention or third-party tracking.</p>
+      </div>
+      <ul class="consent-modal-pillars" aria-label="Security guarantees">
+        <li>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2z"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span>Stateless <code>/api/gemini</code> proxy &amp; local browser fallback</span>
+        </li>
+        <li>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span>Zero server-side PII logging or third-party tracking</span>
+        </li>
+      </ul>
+      <div class="consent-modal-actions">
+        <button type="button" id="edgeConsentDeclineBtn" class="secondary consent-decline-btn">Decline</button>
+        <button type="button" id="edgeConsentAgreeBtn" class="primary consent-agree-btn">Accept &amp; Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <header class="top">
+    <a class="brand" href="index.html" aria-label="Chat_Safe × Urimai home">
+      <img src="icon.svg" alt="Chat_Safe × Urimai shield logo" width="34" height="34">
+      <div>
+        <p class="logo">Chat<span>_</span>Safe</p>
+        <p class="tagline" data-i18n="tagline">Kavach × Urimai</p>
+      </div>
+    </a>
+    <nav class="mainnav" aria-label="Primary navigation">
+      <a href="index.html">Home</a>
+      <a href="index.html#how">About</a>
+      <a href="app.html" aria-current="page" data-i18n="navApp">App</a>
+      <a href="demo.html" data-i18n="navDemo">Demo</a>
+      <a href="account.html" data-i18n="navAccount">Account / Login</a>
+    </nav>
+    <div class="controls header-actions" role="group" aria-label="Display &amp; language controls">
+      <div class="header-utilities">
+        <label for="lang" class="sr-only">Language</label>
+        <select id="lang" class="header-lang-select" aria-label="Language" data-tip="Choose any of 23 Indian languages">
+          <option value="en">English</option>
+        </select>
+        <a href="account.html" id="streakBadge" class="streak header-util-secondary" aria-label="Daily streak">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+          <span id="streakNum">0</span>
+        </a>
+        <button type="button" id="historyBtn" class="icon-btn header-util-secondary" aria-label="Case files (saved chats)" aria-controls="cases" aria-expanded="false" data-tip="Case files (H)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+        </button>
+        <button type="button" id="soundBtn" class="icon-btn header-util-secondary" aria-label="Mute or unmute sound" aria-pressed="false" data-tip="Sound effects">
+          <svg class="snd-on" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+          <svg class="snd-off" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="m22 9-6 6M16 9l6 6"/></svg>
+        </button>
+        <button type="button" id="themeToggle" class="icon-btn" aria-label="Theme Toggle (Dark / Light mode)" data-tip="Theme Toggle (Dark / Light)">
+          <svg class="sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          <svg class="moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        </button>
+        <button type="button" id="btn-settings" class="icon-btn header-util-secondary" aria-label="Settings (Display &amp; accessibility preferences)" data-tip="Settings &amp; Accessibility">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+        </button>
+        <div class="cursor-picker header-util-secondary">
+          <button type="button" id="btn-cursor" class="icon-btn" aria-label="AI Spark / Engine Status &amp; Cursor style" data-tip="AI Spark / Engine Status">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4M22 5h-4M4 17v2M5 18H3"/></svg>
+          </button>
+          <div class="cursor-menu glass" id="cursor-menu" hidden>
+            <div class="menu-title">Cursor style</div>
+            <button type="button" data-mode="orb">Orbit ring</button>
+            <button type="button" data-mode="comet">Comet trail</button>
+            <button type="button" data-mode="neon">Neon ribbon</button>
+            <button type="button" data-mode="spark">Spark burst</button>
+            <button type="button" data-mode="system">System default</button>
+          </div>
+        </div>
+        <button type="button" id="helpBtn" class="icon-btn header-util-secondary" aria-label="Keyboard shortcuts guide" data-tip="Keyboard Shortcuts (?)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div id="consentDeclinedBanner" class="restriction-banner" role="alert" hidden>
+    <div class="restriction-banner-inner glass">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4M12 16h.01"/></svg>
+      <div>
+        <strong>Workspace Locked — Privacy Consent Declined</strong>
+        <p class="small muted" style="margin:.15rem 0 0">Edge AI processing, voice input, and local case storage are disabled until you accept the Zero-Data-Retention &amp; Edge Privacy Governance policy.</p>
+      </div>
+      <button type="button" id="reopenConsentBtn" class="primary sm">Review &amp; Accept Privacy Governance</button>
+    </div>
+  </div>
+
+  <main id="main">
+    <!-- Voice Agent + Speed-Dial '9' Keypad Simulator -->
+    <section class="hero glass reveal" aria-labelledby="agentTitle">
+      <div class="avatar-wrap">
+        <canvas id="kavach" class="avatar" role="img" tabindex="0" aria-label="Kavach, 3D cyber and civic guardian"></canvas>
+        <p class="hint" data-i18n="dragHint">Drag to spin · tap to poke · wheel to zoom</p>
+        <button type="button" id="resetView" class="linkbtn" data-i18n="resetView">↺ Reset view</button>
+        <p id="agentState" class="state-pill" role="status" aria-live="polite" data-i18n="state_idle">Ready to help</p>
+        <button type="button" id="mic" class="mic" aria-pressed="false">
+          <svg class="mic-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/></svg>
+          <span id="micLabel" data-i18n="micStart">Tap to speak</span>
+        </button>
+        <label class="toggle"><input type="checkbox" id="autoSpeak" checked> <span data-i18n="autoSpeak">Speak replies</span></label>
+        <div class="hud" aria-labelledby="hudTitle">
+          <p id="hudTitle" class="hud-title"><span data-i18n="learned">Scam types learned</span> <strong id="hudCount">0/8</strong></p>
+          <ol id="hudList" class="hud-list"></ol>
+        </div>
+      </div>
+
+      <div class="agent-panel">
+        <div class="panel-head">
+          <h1 id="agentTitle" data-i18n="agentTitle">Kavach &amp; Urimai — Scam Shield &amp; Civic Petitions</h1>
+          <div class="head-actions">
+            <button type="button" id="demoBtn" class="chip demo-chip auto-demo-btn" aria-label="Start Auto-Pilot Guided Demo" data-tip="One-click Auto-Pilot Guided Demo: Kavach Red Scam + Urimai Blue Civic + PDF">▶ Start Auto-Demo</button>
+            <button type="button" id="newChat" class="chip" data-i18n="newChat">+ New chat</button>
+          </div>
+        </div>
+        <div class="sim-mode-bar">
+          <div id="demoSimulatorBadge" class="sim-mode-pill" role="status" aria-live="polite" data-tip="Vercel Serverless /api/gemini Proxy with automatic Local Simulator fallback">
+            <span class="sim-dot" aria-hidden="true"></span>
+            <span id="demoSimulatorLabel">Vercel AI Proxy Ready · Auto-Fallback Active</span>
+          </div>
+        </div>
+        <p class="muted" data-i18n="agentIntro">Speak, paste, or press Speed-Dial 9 on a button phone. Kavach stops cyber scams (1930) while Urimai generates automated local legal petitions—manage rural issues remotely from any smartphone or laptop.</p>
+        <p id="uiNote" class="note" hidden></p>
+
+        <div class="voice-dual">
+          <div class="chat-column">
+            <ol id="agentLog" class="chat" aria-live="polite" aria-label="Conversation with Kavach & Urimai"></ol>
+            <div class="quick" role="group" aria-label="Quick voice prompts">
+              <button type="button" class="chip" data-ask="chipReal" data-i18n="chipReal">Is this caller really from my bank?</button>
+              <button type="button" class="chip" data-ask="chipArrest" data-i18n="chipArrest">What is a digital arrest?</button>
+              <button type="button" class="chip" data-ask="chipWater" data-i18n="chipWater">Panchayat water pipe broke 3 days ago</button>
+            </div>
+            <div id="caseStrip" class="case-strip" role="group" aria-label="Recent chats" hidden></div>
+            <form id="agentForm" class="ask" novalidate>
+              <label for="agentInput" class="sr-only" data-i18n="typeHere">Type or speak</label>
+              <textarea id="agentInput" rows="2" maxlength="4000" dir="auto" data-i18n-placeholder="typeHere"></textarea>
+              <button type="submit" class="primary" data-i18n="send">Send</button>
+            </form>
+          </div>
+
+          <!-- Keypad Phone Speed-Dial '9' Simulator -->
+          <aside class="keypad-phone" aria-label="Rural Button Phone Speed-Dial 9 Simulator">
+            <div class="keypad-screen" id="keypadScreen">
+              <span class="kp-tag">BUTTON PHONE · IVR SIM</span>
+              <span id="keypadText">Hold/Tap <b>9</b> to verify scams (Kavach) or draft petitions (Urimai)</span>
+            </div>
+            <div class="keypad-grid" role="group" aria-label="Phone keypad">
+              <button type="button" class="keypad-key" data-digit="1">1</button>
+              <button type="button" class="keypad-key" data-digit="2">2</button>
+              <button type="button" class="keypad-key" data-digit="3">3</button>
+              <button type="button" class="keypad-key" data-digit="4">4</button>
+              <button type="button" class="keypad-key" data-digit="5">5</button>
+              <button type="button" class="keypad-key" data-digit="6">6</button>
+              <button type="button" class="keypad-key" data-digit="7">7</button>
+              <button type="button" class="keypad-key" data-digit="8">8</button>
+              <button type="button" class="keypad-key speed9" data-digit="9" data-tip="Speed-Dial 9: Answer in your chosen Indian language!">9 · IVR</button>
+              <button type="button" class="keypad-key" data-digit="*">*</button>
+              <button type="button" class="keypad-key" data-digit="0">0</button>
+              <button type="button" class="keypad-key" data-digit="#">#</button>
+            </div>
+            <div class="keypad-scenarios">
+              <button type="button" class="chip sm" id="simScamCall" data-tip="Simulate Scenario A: Bank OTP scam call">Sim A: OTP Scam</button>
+              <button type="button" class="chip sm" id="simCivicCall" data-tip="Simulate Scenario B: Broken water pipe Urimai handoff">Sim B: Water Pipe</button>
+            </div>
+          </aside>
+        </div>
+
+        <!-- Live Multi-Agent Bus Strip -->
+        <div class="bus-strip" id="agentBus" aria-label="Live AI Agent Bus">
+          <span class="mono small muted bus-label">AGENT BUS:</span>
+          <span class="bus-node active" data-bus="vani">Vani IVR</span>
+          <span class="bus-node" data-bus="gemini">Gemini Router</span>
+          <span class="bus-node" data-bus="kavach">Kavach</span>
+          <span class="bus-node" data-bus="urimai">Urimai</span>
+          <span class="bus-node" data-bus="netra">Netra PII</span>
+          <span class="bus-node" data-bus="setu">Setu O2O</span>
+        </div>
+
+        <!-- Dynamic Red Scam / Blue Urimai Civic Verdict Card -->
+        <section id="heroDynamicCard" class="hero-dynamic-card" hidden aria-live="polite"></section>
+      </div>
+    </section>
+
+    <!-- Primary + Tool Navigation Tabs (evenly aligned rows) -->
+    <div class="tabs-stack reveal" role="tablist" aria-label="Chat_Safe × Urimai Modules">
+      <div class="tabs tabs-primary">
+        <button role="tab" id="tab-radar" aria-controls="panel-radar" aria-selected="true" data-i18n="tabRadar">Radar &amp; Video News</button>
+        <button role="tab" id="tab-scanner" aria-controls="panel-scanner" aria-selected="false" tabindex="-1" data-i18n="tabScanner">AI Scanner</button>
+        <button role="tab" id="tab-family" aria-controls="panel-family" aria-selected="false" tabindex="-1" data-i18n="tabFamily"><span class="tab-label">Family Hub</span> <span id="familyBadge" class="pill blue" hidden>1</span></button>
+        <button role="tab" id="tab-streak" aria-controls="panel-streak" aria-selected="false" tabindex="-1" data-i18n="tabStreak">Daily Streak</button>
+      </div>
+      <div class="tabs tabs-tools">
+        <button role="tab" id="tab-auto" aria-controls="panel-auto" aria-selected="false" tabindex="-1" data-i18n="tabAuto">Autopilot</button>
+        <button role="tab" id="tab-pay" aria-controls="panel-pay" aria-selected="false" tabindex="-1" data-i18n="tabPay">Pay-Check</button>
+        <button role="tab" id="tab-paati" aria-controls="panel-paati" aria-selected="false" tabindex="-1" data-i18n="tabPaati">Paati Decoy</button>
+        <button role="tab" id="tab-learn" aria-controls="panel-learn" aria-selected="false" tabindex="-1" data-i18n="tabLearn">8 Scams</button>
+        <button role="tab" id="tab-google" aria-controls="panel-google" aria-selected="false" tabindex="-1" data-i18n="tabGoogle">Google &amp; Agents</button>
+        <button role="tab" id="tab-privacy" aria-controls="panel-privacy" aria-selected="false" tabindex="-1">Data Privacy (ISO)</button>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 1: RADAR & VIDEO NEWS REELS ==================== -->
+    <section id="panel-radar" role="tabpanel" aria-labelledby="tab-radar" class="panel glass">
+      <div class="radar-toolbar">
+        <div>
+          <p class="eyebrow" style="margin:0">TAB 1 // LOCAL SCAM DEFENSE &amp; CIVIC PETITION FEED</p>
+          <h2 style="margin:.2rem 0 .25rem">City Scam Radar, Village Civic Watch &amp; Verified Video Reels</h2>
+          <p class="small muted" style="margin:0 0 .35rem">Track rural cyber scam alerts (Kavach) and local Urimai legal petitions across regions—manage family safety and village issues remotely from any smartphone or laptop.</p>
+        </div>
+
+        <!-- Region Filter Pills -->
+        <div class="region-pills" id="regionPills" role="group" aria-label="Filter Radar by Region">
+          <span class="small muted">Region:</span>
+          <button type="button" class="region-pill active" data-city="All">All India</button>
+          <button type="button" class="region-pill" data-city="Coimbatore">Coimbatore</button>
+          <button type="button" class="region-pill" data-city="Chennai">Chennai</button>
+          <button type="button" class="region-pill" data-city="Madurai">Madurai</button>
+          <button type="button" class="region-pill" data-city="Trichy">Trichy</button>
+          <button type="button" class="region-pill" data-city="Salem">Salem</button>
+          <button type="button" class="region-pill" data-city="Bengaluru">Bengaluru</button>
+          <button type="button" class="region-pill" data-city="Mumbai">Mumbai</button>
+        </div>
+
+        <!-- Feed Mode Switcher + Redaction & Post Alert Video -->
+        <div class="feed-switcher">
+          <div class="feed-tabs" id="feedModeTabs" role="group" aria-label="Filter feed type">
+            <button type="button" class="feed-tab active" data-feed="all">All Feeds</button>
+            <button type="button" class="feed-tab" data-feed="scams">Trending Scams</button>
+            <button type="button" class="feed-tab" data-feed="civic">Civic Watch</button>
+            <button type="button" class="feed-tab" data-feed="video">Video Reels</button>
+          </div>
+          <div class="feed-actions">
+            <button type="button" id="toggleRedaction" class="chip sm" aria-pressed="true" data-tip="Toggle Gemini PII Auto-Redaction">Gemini [REDACTED] On</button>
+            <button type="button" id="openPublisherBtn" class="button primary sm">+ Post Alert Video</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Verified User Video Publisher Form (toggles open) -->
+      <form id="videoPublisherForm" class="publisher-box" hidden style="margin-bottom:1.1rem">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <strong>Verified Reporter Video Studio</strong>
+          <label class="small"><input type="checkbox" id="pubVerified" checked> Verified Badge</label>
+        </div>
+        <input id="pubTitle" type="text" placeholder="Video headline (e.g., Fake courier call alert in RS Puram)" required>
+        <div class="pub-meta-grid">
+          <input id="pubCreator" type="text" placeholder="Your verified handle" value="Cyber Mitra Verified" required>
+          <input id="pubCategory" type="text" placeholder="Category" value="Electricity Scam" required>
+          <select id="pubCity" aria-label="City for video">
+            <option value="Coimbatore">Coimbatore</option>
+            <option value="Chennai">Chennai</option>
+            <option value="Madurai">Madurai</option>
+            <option value="Trichy">Trichy</option>
+            <option value="Salem">Salem</option>
+            <option value="Bengaluru">Bengaluru</option>
+            <option value="Mumbai">Mumbai</option>
+          </select>
+        </div>
+        <textarea id="pubSummary" rows="2" placeholder="Key takeaway / warning clue for viewers…" required></textarea>
+        <label class="small muted">Optional: Upload a real video clip (.mp4 / .webm) or leave blank for an instant animated reel:
+          <input id="pubVideoFile" type="file" accept="video/mp4,video/webm" style="margin-top:.25rem">
+        </label>
+        <div class="actions" style="margin:0">
+          <button type="submit" class="primary sm">Publish to Video Feed</button>
+          <button type="button" id="cancelPubBtn" class="secondary sm">Cancel</button>
+        </div>
+      </form>
+
+      <!-- 1. Verified Scam Video News & Reels (3-Column Grid matching screenshot) -->
+      <section id="radarVideoSection" class="radar-section" aria-labelledby="videoFeedHeading">
+        <div class="radar-section-head">
+          <h3 id="videoFeedHeading">Verified Scam Video News &amp; Reels</h3>
+          <span class="small muted">Daily visual micro-learning</span>
+        </div>
+        <div id="reelScroller" class="reels-grid-3" aria-label="Verified Scam Video News and Reels"></div>
+      </section>
+
+      <!-- 2. Live Scam Threat Scroll -->
+      <section id="radarScamSection" class="radar-section" aria-labelledby="scamFeedHeading">
+        <div class="radar-section-head">
+          <h3 id="scamFeedHeading">Live Scam Threat Scroll (Auto-Redacted by Gemini / Netra)</h3>
+          <span id="radarScamCount" class="small muted"></span>
+        </div>
+        <div id="radarScamList" class="radar-feed"></div>
+
+        <div class="publisher-box" style="margin-top:1rem">
+          <h4 style="margin:0">Live PII Auto-Redaction Tester</h4>
+          <p class="small muted" style="margin:0">Paste any raw SMS with names, phones, Aadhaar or UPI IDs to watch Netra mask personal data with <code>[REDACTED]</code> tags.</p>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <input id="redactInput" type="text" placeholder="e.g., Dear Ramesh, call +91 98401 22334 or pay ramesh@ybl" style="flex:1;min-width:200px">
+            <button type="button" id="redactBtn" class="secondary sm">Redact PII</button>
+          </div>
+          <p id="redactOut" class="small" style="margin:0"></p>
+        </div>
+      </section>
+
+      <!-- 3. Civic Watch -->
+      <section id="radarCivicSection" class="radar-section" aria-labelledby="civicFeedHeading">
+        <div class="radar-section-head">
+          <h3 id="civicFeedHeading">Civic Watch (Anonymized Urimai Issues Nearby)</h3>
+          <span id="radarCivicCount" class="small muted"></span>
+        </div>
+        <div id="radarCivicList" class="radar-feed"></div>
+      </section>
+    </section>
+
+    <!-- ==================== TAB 2: UNIFIED AI SCANNER (KAVACH / URIMAI) ==================== -->
+    <section id="panel-scanner" role="tabpanel" aria-labelledby="tab-scanner" class="panel glass" hidden>
+      <p class="eyebrow" style="margin:0">TAB 2 // UNIFIED GEMINI SMART ROUTER (CYBER SCAMS + LOCAL LEGAL PETITIONS)</p>
+      <h2 style="margin:.2rem 0 .3rem">AI Scanner — Stop Cyber Scams (Kavach) &amp; Generate Civic Petitions (Urimai)</h2>
+      <p class="small muted" style="margin:0 0 .75rem">Analyze rural scam forwards from any smartphone or laptop, or turn button-phone voice notes into automated bilingual legal petitions in 23 Indian languages.</p>
+      <form id="xrayForm" novalidate>
+        <label for="message" class="label">Paste a suspicious WhatsApp/SMS forward (Kavach 1930) OR describe a village civic issue (Urimai Petition)</label>
+        <div class="scan-box" id="scanBox">
+          <textarea id="message" rows="5" maxlength="4000" required dir="auto" placeholder="Paste scam text OR type: 'The panchayat water pipe on my street broke 3 days ago…'"></textarea>
+        </div>
+        <div class="samples" role="group" aria-label="Try an example">
+          <span>Try an example:</span>
+          <button type="button" class="chip" data-sample="stock">Stock-tip scam</button>
+          <button type="button" class="chip" data-sample="arrest">Digital arrest</button>
+          <button type="button" class="chip" data-sample="water">Broken water pipe (Urimai)</button>
+          <button type="button" class="chip" data-sample="road">Broken road (Urimai)</button>
+          <button type="button" class="chip" data-sample="safe">Safe message</button>
+        </div>
+        <div class="actions">
+          <button type="submit" class="primary" id="analyzeBtn" data-i18n="scanBtn">Smart Scan (Kavach / Urimai)</button>
+          <button type="button" id="scannerMicBtn" class="secondary">Speak to Scan</button>
+        </div>
+      </form>
+      <div id="xrayStatus" class="status" role="status" aria-live="polite"></div>
+
+      <!-- Scam Result (Red) -->
+      <article id="result" class="result" hidden aria-labelledby="verdict">
+        <div class="score-row">
+          <div class="gauge" id="gauge" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Scam risk score">
+            <span id="scoreText">0</span>
+          </div>
+          <div>
+            <p class="level" id="levelText"></p>
+            <h3 id="verdict" tabindex="-1" dir="auto"></h3>
+            <p id="scamType" class="muted" dir="auto"></p>
+          </div>
+        </div>
+        <div id="safebrowsing-widget" class="api-status-widget hidden" aria-live="polite">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <strong>Google Safe Browsing Check:</strong>
+          <span id="url-threat-status">Scanning links...</span>
+        </div>
+        <p id="explanation" dir="auto"></p>
+        <button type="button" id="readAloud" class="secondary sm">Read aloud</button>
+        <h4>Warning signs found</h4>
+        <ul id="redFlags" class="flags" dir="auto"></ul>
+        <h4>What to do now</h4>
+        <ol id="nextSteps" dir="auto"></ol>
+        <div id="upiBlock" hidden>
+          <h4>Payment IDs in this message</h4>
+          <ul id="upiList" class="upi-list"></ul>
+        </div>
+        <div id="complaintBlock" hidden>
+          <h4>Ready-made 1930 cybercrime complaint</h4>
+          <textarea id="complaint" rows="7" readonly></textarea>
+          <div class="actions">
+            <button type="button" id="copyComplaint" class="secondary">Copy 1930 Draft</button>
+            <a id="familyAlert" class="button secondary" target="_blank" rel="noopener noreferrer">Alert family on WhatsApp</a>
+            <a class="button secondary" href="https://cybercrime.gov.in" target="_blank" rel="noopener noreferrer">File at cybercrime.gov.in</a>
+            <a class="button danger" href="tel:1930">Call 1930</a>
+          </div>
+        </div>
+        <p id="engine" class="muted small"></p>
+      </article>
+
+      <!-- Urimai Civic Result (Blue) -->
+      <article id="urimaiScanResult" class="urimai-card" hidden style="margin-top:1rem">
+        <div style="display:flex;justify-content:space-between;align-items:start;gap:.8rem;flex-wrap:wrap">
+          <div>
+            <span class="pill blue">URIMAI CIVIC ENGINE ACTIVATED</span>
+            <h3 id="usDept" style="margin:.4rem 0 .2rem">Municipal Water Board</h3>
+            <p id="usSummary" class="muted" style="margin:0"></p>
+            <div id="maps-status-badge" class="api-status-widget civic hidden" aria-live="polite">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><path d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+              <strong>Google Maps Geolocation:</strong>
+              <span id="detected-address">Acquiring precise location...</span>
+            </div>
+          </div>
+          <div class="actions" style="margin:0">
+            <button type="button" id="sendToFamilyBtn" class="primary">Send to Family Hub Action Kit</button>
+            <button type="button" id="usDownloadPdfBtn" class="secondary">Download Bilingual PDF</button>
+          </div>
+        </div>
+        <div class="bilingual-grid">
+          <div class="bilingual-box">
+            <h5>Official English Draft</h5>
+            <pre id="usEngLetter"></pre>
+          </div>
+          <div class="bilingual-box">
+            <h5 id="usRegTitle">Regional Script Draft</h5>
+            <pre id="usRegLetter" dir="auto"></pre>
+          </div>
+        </div>
+      </article>
+
+      <div style="margin-top:1.2rem">
+        <h3 style="margin:0 0 .5rem">Recent Scan History (Scam &amp; Civic)</h3>
+        <ul id="scanHistoryList" class="learn-list"></ul>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: FAMILY HUB (LAST-MILE O2O + CM BYPASS + PROXY) ==================== -->
+    <section id="panel-family" role="tabpanel" aria-labelledby="tab-family" class="panel glass" hidden>
+      <p class="eyebrow" style="margin:0">TAB 3 // REMOTE BRIDGE FOR FAMILY BUTTON PHONES &amp; VILLAGE JUSTICE</p>
+      <h2 style="margin:.2rem 0 .3rem">Family Hub — Remote Scam SOS &amp; Automated Urimai Legal Petitions</h2>
+      <p class="small muted" style="margin:0 0 .75rem">Last-mile civic justice, even from another city, college, or while away from home. Manage your family's rural scam threats and village legal petitions remotely from any smartphone or laptop.</p>
+
+      <!-- Flashing Red SOS Alert (when parent speed-dials 9 on a scam) -->
+      <div id="familySosBanner" class="sos-banner" hidden role="alert">
+        <div>
+          <strong>LIVE SOS: Linked Button Phone Speed-Dialed '9' About a Cyber Scam!</strong>
+          <p id="sosDetails" style="margin:.2rem 0 0"></p>
+        </div>
+        <div class="actions" style="margin:0">
+          <button type="button" id="sosPlayVoice" class="secondary sm">Play Family Member's Voice</button>
+          <a href="tel:1930" class="button danger sm">Call 1930</a>
+          <button type="button" id="sosDismiss" class="chip sm">Resolve</button>
+        </div>
+      </div>
+
+      <!-- Active Urimai Action Kit -->
+      <div class="urimai-card" id="familyKitCard">
+        <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:.75rem">
+          <div>
+            <span class="pill blue" id="fhKitBadge">FAMILY REQUEST: URIMAI LEGAL PETITION READY</span>
+            <h3 id="fhKitTitle" style="margin:.45rem 0 .2rem">Broken Panchayat Water Pipe — Ward 12</h3>
+            <p class="small muted" style="margin:0">From: <strong id="fhReporter">Family Elder (Button Phone — Speed Dial 9)</strong> · Department: <strong id="fhDept">Municipal Water Board</strong></p>
+          </div>
+          <div class="actions" style="margin:0">
+            <button type="button" id="fhPlayAudio" class="secondary sm">Play Button-Phone Voice Recording</button>
+            <button type="button" id="fhSwitchSample" class="chip sm">Load Sample Road Issue</button>
+          </div>
+        </div>
+
+        <div class="bilingual-grid">
+          <div class="bilingual-box">
+            <h5>Official English Petition</h5>
+            <pre id="fhEngLetter"></pre>
+          </div>
+          <div class="bilingual-box">
+            <h5 id="fhRegHeading">Regional Language Petition</h5>
+            <pre id="fhRegLetter" dir="auto"></pre>
+          </div>
+        </div>
+
+        <!-- O2O Multi-Modal Steps -->
+        <div class="kit-grid">
+          <div class="kit-step">
+            <h4>1. Upload Street Photo</h4>
+            <p class="small muted" style="margin:0">Snap or pick a photo of the broken pipe/road. Urimai embeds it directly into the legal PDF.</p>
+            <label class="button secondary" style="cursor:pointer">
+              Choose / Snap Photo
+              <input type="file" id="fhPhotoInput" accept="image/jpeg,image/png" class="sr-only" aria-label="Upload a JPEG or PNG photo of the broken water pipe, road, or streetlight">
+            </label>
+            <img id="fhPhotoPreview" class="kit-photo-preview" alt="Uploaded street or civic issue evidence photo to embed inside your Urimai PDF" hidden>
+            <p id="fhPhotoStatus" class="small muted" style="margin:0"></p>
+          </div>
+
+          <div class="kit-step">
+            <h4>2. Generate Bilingual PDF</h4>
+            <p class="small muted" style="margin:0">Includes English + regional petition, embedded photo, and the <strong>5-Resident Signature Table</strong>.</p>
+            <button type="button" id="fhPdfBtn" class="primary">Download Urimai PDF</button>
+            <p id="fhOfflineInstr" class="small muted" style="margin:0"></p>
+          </div>
+
+          <div class="kit-step">
+            <h4>3. Share to WhatsApp</h4>
+            <p class="small muted" style="margin:0">Send the kit summary or Local Proxy request directly to family or neighbors on WhatsApp.</p>
+            <a id="fhWaBtn" class="button secondary" target="_blank" rel="noopener noreferrer">Share to WhatsApp</a>
+          </div>
+        </div>
+
+        <!-- Location-Aware Pathway Switch: Same Town vs Different City (Solution 1 & Solution 2) -->
+        <div style="border-top:1px solid var(--border);padding-top:.85rem">
+          <p class="label" style="margin:0 0 .4rem">Are you in the same village/town to print &amp; attach a photo, or managing remotely from another city, college, or workplace?</p>
+          <div class="pathway-bar">
+            <button type="button" class="chip" id="pathLocalBtn" aria-pressed="true">Same Town — O2O Print + 5 Signatures</button>
+            <button type="button" class="chip" id="pathDigitalBtn" aria-pressed="false">Solution 1: Remote CM Portal Bypass</button>
+            <button type="button" class="chip" id="pathProxyBtn" aria-pressed="false">Solution 2: Ask a Local Proxy (WhatsApp)</button>
+          </div>
+
+          <!-- Solution 1: Digital-First Bypass (CM Helpline / CPGRAMS) -->
+          <div id="digitalBypassBox" class="pathway-card" hidden>
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
+              <strong>Solution 1: Digital-First Bypass (Submit Remotely from Anywhere)</strong>
+              <select id="portalStateSelect" aria-label="Select State Portal"></select>
+            </div>
+            <p class="small muted" style="margin:0">Manage your family's village civic petition remotely from any smartphone or laptop via <strong id="portalNameLabel">Mudhalvarin Mugavari (TN CM Helpline)</strong> (Helpline: <code id="portalHelpline">1100</code>).</p>
+            <textarea id="portalCopyArea" rows="3" readonly></textarea>
+            <div class="actions" style="margin:0">
+              <button type="button" id="copyPortalTextBtn" class="primary sm">1-Click Copy Portal Text</button>
+              <a id="openPortalBtn" class="button secondary sm" target="_blank" rel="noopener noreferrer">Open Official Govt Portal →</a>
+              <a id="openSecondaryPortalBtn" class="button secondary sm" target="_blank" rel="noopener noreferrer">Secondary Portal</a>
+            </div>
+          </div>
+
+          <!-- Solution 2: Local Proxy WhatsApp Handoff -->
+          <div id="localProxyBox" class="pathway-card" hidden>
+            <strong>Solution 2: Local Proxy Handoff (Neighbor / Auto Driver / Village e-Seva CSC)</strong>
+            <p class="small muted" style="margin:0">Forward this unique secure link from your smartphone or laptop to a neighbor or CSC operator near your family's village. When they tap it, they can snap the photo and download the print-ready petition locally!</p>
+            <input id="proxyLinkInput" type="text" readonly>
+            <div class="actions" style="margin:0">
+              <a id="proxyWaSendBtn" class="button primary sm" target="_blank" rel="noopener noreferrer">Forward WhatsApp Proxy Link</a>
+              <button type="button" id="copyProxyLinkBtn" class="secondary sm">Copy Link</button>
+              <a id="previewProxyPageBtn" class="button secondary sm" target="_blank" rel="noopener noreferrer">Open Proxy Camera Page →</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5-Signature Block Preview -->
+        <details>
+          <summary style="cursor:pointer;font-weight:700">Preview: Signatures of Affected Residents Table (included in PDF)</summary>
+          <div class="sig-table-wrap">
+            <table class="sig-table" style="margin-top:.6rem">
+              <thead><tr><th>#</th><th>Resident Name</th><th>Door No. / Street</th><th>Signature / Thumbprint</th></tr></thead>
+              <tbody>
+                <tr><td>1</td><td></td><td></td><td></td></tr>
+                <tr><td>2</td><td></td><td></td><td></td></tr>
+                <tr><td>3</td><td></td><td></td><td></td></tr>
+                <tr><td>4</td><td></td><td></td><td></td></tr>
+                <tr><td>5</td><td></td><td></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: DAILY STREAK (SWIPE-TO-SURVIVE) ==================== -->
+    <section id="panel-streak" role="tabpanel" aria-labelledby="tab-streak" class="panel glass" hidden>
+      <p class="eyebrow" style="margin:0">TAB 4 // DAILY HABIT-FORMING MICRO-LEARNING</p>
+      <div class="g-top">
+        <p class="g-hud"><span id="gHearts" class="g-hearts" role="status">3 / 3 Lives</span></p>
+        <p class="g-hud"><span data-i18n="gStreak">Streak</span> <strong id="gStreak">0</strong></p>
+        <p class="g-hud"><span data-i18n="gScore">Score</span> <strong id="gScore">0</strong></p>
+      </div>
+      <div id="gProgress" class="g-progress" role="progressbar" aria-label="Cards played" aria-valuemin="0" aria-valuenow="0" aria-valuemax="8"></div>
+      <div id="gameBoard" class="g-board">
+        <p class="g-ask" data-i18n="gAsk">Is this message safe, or a scam?</p>
+        <article id="gCard" class="g-card" tabindex="0" aria-label="Message to judge">
+          <span class="g-chat-tail" aria-hidden="true"></span>
+          <p id="gText" class="g-text"></p>
+        </article>
+        <div id="gResult" class="g-result" hidden aria-live="polite"></div>
+        <div class="g-choices">
+          <button type="button" id="gScam" class="g-btn g-btn-scam">
+            <svg class="g-btn-ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4M12 17h.01"/></svg>
+            <span data-i18n="gScam">SCAM</span>
+          </button>
+          <button type="button" id="gSafe" class="g-btn g-btn-safe">
+            <svg class="g-btn-ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+            <span data-i18n="gSafe">SAFE</span>
+          </button>
+        </div>
+        <p class="help g-hint" data-i18n="gHint">Swipe the card left for SCAM, right for SAFE — or use the buttons.</p>
+      </div>
+      <div id="gDone" hidden></div>
+    </section>
+
+    <!-- ==================== TAB 5: AUTOPILOT ==================== -->
+    <section id="panel-auto" role="tabpanel" aria-labelledby="tab-auto" class="panel glass" hidden>
+      <div class="auto-head">
+        <div>
+          <h2 class="auto-title">Autopilot — Batch Scan a Whole Chat Pile</h2>
+          <p class="help">Paste multiple messages (one per line). Autopilot scores every line and writes the reply, 1930 complaint, and family warning automatically.</p>
+        </div>
+        <span class="auto-badge" id="autoBadge" hidden></span>
+      </div>
+      <form id="autoForm" novalidate>
+        <textarea id="autoInput" rows="5" maxlength="20000" dir="auto" required placeholder="Paste one message per line…"></textarea>
+        <fieldset class="auto-switches">
+          <legend>Autopilot Actions</legend>
+          <label class="sw"><input type="checkbox" id="auScan" checked><span></span><b>Check every message automatically</b></label>
+          <label class="sw"><input type="checkbox" id="auReply" checked><span></span><b>Write safe reply</b></label>
+          <label class="sw"><input type="checkbox" id="auWarn" checked><span></span><b>Warn family group</b></label>
+          <label class="sw"><input type="checkbox" id="auReport"><span></span><b>Prepare 1930 report</b></label>
+        </fieldset>
+        <div class="actions">
+          <button type="submit" class="primary" id="autoRun">Run Autopilot</button>
+          <button type="button" class="secondary" id="autoSample">Fill example pile</button>
+        </div>
+      </form>
+      <div id="autoOut" class="auto-out" hidden aria-live="polite"></div>
+    </section>
+
+    <!-- ==================== TAB 6: PAY-CHECK (@valid UPI) ==================== -->
+    <section id="panel-pay" role="tabpanel" aria-labelledby="tab-pay" class="panel glass" hidden>
+      <p>Since 1 Oct 2025, SEBI-registered brokers and advisers collect money only through NPCI-issued <code>@valid</code> UPI handles. Verify any UPI ID before paying.</p>
+      <form id="payForm" novalidate>
+        <label for="upi" class="label">UPI ID to verify</label>
+        <input id="upi" type="text" inputmode="email" autocomplete="off" spellcheck="false" maxlength="300" placeholder="e.g., abc.brk@validhdfc or rajesh.trader@ybl" required>
+        <div class="actions"><button type="submit" class="primary">Check UPI ID</button></div>
+      </form>
+      <div id="payResult" class="status" role="status" aria-live="polite"></div>
+    </section>
+
+    <!-- ==================== TAB 7: KAMALA PAATI DECOY ==================== -->
+    <section id="panel-paati" role="tabpanel" aria-labelledby="tab-paati" class="panel glass" hidden>
+      <p>Meet Kamala Paati — an AI grandma who wastes scammers' time politely in your chosen language without ever revealing real OTPs or personal details.</p>
+      <ol id="chatLog" class="chat" aria-live="polite" aria-label="Decoy conversation"></ol>
+      <form id="paatiForm" novalidate>
+        <label for="scammerMsg" class="label">Scammer's latest message</label>
+        <textarea id="scammerMsg" rows="3" maxlength="4000" required dir="auto" placeholder="Paste what the scammer said…"></textarea>
+        <div class="actions"><button type="submit" class="primary">Get Paati's reply</button></div>
+      </form>
+    </section>
+
+    <!-- ==================== TAB 8: LEARN 8 SCAMS ==================== -->
+    <section id="panel-learn" role="tabpanel" aria-labelledby="tab-learn" class="panel glass" hidden>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
+        <p style="margin:0">Tap any card to test that exact scam in AI Scanner, or open the <a href="demo.html">Sticky Scroll 3D Demo</a>.</p>
+        <a href="demo.html" class="button secondary sm">Open Sticky Demo</a>
+      </div>
+      <div id="typeGrid" class="type-grid"></div>
+    </section>
+
+    <!-- ==================== TAB 9: GOOGLE ECOSYSTEM & 8 AI AGENTS ==================== -->
+    <section id="panel-google" role="tabpanel" aria-labelledby="tab-google" class="panel glass" hidden>
+      <p class="eyebrow" style="margin:0">GOOGLE AI &amp; CLOUD STACK + 8 COLLABORATING AGENTS</p>
+      <h2 style="margin:.2rem 0 .5rem">Powered by Google Products &amp; Multi-Agent AI</h2>
+
+      <div class="google-grid">
+        <article class="google-card">
+          <h3>Google Gemini 2.5 Flash</h3>
+          <p class="small muted">Structured JSON Intent Classification (Scam vs Civic), Bilingual Urimai Legal Drafting, PII Auto-Redaction, and Kamala Paati Decoy.</p>
+          <span class="pill green" id="geminiStatusPill">Offline + Live Ready</span>
+        </article>
+        <article class="google-card">
+          <h3>Web Speech &amp; Google TTS</h3>
+          <p class="small muted">Hands-free speech recognition &amp; 23-language voice synthesis powering Kavach &amp; Speed-Dial '9' IVR handoffs.</p>
+        </article>
+        <article class="google-card">
+          <h3>Google Maps &amp; Ward Locator</h3>
+          <p class="small muted">Pinpoints parent's Ward/Panchayat and checks if you are remote to trigger CM Helpline Bypass.</p>
+          <button type="button" id="detectLocationBtn" class="secondary sm">Detect My Ward / GPS</button>
+          <p id="geoStatus" class="small muted" style="margin:0"></p>
+        </article>
+        <article class="google-card">
+          <h3>Gmail &amp; Google Docs Export</h3>
+          <p class="small muted">1-click Gmail draft to Municipal Commissioner / Cyber Cell or export Urimai petition for Google Docs.</p>
+          <button type="button" id="gmailDraftBtn" class="secondary sm">Open Gmail Petition Draft</button>
+        </article>
+        <article class="google-card">
+          <h3>Android PWA Share Target</h3>
+          <p class="small muted">Installable PWA with <code>share_target</code>: share suspicious WhatsApp messages directly into Chat_Safe from Android.</p>
+        </article>
+        <article class="google-card">
+          <h3>Vercel Serverless Proxy (<code>/api/gemini</code>)</h3>
+          <p class="small muted">Server-side Gemini 2.5 Flash intent routing via <code>api/gemini.js</code> with automatic zero-error Local Simulator fallback when offline or unconfigured.</p>
+        </article>
+      </div>
+
+      <h3 style="margin:1.5rem 0 .4rem">Meet the 8 AI Agents</h3>
+      <div id="appAgentGrid" class="agent-grid"></div>
+    </section>
+
+    <!-- ==================== TAB 10: ISO/IEC 27701 DATA PRIVACY & USER VAULT ==================== -->
+    <section id="panel-privacy" role="tabpanel" aria-labelledby="tab-privacy" class="panel glass" hidden>
+      <p class="eyebrow" style="margin:0">TAB 10 // ISO/IEC 27001 &amp; 27701 · DPDP ACT 2023 GOVERNANCE</p>
+      <h2 style="margin:.2rem 0 .45rem">Data Privacy Center, User Registry &amp; Legal Compliance</h2>
+      <p class="muted">We practice strict <strong>data minimization</strong>: only the fields below are stored (passwords hashed via <strong>Argon2id</strong>, city optionally encrypted with AES-256-GCM, and zero third-party ad trackers).</p>
+
+      <div class="iso-grid">
+        <form id="privacyProfileForm" class="google-card" novalidate style="display:grid;gap:.65rem">
+          <h3 style="margin:0">Verified Citizen Info &amp; Consent Vault</h3>
+          <input type="text" name="website" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <label for="privName" class="small">Full Name (Required)</label>
+          <input id="privName" name="name" maxlength="60" required autocomplete="name" placeholder="e.g., Meenakshi Sundaram">
+          <label for="privEmail" class="small">Email Address (Required)</label>
+          <input id="privEmail" name="email" type="email" maxlength="254" required autocomplete="email" placeholder="citizen@example.in">
+          <label for="privCity" class="small">City / Municipal Ward (Optional — for Urimai Petitions)</label>
+          <input id="privCity" name="city" maxlength="80" placeholder="e.g., Ward 12, Coimbatore">
+          <label for="privPass" class="small">Account Passphrase (8+ chars, hashed with Argon2id on server)</label>
+          <input id="privPass" name="password" type="password" minlength="8" maxlength="200" autocomplete="new-password" placeholder="Minimum 8 characters">
+
+          <label class="consent-check">
+            <input type="checkbox" id="privPolicyConsent" required>
+            <span>I agree to the <a href="privacy.html#privacy-policy" target="_blank" rel="noopener">Privacy Policy</a>, <a href="privacy.html#terms-of-service" target="_blank" rel="noopener">Terms of Service</a> &amp; <a href="privacy.html#refund-policy" target="_blank" rel="noopener">₹0 Free / Refund Policy</a>.</span>
+          </label>
+          <label class="consent-check">
+            <input type="checkbox" id="privAgeConsent" required>
+            <span><strong>Age Verification:</strong> I confirm I am 18+ years old, OR I am submitting with verifiable parent/guardian consent for a minor.</span>
+          </label>
+          <label class="consent-check">
+            <input type="checkbox" id="privAlertsOptIn">
+            <span>Optional: Receive scam radar digests (1-click unsubscribe anytime — unchecked by default, no dark patterns).</span>
+          </label>
+
+          <div class="actions" style="margin:.2rem 0 0">
+            <button type="submit" class="primary">Save Encrypted Profile &amp; Consent</button>
+          </div>
+          <p id="privacyFormStatus" class="status" role="status" aria-live="polite" style="margin:0"></p>
+        </form>
+
+        <div class="google-card" style="display:grid;gap:.7rem;align-content:start">
+          <h3 style="margin:0">Your ISO 27701 Rights &amp; Audits</h3>
+          <p class="small muted" style="margin:0">Exercise Access, Portability, Opt-Out, or Permanent Erasure anytime:</p>
+          <div class="actions" style="margin:0">
+            <button type="button" id="privacyExportBtn" class="secondary">Export My Data (JSON)</button>
+            <button type="button" id="privacyUnsubBtn" class="secondary">Unsubscribe Alerts</button>
+            <button type="button" id="privacyDeleteBtn" class="danger">Delete Account &amp; Erase Data</button>
+          </div>
+          <p id="privacyRightsStatus" class="small muted" role="status" aria-live="polite" style="margin:0"></p>
+
+          <details>
+            <summary><strong>Privacy, Terms, Refund (₹0 Free) &amp; Cookie Policy</strong></summary>
+            <p class="small" style="margin:.45rem 0">100% Free Citizen Service — ₹0 fees, zero hidden charges, zero fake reviews. Optional future partner services carry a 7-day 100% refund guarantee. Strict security cookies only (<code>cs_session</code> HttpOnly, <code>cs_csrf</code> SameSite=Strict).</p>
+          </details>
+          <details>
+            <summary><strong>Security Controls &amp; Third-Party / Asset Audit</strong></summary>
+            <ul class="small" style="margin:.4rem 0 0;padding-left:1.2rem">
+              <li>Argon2id password hashing + 15-min expiring SHA-256 reset tokens.</li>
+              <li>Parameterized SQLite WAL (<code>busy_timeout=5000</code>) + CSRF + CORS + Rate Limits + Overload Shedding (<code>503</code>).</li>
+              <li>Zero ad/analytics SDKs; all icons &amp; Canvas visuals are original/licensed (<code>icon.svg</code>).</li>
+              <li>Business Contact: Chat_Safe × Urimai Initiative, Coimbatore · <code>privacy@chatsafe.in</code>.</li>
+            </ul>
+          </details>
+          <a class="button secondary sm" href="privacy.html">Open Full Legal &amp; Compliance Page</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Search Bar & Case Files Drawer -->
+  <div id="searchBar" class="searchbar" hidden>
+    <form id="searchForm" role="search">
+      <label for="caseSearch" class="sr-only">Search saved chats</label>
+      <input id="caseSearch" type="search" autocomplete="off" placeholder="Search saved chats">
+      <button type="submit" class="icon-btn" aria-label="Search">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.35-4.35"/></svg>
+      </button>
+      <button type="button" id="closeSearch" class="icon-btn" aria-label="Close search">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </form>
+  </div>
+
+  <aside id="cases" class="drawer" role="dialog" aria-modal="true" aria-labelledby="casesTitle" hidden>
+    <div class="marquee" aria-hidden="true"><span>CASE FILES · STORED ON THIS DEVICE ONLY · SEARCH ANY WORD ·&nbsp;</span><span>CASE FILES · STORED ON THIS DEVICE ONLY · SEARCH ANY WORD ·&nbsp;</span></div>
+    <div class="drawer-head">
+      <h2 id="casesTitle">Case files</h2>
+      <button type="button" id="closeCases" class="icon-btn" aria-label="Close case files">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <button type="button" id="openSearch" class="secondary wide">Search saved chats</button>
+    <p id="caseCount" class="muted small" role="status" aria-live="polite"></p>
+    <ul id="caseList" class="case-list"></ul>
+    <div class="actions">
+      <button type="button" id="exportCases" class="secondary">Export</button>
+      <button type="button" id="clearCases" class="secondary">Clear all</button>
+    </div>
+    <p class="muted small">Saved only in this browser. Nothing is uploaded.</p>
+  </aside>
+
+  <dialog id="helpDialog" aria-modal="true" aria-labelledby="helpTitle">
+    <h2 id="helpTitle">Keyboard shortcuts</h2>
+    <dl class="keys">
+      <dt><kbd>M</kbd></dt><dd>Start / stop the mic</dd>
+      <dt><kbd>9</kbd></dt><dd>Trigger Speed-Dial '9' Keypad</dd>
+      <dt><kbd>H</kbd></dt><dd>Open case files</dd>
+      <dt><kbd>F</kbd></dt><dd>Search saved chats</dd>
+      <dt><kbd>N</kbd></dt><dd>New chat</dd>
+      <dt><kbd>Esc</kbd></dt><dd>Close panels</dd>
+    </dl>
+    <button type="button" id="closeHelp" class="primary" style="margin-top:.8rem">Close</button>
+  </dialog>
+
+  <div id="cookieConsentBanner" class="cookie-banner" role="region" aria-label="Cookie preferences" hidden>
+    <p><strong>Cookie &amp; Privacy Notice:</strong> Chat_Safe uses strictly necessary security cookies (<code>cs_session</code>, <code>cs_csrf</code>). Optional UI preferences (theme/streak) are saved locally only with your choice. <a href="privacy.html#cookie-policy">Cookie Policy</a></p>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+      <button type="button" id="cookieEssentialBtn" class="secondary sm">Essential Only</button>
+      <button type="button" id="cookieAcceptBtn" class="primary sm">Accept Essential + Preferences</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <footer class="foot">
+    <p>Chat_Safe × Urimai · <a href="privacy.html">Privacy Policy</a> · <button type="button" id="openCookiePrefsBtn" class="linkbtn">Cookie Preferences</button> · Emergency: <a href="tel:1930">1930</a> · <a href="tel:112">112</a></p>
+  </footer>
+
+  <script src="i18n.js" defer></script>
+  <script src="sound.js" defer></script>
+  <script src="icons.js" defer></script>
+  <script src="scamtypes.js" defer></script>
+  <script src="api.js" defer></script>
+  <script src="history.js" defer></script>
+  <script src="avatar.js" defer></script>
+  <script src="agentAvatars.js" defer></script>
+  <script src="videoReels.js" defer></script>
+  <script src="pdf.js" defer></script>
+  <script src="fx.js" defer></script>
+  <script src="app.js" defer></script>
+  <script src="cursor.js" defer></script>
+</body>
+</html>

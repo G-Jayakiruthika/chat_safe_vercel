@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" data-palette="mantis">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Chat_Safe × Urimai — Stop cyber scams (Kavach) and generate automated local legal &amp; civic petitions (Urimai) from any button phone in 23 Indian languages. Manage your family's village issues and rural scam alerts remotely from any smartphone or laptop.">
+  <meta name="theme-color" content="#070b14">
+  <title>Chat_Safe × Urimai — Stop Cyber Scams &amp; Generate Local Legal Petitions</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css?v=315">
+  <link rel="stylesheet" href="palettes.css?v=315">
+  <link rel="stylesheet" href="landing.css?v=315">
+  <script src="theme.js?v=310"></script>
+</head>
+<body class="landing" data-default-palette="mantis">
+  <!-- Preloader -->
+  <div id="boot" class="boot" aria-hidden="true">
+    <svg class="boot-shield" viewBox="0 0 64 72" fill="none" aria-hidden="true">
+      <path class="boot-draw" d="M32 3 59 13v26c0 17-11 28-27 33C16 67 5 56 5 39V13Z" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+      <path class="boot-tick" d="m20 36 8 8 17-18" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="boot-pct" id="bootPct">0%</div>
+    <div class="boot-label" id="bootLabel">IGNITING KAVACH × URIMAI</div>
+    <div class="boot-bar"><span></span></div>
+  </div>
+
+  <canvas id="morph" class="bg" aria-label="Animated 3D security and civic particle background"></canvas>
+  <a class="skip" href="#main">Skip to main content</a>
+
+  <header class="top landing-top">
+    <a class="brand" href="index.html" aria-label="Chat_Safe × Urimai home" data-tip="Chat_Safe × Urimai Home">
+      <img src="icon.svg" alt="Chat_Safe × Urimai shield logo" width="34" height="34">
+      <div>
+        <p class="logo">Chat<span>_</span>Safe</p>
+        <p class="tagline">Kavach × Urimai</p>
+      </div>
+    </a>
+    <nav class="mainnav" aria-label="Primary navigation">
+      <a href="index.html" aria-current="page">Home</a>
+      <a href="#how">About</a>
+      <a href="demo.html">Demo</a>
+      <a href="app.html">App</a>
+      <a href="account.html">Account / Login</a>
+    </nav>
+    <div class="controls header-actions" role="group" aria-label="Header utility and launch actions">
+      <div class="header-utilities">
+        <button type="button" id="themeToggle" class="icon-btn" aria-label="Switch between bright white mode and dark mode" data-tip="Theme Toggle (Light / Dark)">
+          <svg class="sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          <svg class="moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        </button>
+        <button type="button" id="btn-settings" class="icon-btn header-util-secondary" aria-label="Open display, colour palette, and accessibility settings" data-tip="Display &amp; Accessibility Settings">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+        </button>
+        <div class="cursor-picker header-util-secondary">
+          <button type="button" id="btn-cursor" class="icon-btn" aria-label="AI Spark &amp; interactive cursor style" data-tip="AI Spark / Cursor Mode">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4M22 5h-4M4 17v2M5 18H3"/></svg>
+          </button>
+          <div class="cursor-menu glass" id="cursor-menu" hidden>
+            <div class="menu-title">Cursor style</div>
+            <button type="button" data-mode="orb">Orbit ring</button>
+            <button type="button" data-mode="comet">Comet trail</button>
+            <button type="button" data-mode="neon">Neon ribbon</button>
+            <button type="button" data-mode="spark">Spark burst</button>
+            <button type="button" data-mode="system">System default</button>
+          </div>
+        </div>
+      </div>
+      <div class="header-primary-actions">
+        <a class="button primary nav-launch-btn" href="app.html">Launch App →</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- HUD: section counter, ruler and scroll % -->
+  <div class="hud-rail" aria-hidden="true">
+    <span id="hudIndex" class="mono">0001 / 0010</span>
+    <span class="ruler">+++++×++++</span>
+    <span id="hudName" class="mono">GLOBE</span>
+  </div>
+  <div class="hud-progress mono" aria-hidden="true">
+    <b id="hudNum">01</b>
+    <span id="hudTotal">/ 10</span>
+    <span class="next" id="hudNext">NEXT ↓</span>
+  </div>
+
+  <main id="main">
+    <!-- Hero + Good-looking Interactive Demo Video Right at the Top -->
+    <section id="heroTop" class="stage hero" data-palette-name="mantis" data-shape="globe" aria-labelledby="heroTitle">
+      <div class="hero-split">
+        <div>
+          <p class="eyebrow">VERSION 3.0 // KAVACH × URIMAI // MADE FOR BHARAT</p>
+          <h1 id="heroTitle" class="mega">Stop cyber scams. <em>Automate</em> local legal petitions.</h1>
+          <p class="lead">One voice call on <strong>Speed-Dial 9</strong> from any <strong>button phone</strong> in <strong>23 Indian languages</strong>. <strong>Kavach</strong> blocks cyber scams &amp; drafts 1930 complaints, while <strong>Urimai</strong> turns spoken village problems into automated local legal petitions, bilingual PDFs &amp; CM Helpline filings—letting anyone manage their family's rural scam threats or village civic issues remotely from any smartphone or laptop.</p>
+          <div class="actions">
+            <a class="button primary big" href="app.html">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/></svg>
+              <span>Launch Kavach × Urimai</span>
+            </a>
+            <a class="button secondary big" href="demo.html">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M12 18h.01"/></svg>
+              <span>8 Scams Sticky Demo</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Top Cinematic 60-Second Interactive Demo Video Player -->
+        <div class="video-player glass" id="videoPlayer" aria-label="Interactive 60-second product walkthrough video">
+          <canvas id="videoExplainer" width="1280" height="720" role="img" aria-label="Animated 60-second walkthrough showing Speed-Dial 9 voice call, Gemini Scam vs Urimai Civic routing, Family Hub photo PDF, and CM Portal bypass"></canvas>
+          <div class="player-caption" id="playerCaption">Press Play to watch how Speed-Dial '9' triggers Kavach &amp; Urimai in 60 seconds.</div>
+          <button type="button" class="player-big-play" id="playerBig" aria-label="Play 60-second demo video"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4l14 8-14 8V4z"/></svg></button>
+          <div class="player-controls">
+            <button type="button" class="icon-btn" id="playerPlay" aria-label="Play or pause demo video"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4l14 8-14 8V4z"/></svg></button>
+            <div class="player-track" id="playerTrack" role="slider" aria-label="Video timeline" aria-valuemin="0" aria-valuemax="60" aria-valuenow="0" tabindex="0"><div class="player-fill" id="playerFill"></div><div class="player-chapters" id="playerChapters"></div></div>
+            <span class="player-time" id="playerTime">0:00 / 1:00</span>
+            <button type="button" class="icon-btn" id="playerRec" aria-label="Download demo video as WebM" data-tip="Save demo as .webm video"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg></button>
+            <button type="button" class="icon-btn" id="playerFs" aria-label="Toggle fullscreen video"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
+          </div>
+        </div>
+      </div>
+      <p class="scroll-cue mono">SCROLL ↓ TO EXPLORE</p>
+    </section>
+
+    <div class="ticker" aria-label="Scams and civic issues Chat_Safe handles">
+      <div class="ticker-track">
+        <span>DIGITAL ARREST</span><span>URIMAI WATER PIPE</span><span>FAKE STOCK-TIP GROUPS</span><span>KYC / OTP</span><span>BROKEN ROAD O2O PDF</span><span>CM HELPLINE BYPASS</span><span>FEDEX DRUGS PARCEL</span><span>LOCAL PROXY WHATSAPP</span>
+        <span aria-hidden="true">DIGITAL ARREST</span><span aria-hidden="true">URIMAI WATER PIPE</span><span aria-hidden="true">FAKE STOCK-TIP GROUPS</span><span aria-hidden="true">KYC / OTP</span><span aria-hidden="true">BROKEN ROAD O2O PDF</span><span aria-hidden="true">CM HELPLINE BYPASS</span><span aria-hidden="true">FEDEX DRUGS PARCEL</span><span aria-hidden="true">LOCAL PROXY WHATSAPP</span>
+      </div>
+    </div>
+
+    <section class="stage statement" data-palette-name="lionfish" data-shape="attack" aria-labelledby="problemTitle">
+      <p class="eyebrow">01 // THE DUAL GAP IN BHARAT: SCAM DEFENSE + CIVIC PETITIONS</p>
+      <h2 id="problemTitle" class="sr-only">The dual gap: cyber scams and automated civic petitions for button phones</h2>
+      <p class="beat reveal-on-scroll">Every second, rural elders face cyber fraud they can't verify on a small screen…</p>
+      <p class="beat reveal-on-scroll">…and millions on <em>button phones</em> cannot type automated legal petitions for broken water pipes, roads, or civic neglect…</p>
+      <p class="beat reveal-on-scroll">…until <em>AI bridges their voice call</em> so family members can protect and petition remotely from any smartphone or laptop.</p>
+      <div class="stats">
+        <div class="stat reveal-on-scroll"><span class="num" data-count="19812" data-prefix="₹" data-suffix=" Cr">0</span><span class="label">lost to cyber fraud in 2025</span></div>
+        <div class="stat reveal-on-scroll"><span class="num" data-count="21.7" data-decimals="1" data-suffix=" lakh">0</span><span class="label">complaints in 2025</span></div>
+        <div class="stat reveal-on-scroll"><span class="num" data-count="23" data-suffix="">0</span><span class="label">Indian languages supported</span></div>
+        <div class="stat reveal-on-scroll"><span class="num" data-count="8" data-suffix="">0</span><span class="label">collaborating AI agents</span></div>
+      </div>
+    </section>
+
+    <!-- Scroll-driven 3D phone demonstration -->
+    <section id="how" class="stage demo-stage" data-palette-name="bluedragon" data-shape="shield" aria-labelledby="howTitle">
+      <p class="eyebrow">02 // BUTTON-PHONE VOICE TO REMOTE SCAM &amp; LEGAL ACTION</p>
+      <h2 id="howTitle" class="big-title">Press '9' on a button phone. Stop scams or automate petitions.</h2>
+
+      <div class="demo-wrap">
+        <ol class="step-rail" aria-label="Steps">
+          <li><button type="button" class="step-pill" data-step="0" aria-current="true"><span class="n">Step 01</span></button></li>
+          <li><button type="button" class="step-pill" data-step="1"><span class="n">02</span></button></li>
+          <li><button type="button" class="step-pill" data-step="2"><span class="n">03</span></button></li>
+        </ol>
+
+        <div class="demo-stage-visual">
+          <div class="phone-3d" role="img" aria-label="3D smartphone preview showing Speed-Dial 9 listening, Gemini intent classification, and Family Hub action kit">
+            <div class="phone-screen">
+              <div class="ps ps-0">
+                <p class="ps-head">Speed-Dial 9 · Listening</p>
+                <div class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                <p class="ps-line">"Vanakkam. Tell me what happened."</p>
+                <p class="ps-line">"Water pipe broke 3 days ago…"</p>
+              </div>
+              <div class="ps ps-1">
+                <p class="ps-head">Gemini Intent Router</p>
+                <div class="ps-gauge">92</div>
+                <p class="ps-line bad">SCAM → Kavach Red + 1930</p>
+                <p class="ps-line ok">CIVIC → Urimai Blue + Kit</p>
+              </div>
+              <div class="ps ps-2">
+                <p class="ps-head">Family Hub Ready</p>
+                <p class="ps-line ok">Voice transcript attached</p>
+                <p class="ps-line ok">Photo + 5-signature PDF</p>
+                <p class="ps-line">CM Helpline / Proxy link</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="chip chip-a" aria-hidden="true"><b>Speed-Dial 9</b><span>Keypad phone IVR</span></div>
+          <div class="chip chip-b" aria-hidden="true"><b>Gemini Router</b><span>Scam vs Civic JSON</span></div>
+          <div class="chip chip-c" aria-hidden="true"><b>23 Languages</b><span>English + 22 Eighth Schedule</span></div>
+          <div class="chip chip-d" aria-hidden="true"><b>O2O + CM Portal</b><span>Photo + 5 signatures</span></div>
+        </div>
+
+        <div class="demo-copy">
+          <h3 class="demo-title">Single Voice Prompt — Dual Action</h3>
+          <p class="demo-text">Elders dial '9' on any button phone and speak in Tamil, Hindi, Telugu, Kannada, or 23 Indian languages. Gemini instantly routes cyber threats to Kavach (1930 defense) and village breakdowns to Urimai (automated legal petitions)—synced to your smartphone or laptop anywhere.</p>
+        </div>
+      </div>
+
+      <a class="button primary" href="app.html">Try Speed-Dial 9 Simulator →</a>
+    </section>
+
+    <!-- Urimai O2O & Digital-First Showcase -->
+    <section id="urimai" class="stage" data-palette-name="mandarin" data-shape="lock" aria-labelledby="urimaiTitle">
+      <p class="eyebrow">03 // THE URIMAI ENGINE (O2O + DIGITAL-FIRST)</p>
+      <h2 id="urimaiTitle" class="big-title">Last-mile civic justice, even from another city, college, or while away from home.</h2>
+      <p class="lead">Stop rural scams with Kavach and file automated village legal petitions with Urimai—manage every family case remotely from any smartphone or laptop.</p>
+      <div class="feature-grid">
+        <article class="feature reveal-on-scroll"><svg class="feature-ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg><h3>1. Button Phone Speed-Dial '9'</h3><p>Elders speak on a button phone: "The panchayat water pipe broke 3 days ago." AI stops fraud via Kavach or dispatches a legal Urimai petition kit to your smartphone or laptop.</p></article>
+        <article class="feature reveal-on-scroll"><svg class="feature-ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><path d="M12 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg><h3>2. Multi-Modal Photo + Legal PDF</h3><p>Attach a street photo locally or via a neighbor. Urimai embeds it into an automated English + regional legal petition with a 5-resident signature block.</p></article>
+        <article class="feature reveal-on-scroll"><svg class="feature-ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 22h18M6 18v-7M10 18v-7M14 18v-7M18 18v-7M12 2 2 7h20L12 2z"/></svg><h3>3. Remote CM Helpline Bypass</h3><p>Managing from another city, college, or workplace? File directly on CM Helpline portals (Mudhalvarin Mugavari, CPGRAMS, Namma Chennai) in one click from any smartphone or laptop.</p></article>
+        <article class="feature reveal-on-scroll"><svg class="feature-ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><h3>4. Local Proxy WhatsApp</h3><p>Click "Ask a Local Proxy" from anywhere to forward a secure photo-and-print upload link to a trusted neighbor, auto driver, or village e-Seva operator.</p></article>
+        <article class="feature reveal-on-scroll"><svg class="feature-ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8z"/><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/></svg><h3>5. Daily Scam Video Reels</h3><p>Vertical swipeable video news feed with verified scam &amp; civic clips — verified users can publish new alerts.</p></article>
+        <article class="feature reveal-on-scroll"><svg class="feature-ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg><h3>6. Radar &amp; Daily Streak</h3><p>Auto-redacted city threat radar ([REDACTED] PII masking) + Tinder-style Safe-or-Scam daily streak game.</p></article>
+      </div>
+    </section>
+
+    <!-- 8 AI Agents Squad -->
+    <section id="agents" class="stage" data-palette-name="jellyfish" data-shape="ring" aria-labelledby="agentsTitle">
+      <p class="eyebrow">04 // MULTI-AGENT ORCHESTRATION + GOOGLE STACK</p>
+      <h2 id="agentsTitle" class="big-title">Eight specialized AI agents: Kavach scam defense &amp; Urimai petitions.</h2>
+      <p class="lead">Hover or tap any agent avatar to see how Gemini 2.5 Flash, Web Speech, Google Maps location routing, and Safe Browsing collaborate to stop cyber scams and generate automated local legal petitions for button-phone users.</p>
+      <div id="agentGrid" class="agent-grid"></div>
+    </section>
+
+    <section id="eyes" class="stage" data-palette-name="nautilus" data-shape="eye" aria-labelledby="eyesTitle">
+      <p class="eyebrow">05 // MEET KAVACH × URIMAI</p>
+      <h2 id="eyesTitle" class="big-title">Instant visual verdicts: Scam Alert vs. Civic Petition.</h2>
+      <p class="lead">No reading needed. Kavach's 3D eyes shift colour instantly — crimson red when stopping cyber scams, royal blue when drafting automated Urimai legal petitions.</p>
+      <ul class="eye-row">
+        <li class="reveal-on-scroll"><canvas data-mood="idle" role="img" aria-label="Kavach calm cyan eyes meaning ready to help"></canvas><strong>Calm</strong><span>Ready to help</span></li>
+        <li class="reveal-on-scroll"><canvas data-mood="safe" role="img" aria-label="Kavach happy green eyes meaning safe message"></canvas><strong>Happy</strong><span>Safe message</span></li>
+        <li class="reveal-on-scroll"><canvas data-mood="civic" role="img" aria-label="Kavach blue eyes meaning Urimai civic petition ready"></canvas><strong>Urimai Blue</strong><span>Civic petition ready</span></li>
+        <li class="reveal-on-scroll"><canvas data-mood="suspicious" role="img" aria-label="Kavach squinting amber eyes meaning verify carefully"></canvas><strong>Squint</strong><span>Suspicious — verify</span></li>
+        <li class="reveal-on-scroll"><canvas data-mood="critical" role="img" aria-label="Kavach furious red eyes meaning scam hang up immediately"></canvas><strong>Furious</strong><span>Scam — hang up!</span></li>
+      </ul>
+    </section>
+
+    <section id="scamtypes" class="stage" data-palette-name="anemone" data-shape="lock" aria-labelledby="typesTitle">
+      <p class="eyebrow">06 // THE 8 SCAMS</p>
+      <h2 id="typesTitle" class="big-title">Know all eight. Tap any card.</h2>
+      <p class="lead">Or open our dedicated <a href="demo.html">Sticky Scroll 3D Phone Demo</a> to walk through all eight step-by-step.</p>
+      <div id="typeGrid" class="type-grid"></div>
+    </section>
+
+    <section id="languages" class="stage" data-palette-name="jellyfish" data-shape="ring" aria-labelledby="langTitle">
+      <p class="eyebrow">07 // EVERY LANGUAGE OF THE EIGHTH SCHEDULE</p>
+      <h2 id="langTitle" class="big-title">23 Indian languages. One guardian.</h2>
+      <ul class="lang-cloud" aria-label="Supported Indian languages">
+        <li>English</li><li lang="as">অসমীয়া</li><li lang="bn">বাংলা</li><li lang="brx">बड़ो</li><li lang="doi">डोगरी</li><li lang="gu">ગુજરાતી</li>
+        <li lang="hi">हिन्दी</li><li lang="kn">ಕನ್ನಡ</li><li lang="ks" dir="rtl">کٲشُر</li><li lang="kok">कोंकणी</li><li lang="mai">मैथिली</li><li lang="ml">മലയാളം</li>
+        <li lang="mni">ꯃꯤꯇꯩꯂꯣꯟ</li><li lang="mr">मराठी</li><li lang="ne">नेपाली</li><li lang="or">ଓଡ଼ିଆ</li><li lang="pa">ਪੰਜਾਬੀ</li><li lang="sa">संस्कृतम्</li>
+        <li lang="sat">ᱥᱟᱱᱛᱟᱲᱤ</li><li lang="sd" dir="rtl">سنڌي</li><li lang="ta">தமிழ்</li><li lang="te">తెలుగు</li><li lang="ur" dir="rtl">اردو</li>
+      </ul>
+      <p class="muted">Tanglish, Hinglish &amp; auto-script detection work across voice, AI scanner, and bilingual Urimai PDFs.</p>
+    </section>
+
+    <section id="faq" class="stage" data-palette-name="anemone" data-shape="shield" aria-labelledby="faqTitle">
+      <p class="eyebrow">08 // QUESTIONS</p>
+      <h2 id="faqTitle" class="big-title">FAQ — Scams, Button Phones &amp; Remote Family Management</h2>
+      <div class="faq">
+        <details><summary>How does a button-phone user trigger Kavach scam defense or Urimai petitions?</summary><p>They speed-dial '9' on any button phone and speak in their mother tongue. Gemini classifies cyber scams for Kavach (1930 defense) or village breakdowns for Urimai (automated legal petitions) and sends the kit to your smartphone or laptop.</p></details>
+        <details><summary>Can I manage my family's village civic issues or scam alerts remotely from another city or college?</summary><p>Yes! Anyone can manage rural scam alerts and village civic grievances remotely from any smartphone or laptop using Solution 1 (Digital-First Bypass: 1-click copy-paste into CM Helpline / Mudhalvarin Mugavari / CPGRAMS) or Solution 2 (Local Proxy: forward a secure WhatsApp upload link to a neighbor or e-Seva center).</p></details>
+        <details><summary>Does the PDF support Tamil, Hindi and regional scripts?</summary><p>Yes! Our Unicode-safe A4 PDF generator renders Official English + any of 23 Indian scripts, embeds the uploaded street photo, and adds the 5-resident signature block.</p></details>
+        <details><summary>Does it work offline / without a client API key?</summary><p>Yes. Zero API keys are needed in the browser: the app calls the Vercel Serverless Gemini 2.5 Flash proxy (<code>/api/gemini</code>) automatically when a server key is present and falls back seamlessly to the built-in deterministic offline engine.</p></details>
+      </div>
+    </section>
+
+    <section class="stage cta" data-palette-name="mantis" data-shape="eye" aria-labelledby="ctaTitle">
+      <p class="eyebrow">09 // READY FOR BHARAT</p>
+      <h2 id="ctaTitle" class="mega">Stop rural scams &amp; file village legal petitions from any smartphone or laptop.</h2>
+      <div class="phones" aria-hidden="true">
+        <div class="phone"><div class="screen"><span class="bubble you">CBI digital arrest…</span><span class="bubble bad">SCAM — Hang up &amp; call 1930</span><span class="bubble ok">SOS sent to Family</span></div></div>
+        <div class="phone tall"><div class="screen"><div class="mini-gauge">92</div><span class="bubble bad">Secrecy · Urgency · Fear</span><span class="bubble">1930 + Urimai PDF</span></div></div>
+        <div class="phone"><div class="screen"><span class="bubble you">Water pipe broke…</span><span class="bubble ok">Urimai Draft Ready</span><span class="bubble ok">CM Portal + Proxy</span></div></div>
+      </div>
+      <div class="actions center">
+        <a class="button primary big" href="app.html">Launch Web App →</a>
+        <a class="button secondary big" href="demo.html">Open 8 Scams Demo</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p>Chat_Safe × Urimai · <a href="privacy.html">Privacy Policy</a> · <a href="connect.html">Connect Apps</a> · Emergency: <a href="tel:1930">1930</a> · <a href="tel:112">112</a></p>
+  </footer>
+
+  <script src="sound.js?v=310" defer></script>
+  <script src="icons.js?v=310" defer></script>
+  <script src="scamtypes.js?v=310" defer></script>
+  <script src="videoExplainer.js?v=310" defer></script>
+  <script src="avatar.js?v=310" defer></script>
+  <script src="agentAvatars.js?v=310" defer></script>
+  <script src="morph.js?v=310" defer></script>
+  <script src="landing.js?v=310" defer></script>
+  <script src="cursor.js?v=310" defer></script>
+</body>
+</html>
