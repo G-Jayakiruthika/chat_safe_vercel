@@ -73,7 +73,7 @@ test('POST /api/gemini returns clean 503 with upstreamStatus and upstreamBody on
     return {
       ok: false,
       status: 500,
-      text: async () => JSON.stringify({ error: { message: 'Model overloaded for key test-secret' } }),
+      text: async () => JSON.stringify({ error: { message: 'Model overloaded for key test-secret&key=test-secret' } }),
     };
   };
   const handlerErr = createGeminiHandler({ env: { GEMINI_API_KEY: 'test-secret' }, fetchImpl: failingFetch });
@@ -85,8 +85,8 @@ test('POST /api/gemini returns clean 503 with upstreamStatus and upstreamBody on
   assert.equal(resErr.body.upstreamStatus, 500);
   assert.match(resErr.body.upstreamBody, /Model overloaded/);
   assert.deepEqual(failingUrls, [
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent',
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent',
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=test-secret',
+    'https://generativelanguage.googleapis.com/v1beta/models?key=test-secret',
   ]);
   assert.doesNotMatch(JSON.stringify(resErr.body), /test-secret|GEMINI_API_KEY/);
 
@@ -107,50 +107,69 @@ test('POST /api/gemini returns clean 503 with upstreamStatus and upstreamBody on
   assert.match(resTimeout.body.upstreamBody, /timed out/i);
 });
 
-test('POST /api/gemini retries gemini-3.8-flash if gemini-3.5-flash-lite fails and returns 200 on recovery', async () => {
+test('POST /api/gemini auto-discovers active Flash model from /models when gemini-3.8-flash fails', async () => {
   const attempted = [];
-  const retryFetch = async (url) => {
+  const discoveryFetch = async (url) => {
     attempted.push(url);
-    if (url.includes('gemini-3.5-flash-lite')) {
-      return { ok: false, status: 404, json: async () => ({}) };
+    if (url.includes('/models/gemini-3.8-flash:generateContent')) {
+      return { ok: false, status: 404, text: async () => 'Model not found' };
     }
-    return {
-      ok: true,
-      status: 200,
-      async json() {
-        return {
-          candidates: [{
-            content: {
-              parts: [{
-                text: JSON.stringify({
-                  intent: 'SCAM',
-                  confidence_score: 91,
-                  active_agents: ['vani', 'gemini', 'kavach', 'netra'],
-                  summary: 'Retry model classified phishing message.',
-                  action_draft: 'Dial 1930 immediately.',
-                  checklist: ['Do not click links', 'Call 1930'],
-                }),
-              }],
-            },
-          }],
-        };
-      },
-    };
+    if (url.includes('/v1beta/models?key=')) {
+      return {
+        ok: true,
+        status: 200,
+        async json() {
+          return {
+            models: [
+              { name: 'models/embedding-001', supportedGenerationMethods: ['embedContent'] },
+              { name: 'models/gemini-flash-vision-only', supportedGenerationMethods: ['generateContent'] },
+              { name: 'models/gemini-2.0-flash', supportedGenerationMethods: ['generateContent'] },
+            ],
+          };
+        },
+      };
+    }
+    if (url.includes('/models/gemini-2.0-flash:generateContent')) {
+      return {
+        ok: true,
+        status: 200,
+        async json() {
+          return {
+            candidates: [{
+              content: {
+                parts: [{
+                  text: JSON.stringify({
+                    intent: 'SCAM',
+                    confidence_score: 91,
+                    active_agents: ['vani', 'gemini', 'kavach', 'netra'],
+                    summary: 'Discovered model classified phishing message.',
+                    action_draft: 'Dial 1930 immediately.',
+                    checklist: ['Do not click links', 'Call 1930'],
+                  }),
+                }],
+              },
+            }],
+          };
+        },
+      };
+    }
+    throw new Error(`Unexpected URL ${url}`);
   };
 
-  const handler = createGeminiHandler({ env: { GEMINI_API_KEY: 'live-secret-value' }, fetchImpl: retryFetch });
+  const handler = createGeminiHandler({ env: { GEMINI_API_KEY: 'live-secret-value' }, fetchImpl: discoveryFetch });
   const res = createMockRes();
   await handler({ method: 'POST', body: { prompt: 'Share OTP now', language: 'en', mode: 'chat' } }, res);
   assert.equal(res.statusCode, 200);
   assert.deepEqual(attempted, [
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent',
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent',
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=live-secret-value',
+    'https://generativelanguage.googleapis.com/v1beta/models?key=live-secret-value',
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=live-secret-value',
   ]);
   assert.equal(res.body.intent, 'SCAM');
   assert.equal(res.body.confidence_score, 91);
 });
 
-test('POST /api/gemini calls Gemini 3.5 Flash-Lite server-side and normalizes SCAM & CIVIC structured JSON', async () => {
+test('POST /api/gemini calls Gemini 3.8 Flash server-side and normalizes SCAM & CIVIC structured JSON', async () => {
   const calls = [];
   const mockFetch = async (url, init) => {
     calls.push({ url, init });
@@ -194,8 +213,7 @@ test('POST /api/gemini calls Gemini 3.5 Flash-Lite server-side and normalizes SC
   const scamRes = createMockRes();
   await handler({ method: 'POST', body: { prompt: 'My CBI officer is calling me for digital arrest', language: 'ta', mode: 'auto_demo' } }, scamRes);
   assert.equal(scamRes.statusCode, 200);
-  assert.equal(calls[0].url, 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent');
-  assert.equal(calls[0].init.headers['x-goog-api-key'], 'live-secret-value');
+  assert.equal(calls[0].url, 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=live-secret-value');
   assert.deepEqual(Object.keys(scamRes.body).sort(), [
     'active_agents',
     'action_draft',

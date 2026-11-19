@@ -1,7 +1,5 @@
-const GEMINI_ENDPOINTS = [
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent',
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent',
-];
+const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
+const PRIMARY_MODEL = 'models/gemini-3.8-flash';
 const REQUEST_TIMEOUT_MS = 8_500;
 const CANONICAL_AGENTS = new Set(['vani', 'gemini', 'kavach', 'urimai', 'netra', 'setu']);
 
@@ -119,6 +117,23 @@ function normalizeProxyPayload(parsed, cleanPrompt) {
 }
 
 /**
+ * Sanitizes text for safe logging and error payloads without exposing credentials.
+ *
+ * @param {unknown} raw Raw error text or response snippet.
+ * @param {string} secretKey Secret credential string to redact.
+ * @returns {string} Sanitized snippet capped at 600 chars.
+ */
+function sanitizeText(raw, secretKey) {
+  let out = String(raw || '');
+  if (secretKey) {
+    out = out.replaceAll(secretKey, '[REDACTED]');
+    out = out.replaceAll(encodeURIComponent(secretKey), '[REDACTED]');
+  }
+  out = out.replace(/([?&]key=)[^&\s"']+/gi, '$1[REDACTED]');
+  return out.trim().slice(0, 600);
+}
+
+/**
  * Safely extracts and sanitizes an upstream response body snippet without exposing credentials.
  *
  * @param {Response|any} res Upstream fetch response object.
@@ -137,8 +152,89 @@ async function readSafeBody(res, secretKey) {
   } catch {
     raw = '';
   }
-  const sanitized = secretKey ? String(raw || '').replaceAll(secretKey, '[REDACTED]') : String(raw || '');
-  return sanitized.trim().slice(0, 600);
+  return sanitizeText(raw, secretKey);
+}
+
+/**
+ * Invokes `:generateContent` for a normalized `models/...` identifier.
+ *
+ * @param {typeof fetch} fetchFn Fetch implementation.
+ * @param {string} modelPath Normalized Gemini model path (e.g. `models/gemini-3.8-flash`).
+ * @param {string} apiKey Gemini API key.
+ * @param {string} requestPayload Serialized JSON body.
+ * @param {AbortSignal} signal Abort signal for request timeout.
+ * @returns {Promise<{ok: boolean, status: number, body: string, data?: any}>} Outcome object.
+ */
+async function callGenerateContent(fetchFn, modelPath, apiKey, requestPayload, signal) {
+  const url = `${GEMINI_API_BASE}/${modelPath}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const upstreamRes = await fetchFn(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    signal,
+    body: requestPayload,
+  });
+
+  if (!upstreamRes?.ok) {
+    return {
+      ok: false,
+      status: Number.isInteger(upstreamRes?.status) ? upstreamRes.status : 503,
+      body: await readSafeBody(upstreamRes, apiKey),
+    };
+  }
+
+  const upstreamJson = await upstreamRes.json();
+  const rawText = upstreamJson?.candidates?.[0]?.content?.parts
+    ?.map((part) => (typeof part?.text === 'string' ? part.text : ''))
+    .join('') || '';
+
+  if (!rawText) {
+    return {
+      ok: false,
+      status: upstreamRes.status || 502,
+      body: 'Empty or malformed upstream response.',
+    };
+  }
+
+  const parsed = JSON.parse(rawText);
+  return { ok: true, status: upstreamRes.status || 200, body: '', data: parsed };
+}
+
+/**
+ * Discovers the first active Gemini Flash text-generation model via `/v1beta/models`.
+ *
+ * @param {typeof fetch} fetchFn Fetch implementation.
+ * @param {string} apiKey Gemini API key.
+ * @param {AbortSignal} signal Abort signal for request timeout.
+ * @param {string} excludeModel Model path already attempted.
+ * @returns {Promise<{modelPath: string|null, status: number|null, body: string}>} Discovery outcome.
+ */
+async function discoverActiveFlashModel(fetchFn, apiKey, signal, excludeModel) {
+  const listUrl = `${GEMINI_API_BASE}/models?key=${encodeURIComponent(apiKey)}`;
+  const listRes = await fetchFn(listUrl, { method: 'GET', signal });
+  if (!listRes?.ok) {
+    return {
+      modelPath: null,
+      status: Number.isInteger(listRes?.status) ? listRes.status : 503,
+      body: await readSafeBody(listRes, apiKey),
+    };
+  }
+
+  const listJson = await listRes.json();
+  const models = Array.isArray(listJson?.models) ? listJson.models : [];
+  for (const m of models) {
+    const rawName = String(m?.name || '').trim();
+    if (!rawName) continue;
+    const methods = Array.isArray(m?.supportedGenerationMethods) ? m.supportedGenerationMethods : [];
+    if (!methods.includes('generateContent')) continue;
+    const lower = rawName.toLowerCase();
+    if (!lower.includes('flash')) continue;
+    if (/embedding|embed|vision|imagen|tts|audio|live|aqa/i.test(lower)) continue;
+    const modelPath = rawName.startsWith('models/') ? rawName : `models/${rawName}`;
+    if (modelPath === excludeModel) continue;
+    return { modelPath, status: listRes.status || 200, body: '' };
+  }
+
+  return { modelPath: null, status: 404, body: 'No active Gemini Flash model available for generateContent.' };
 }
 
 /**
@@ -216,57 +312,51 @@ export function createGeminiHandler(deps = {}) {
     let upstreamStatus = null;
     let upstreamBody = '';
     try {
-      for (const endpoint of GEMINI_ENDPOINTS) {
-        if (controller.signal.aborted) break;
+      try {
+        const primary = await callGenerateContent(fetchFn, PRIMARY_MODEL, apiKey, requestPayload, controller.signal);
+        if (primary.ok) {
+          return res.status(200).json(normalizeProxyPayload(primary.data, cleanPrompt));
+        }
+        upstreamStatus = primary.status;
+        if (primary.body) upstreamBody = primary.body;
+      } catch (err) {
+        if (controller.signal.aborted) {
+          upstreamStatus = upstreamStatus ?? 504;
+          upstreamBody = upstreamBody || 'Upstream request timed out.';
+        } else {
+          upstreamBody = sanitizeText(err?.message || 'Upstream request failed.', apiKey);
+        }
+      }
+
+      if (!controller.signal.aborted) {
         try {
-          const upstreamRes = await fetchFn(endpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-goog-api-key': apiKey,
-            },
-            signal: controller.signal,
-            body: requestPayload,
-          });
-
-          if (!upstreamRes?.ok) {
-            if (Number.isInteger(upstreamRes?.status)) {
-              upstreamStatus = upstreamRes.status;
+          const discovered = await discoverActiveFlashModel(fetchFn, apiKey, controller.signal, PRIMARY_MODEL);
+          if (discovered.modelPath) {
+            const retry = await callGenerateContent(fetchFn, discovered.modelPath, apiKey, requestPayload, controller.signal);
+            if (retry.ok) {
+              return res.status(200).json(normalizeProxyPayload(retry.data, cleanPrompt));
             }
-            const bodySnippet = await readSafeBody(upstreamRes, apiKey);
-            if (bodySnippet) upstreamBody = bodySnippet;
-            continue;
+            upstreamStatus = retry.status;
+            if (retry.body) upstreamBody = retry.body;
+          } else {
+            if (discovered.status !== null) upstreamStatus = discovered.status;
+            if (discovered.body) upstreamBody = discovered.body;
           }
-
-          const upstreamJson = await upstreamRes.json();
-          const rawText = upstreamJson?.candidates?.[0]?.content?.parts
-            ?.map((part) => (typeof part?.text === 'string' ? part.text : ''))
-            .join('') || '';
-
-          if (!rawText) {
-            upstreamStatus = upstreamRes.status || 502;
-            upstreamBody = 'Empty or malformed upstream response.';
-            continue;
-          }
-
-          const parsed = JSON.parse(rawText);
-          const normalized = normalizeProxyPayload(parsed, cleanPrompt);
-          return res.status(200).json(normalized);
         } catch (err) {
           if (controller.signal.aborted) {
             upstreamStatus = upstreamStatus ?? 504;
             upstreamBody = upstreamBody || 'Upstream request timed out.';
-            break;
-          }
-          if (!upstreamBody) {
-            const msg = String(err?.message || 'Upstream request failed.');
-            upstreamBody = (apiKey ? msg.replaceAll(apiKey, '[REDACTED]') : msg).slice(0, 600);
+          } else if (!upstreamBody) {
+            upstreamBody = sanitizeText(err?.message || 'Model discovery failed.', apiKey);
           }
         }
       }
 
       const finalStatus = upstreamStatus ?? (controller.signal.aborted ? 504 : 503);
-      const finalBody = upstreamBody || (controller.signal.aborted ? 'Upstream request timed out.' : 'Upstream request failed.');
+      const finalBody = sanitizeText(
+        upstreamBody || (controller.signal.aborted ? 'Upstream request timed out.' : 'Upstream request failed.'),
+        apiKey,
+      );
       console.error('Gemini API failure:', finalStatus, finalBody);
       return res.status(503).json({
         error: 'Live AI proxy error',
