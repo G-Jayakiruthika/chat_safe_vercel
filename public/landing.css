@@ -152,17 +152,19 @@
 
 .demo-stage-visual {
   grid-area: visual; position: relative; z-index: 10; display: grid; place-items: center;
-  min-height: min(500px, 60vh); padding: 1rem 1.5rem;
+  min-height: 0; padding: 1rem 1.5rem;
 }
 .phone-3d {
   position: relative; z-index: 4; display: flex; flex-direction: column;
-  width: clamp(260px, 22vw, 320px); max-width: 320px; height: auto; max-height: 58vh; min-height: 360px; aspect-ratio: 9 / 16;
+  align-self: center; justify-self: center; box-sizing: border-box; overflow: hidden;
+  max-width: 320px !important; width: clamp(260px, 22vw, 320px) !important; max-height: 58vh !important; min-height: 0 !important; height: auto !important; aspect-ratio: 9 / 16 !important;
+  transform: none !important;
   border-radius: 36px; padding: 10px;
   background: linear-gradient(160deg, #1e293b, #0b1220); border: 1px solid rgba(148, 163, 184, 0.34);
   box-shadow: 0 28px 65px rgba(2, 6, 23, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 .phone-screen {
-  position: relative; z-index: 6; flex: 1; min-height: 0; width: 100%; border-radius: 26px;
+  position: relative; z-index: 6; flex: 1 1 auto; min-height: 0; width: 100%; height: 100%; border-radius: 26px;
   background: linear-gradient(180deg, #0b1326 0%, #070b14 100%);
   border: 1px solid rgba(148, 163, 184, 0.18); overflow: hidden; display: flex; flex-direction: column;
 }
@@ -345,7 +347,6 @@
 }
 @media (min-width: 768px) and (max-width: 899px) {
   .demo-stage-visual { padding: 1rem .4rem; }
-  .phone-3d { width: clamp(232px, 28vw, 280px); max-width: 320px; max-height: 58vh; aspect-ratio: 9 / 16; min-height: 360px; }
   .demo-stage-visual .chip-a,
   .demo-stage-visual .chip-b,
   .demo-stage-visual .chip-c,
@@ -387,14 +388,19 @@
 /* Top landing header — cleanly aligned, Launch CTA anchored to the far right */
 .landing-top {
   display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 100%;
-  gap: clamp(.45rem, 1.2vw, 1rem); flex-wrap: nowrap;
+  gap: clamp(.45rem, 1vw, .85rem); flex-wrap: nowrap;
 }
 .landing-top .mainnav {
-  display: flex; align-items: center; gap: 14px; flex: 0 1 auto; justify-content: center;
+  display: flex !important; align-items: center !important; gap: 12px !important;
+  flex: 0 1 auto !important; justify-content: center;
+  margin: 0 !important; padding-inline: 0 !important;
   min-width: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
 }
 .landing-top .mainnav::-webkit-scrollbar { display: none; }
-.landing-top .mainnav a { font-size: clamp(.74rem, .86vw, .82rem); padding: 6px 8px; letter-spacing: .04em; white-space: nowrap; flex-shrink: 0; }
+.landing-top .mainnav a {
+  font-size: clamp(.74rem, .86vw, .82rem); margin: 0 !important; padding: 6px 8px !important;
+  letter-spacing: .02em !important; white-space: nowrap !important; flex-shrink: 0 !important;
+}
 .landing-top .controls,
 .landing-top .header-actions {
   flex: 0 0 auto; display: flex; flex-wrap: nowrap;
@@ -410,15 +416,16 @@
   .landing-top .header-actions { margin-left: 0; }
 }
 
-@media (max-width: 1240px) {
-  .landing-top .mainnav { gap: 10px; }
+@media (max-width: 1100px) {
+  .landing-top .mainnav { gap: 8px !important; }
+  .landing-top .mainnav a { padding: 6px 8px !important; white-space: nowrap !important; }
 }
 
 @media (max-width: 1024px) {
   .landing-top { flex-wrap: wrap; }
   .landing-top .controls,
   .landing-top .header-actions { margin-left: auto; }
-  .landing-top .mainnav { order: 3; width: 100%; justify-content: flex-start; gap: 10px; overflow-x: auto; padding-bottom: .25rem; }
+  .landing-top .mainnav { order: 3; width: 100%; justify-content: flex-start; gap: 8px !important; overflow-x: auto; padding-bottom: .25rem; }
 }
 
 @media (min-width: 768px) and (max-width: 1024px) {
@@ -447,7 +454,7 @@
     min-height: auto; padding: .4rem 0;
   }
   .phone-3d {
-    grid-column: 1 / -1; width: min(286px, 100%); max-width: 320px; height: auto; max-height: 58vh; aspect-ratio: 9 / 16; min-height: 380px;
+    grid-column: 1 / -1;
     margin-inline: auto; margin-bottom: .35rem;
   }
   .demo-stage-visual .chip-a,

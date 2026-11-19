@@ -347,14 +347,17 @@ button:disabled { opacity: .6; cursor: progress; }
 /* ---------- v2.1: navigation ---------- */
 .brand { text-decoration: none; color: inherit; }
 .mainnav {
-  display: flex; gap: 14px; flex-wrap: nowrap; align-items: center;
-  justify-content: center; flex: 0 1 auto; min-width: 0;
+  display: flex !important; align-items: center !important; gap: 12px !important;
+  flex-wrap: nowrap; justify-content: center; flex: 0 1 auto !important; min-width: 0;
+  margin: 0 !important; padding-inline: 0 !important;
   overflow-x: auto; scrollbar-width: none;
 }
 .mainnav::-webkit-scrollbar { display: none; }
 .mainnav a {
-  color: var(--muted); text-decoration: none; font-weight: 700; font-size: clamp(.74rem, .86vw, .82rem); letter-spacing: .04em; text-transform: uppercase;
-  padding: 6px 8px; border-radius: 999px; transition: color .2s, background .2s; white-space: nowrap; flex-shrink: 0;
+  color: var(--muted); text-decoration: none; font-weight: 700; font-size: clamp(.74rem, .86vw, .82rem);
+  letter-spacing: .02em !important; text-transform: uppercase;
+  margin: 0 !important; padding: 6px 8px !important; border-radius: 999px;
+  transition: color .2s, background .2s; white-space: nowrap !important; flex-shrink: 0 !important;
 }
 .mainnav a:hover, .mainnav a[aria-current="page"] { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
 
@@ -1067,15 +1070,17 @@ body.notes-off #sf-tip { display: none !important; }
 .demo-phone-col { position: sticky; top: 5.5rem; align-self: start; }
 @media (max-width: 860px) { .demo-phone-col { position: static; } }
 .demo-sticky-phone {
-  margin-inline: auto; width: clamp(260px, 22vw, 320px); max-width: 320px; max-height: 58vh; min-height: 360px; aspect-ratio: 9 / 16;
+  margin-inline: auto; box-sizing: border-box;
+  max-width: 320px !important; width: clamp(260px, 22vw, 320px) !important; max-height: 58vh !important; min-height: 0 !important; height: auto !important; aspect-ratio: 9 / 16 !important;
+  transform: none !important;
   overflow-y: auto; scrollbar-width: none;
-  border-radius: 36px; border: 6px solid color-mix(in srgb, var(--border) 90%, #94a3b8); background: var(--bg2); padding: .9rem;
-  box-shadow: var(--shadow); display: flex; flex-direction: column; gap: .6rem;
+  border-radius: 36px; border: 6px solid color-mix(in srgb, var(--border) 90%, #94a3b8); background: var(--bg2); padding: .78rem;
+  box-shadow: var(--shadow); display: flex; flex-direction: column; gap: .48rem;
 }
 .demo-sticky-phone::-webkit-scrollbar { display: none; }
 .demo-notch { width: 96px; height: 18px; border-radius: 99px; background: var(--border); margin: 0 auto .2rem; }
-.demo-msg-bubble { padding: .9rem; border-radius: 16px 16px 16px 4px; background: color-mix(in srgb, var(--accent) 16%, transparent); font-size: .96rem; }
-.demo-verdict-box { padding: .9rem; border-radius: 16px; border: 2px solid var(--accent); background: var(--bg); }
+.demo-msg-bubble { padding: .68rem .78rem; border-radius: 16px 16px 16px 4px; background: color-mix(in srgb, var(--accent) 16%, transparent); font-size: .88rem; }
+.demo-verdict-box { padding: .68rem .78rem; border-radius: 16px; border: 2px solid var(--accent); background: var(--bg); }
 .demo-verdict-box.scam { border-color: var(--critical); }
 .demo-verdict-box.civic { border-color: #3b82f6; }
 .demo-step-nav { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding-top: .4rem; border-top: 1px solid var(--border); }
@@ -1521,12 +1526,9 @@ main.app-restricted {
   .logo {
     font-size: 1.18rem;
   }
-  .mainnav {
-    gap: 10px;
-  }
   .mainnav a {
     font-size: .74rem;
-    padding: 6px 8px;
+    padding: 6px 8px !important;
   }
   .controls,
   .header-actions,
@@ -1553,6 +1555,16 @@ main.app-restricted {
   }
 }
 
+@media (max-width: 1100px) {
+  .mainnav {
+    gap: 8px !important;
+  }
+  .mainnav a {
+    padding: 6px 8px !important;
+    white-space: nowrap !important;
+  }
+}
+
 /* Mobile & Tablet Utility Pruning (<= 1024px): keep top bar uncrowded */
 @media (max-width: 1024px) {
   .header-util-secondary {
@@ -1573,7 +1585,7 @@ main.app-restricted {
     order: 3;
     width: 100%;
     justify-content: flex-start;
-    gap: 10px;
+    gap: 8px !important;
     overflow-x: auto;
     flex-wrap: nowrap;
     padding-bottom: .2rem;
@@ -1662,7 +1674,7 @@ main.app-restricted {
     order: 3;
     width: 100%;
     justify-content: flex-start;
-    gap: 10px;
+    gap: 8px !important;
     overflow-x: auto;
     flex-wrap: nowrap;
     padding-bottom: .25rem;
@@ -1672,7 +1684,8 @@ main.app-restricted {
     min-height: 44px;
     display: inline-flex;
     align-items: center;
-    padding: 6px 8px;
+    padding: 6px 8px !important;
+    white-space: nowrap !important;
   }
   .controls,
   .header-actions {
