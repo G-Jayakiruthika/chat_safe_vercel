@@ -66,18 +66,24 @@ test('POST /api/gemini returns clean 503 with fallback flag and zero secret leak
   assert.doesNotMatch(serialized, /Error:|at\s+\w+\s+\(/);
 });
 
-test('POST /api/gemini returns clean 503 with upstream statusCode on failure and AbortController timeout', async () => {
+test('POST /api/gemini returns clean 503 with upstreamStatus and upstreamBody on failure and AbortController timeout', async () => {
   const failingUrls = [];
   const failingFetch = async (url) => {
     failingUrls.push(url);
-    return { ok: false, status: 500, json: async () => ({}) };
+    return {
+      ok: false,
+      status: 500,
+      text: async () => JSON.stringify({ error: { message: 'Model overloaded for key test-secret' } }),
+    };
   };
   const handlerErr = createGeminiHandler({ env: { GEMINI_API_KEY: 'test-secret' }, fetchImpl: failingFetch });
   const resErr = createMockRes();
   await handlerErr({ method: 'POST', body: { prompt: 'Test prompt' } }, resErr);
   assert.equal(resErr.statusCode, 503);
+  assert.equal(resErr.body.error, 'Live AI proxy error');
   assert.equal(resErr.body.fallback, true);
-  assert.equal(resErr.body.statusCode, 500);
+  assert.equal(resErr.body.upstreamStatus, 500);
+  assert.match(resErr.body.upstreamBody, /Model overloaded/);
   assert.deepEqual(failingUrls, [
     'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent',
     'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent',
@@ -95,8 +101,10 @@ test('POST /api/gemini returns clean 503 with upstream statusCode on failure and
   const resTimeout = createMockRes();
   await handlerTimeout({ method: 'POST', body: { prompt: 'Slow request' } }, resTimeout);
   assert.equal(resTimeout.statusCode, 503);
+  assert.equal(resTimeout.body.error, 'Live AI proxy error');
   assert.equal(resTimeout.body.fallback, true);
-  assert.equal(resTimeout.body.statusCode, 504);
+  assert.equal(resTimeout.body.upstreamStatus, 504);
+  assert.match(resTimeout.body.upstreamBody, /timed out/i);
 });
 
 test('POST /api/gemini retries gemini-3.8-flash if gemini-3.5-flash-lite fails and returns 200 on recovery', async () => {

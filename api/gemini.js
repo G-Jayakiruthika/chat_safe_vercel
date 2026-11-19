@@ -119,6 +119,29 @@ function normalizeProxyPayload(parsed, cleanPrompt) {
 }
 
 /**
+ * Safely extracts and sanitizes an upstream response body snippet without exposing credentials.
+ *
+ * @param {Response|any} res Upstream fetch response object.
+ * @param {string} secretKey Secret credential string to redact if echoed.
+ * @returns {Promise<string>} Sanitized error/body snippet.
+ */
+async function readSafeBody(res, secretKey) {
+  let raw = '';
+  try {
+    if (typeof res?.text === 'function') {
+      raw = await res.text();
+    } else if (typeof res?.json === 'function') {
+      const parsed = await res.json();
+      raw = JSON.stringify(parsed);
+    }
+  } catch {
+    raw = '';
+  }
+  const sanitized = secretKey ? String(raw || '').replaceAll(secretKey, '[REDACTED]') : String(raw || '');
+  return sanitized.trim().slice(0, 600);
+}
+
+/**
  * Creates a Vercel-compatible serverless request handler with injectable dependencies for testing.
  *
  * @param {{fetchImpl?: typeof fetch, env?: Record<string, string|undefined>, timeoutMs?: number}} [deps] Optional dependency overrides.
@@ -190,7 +213,8 @@ export function createGeminiHandler(deps = {}) {
       },
     });
 
-    let lastStatusCode = null;
+    let upstreamStatus = null;
+    let upstreamBody = '';
     try {
       for (const endpoint of GEMINI_ENDPOINTS) {
         if (controller.signal.aborted) break;
@@ -207,8 +231,10 @@ export function createGeminiHandler(deps = {}) {
 
           if (!upstreamRes?.ok) {
             if (Number.isInteger(upstreamRes?.status)) {
-              lastStatusCode = upstreamRes.status;
+              upstreamStatus = upstreamRes.status;
             }
+            const bodySnippet = await readSafeBody(upstreamRes, apiKey);
+            if (bodySnippet) upstreamBody = bodySnippet;
             continue;
           }
 
@@ -218,25 +244,35 @@ export function createGeminiHandler(deps = {}) {
             .join('') || '';
 
           if (!rawText) {
-            lastStatusCode = upstreamRes.status || 502;
+            upstreamStatus = upstreamRes.status || 502;
+            upstreamBody = 'Empty or malformed upstream response.';
             continue;
           }
 
           const parsed = JSON.parse(rawText);
           const normalized = normalizeProxyPayload(parsed, cleanPrompt);
           return res.status(200).json(normalized);
-        } catch {
+        } catch (err) {
           if (controller.signal.aborted) {
-            lastStatusCode = lastStatusCode ?? 504;
+            upstreamStatus = upstreamStatus ?? 504;
+            upstreamBody = upstreamBody || 'Upstream request timed out.';
             break;
+          }
+          if (!upstreamBody) {
+            const msg = String(err?.message || 'Upstream request failed.');
+            upstreamBody = (apiKey ? msg.replaceAll(apiKey, '[REDACTED]') : msg).slice(0, 600);
           }
         }
       }
 
+      const finalStatus = upstreamStatus ?? (controller.signal.aborted ? 504 : 503);
+      const finalBody = upstreamBody || (controller.signal.aborted ? 'Upstream request timed out.' : 'Upstream request failed.');
+      console.error('Gemini API failure:', finalStatus, finalBody);
       return res.status(503).json({
-        error: 'Live AI proxy temporarily unavailable. Falling back to local simulator.',
+        error: 'Live AI proxy error',
         fallback: true,
-        statusCode: lastStatusCode ?? (controller.signal.aborted ? 504 : 503),
+        upstreamStatus: finalStatus,
+        upstreamBody: finalBody,
       });
     } finally {
       clearTimeout(timer);
