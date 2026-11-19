@@ -347,14 +347,14 @@ button:disabled { opacity: .6; cursor: progress; }
 /* ---------- v2.1: navigation ---------- */
 .brand { text-decoration: none; color: inherit; }
 .mainnav {
-  display: flex; gap: clamp(.1rem, .45vw, .35rem); flex-wrap: nowrap; align-items: center;
-  justify-content: center; justify-content: safe center; flex: 0 1 auto; min-width: 0;
+  display: flex; gap: 14px; flex-wrap: nowrap; align-items: center;
+  justify-content: center; flex: 0 1 auto; min-width: 0;
   overflow-x: auto; scrollbar-width: none;
 }
 .mainnav::-webkit-scrollbar { display: none; }
 .mainnav a {
-  color: var(--muted); text-decoration: none; font-weight: 700; font-size: clamp(.72rem, .86vw, .82rem); letter-spacing: .04em; text-transform: uppercase;
-  padding: .38rem clamp(.45rem, .68vw, .7rem); border-radius: 999px; transition: color .2s, background .2s; white-space: nowrap; flex-shrink: 0;
+  color: var(--muted); text-decoration: none; font-weight: 700; font-size: clamp(.74rem, .86vw, .82rem); letter-spacing: .04em; text-transform: uppercase;
+  padding: 6px 8px; border-radius: 999px; transition: color .2s, background .2s; white-space: nowrap; flex-shrink: 0;
 }
 .mainnav a:hover, .mainnav a[aria-current="page"] { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
 
@@ -856,12 +856,13 @@ body.notes-off #sf-tip { display: none !important; }
 .voice-dual { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: start; }
 @media (max-width: 900px) { .voice-dual { grid-template-columns: 1fr; } }
 .keypad-phone {
-  width: 235px; padding: .9rem; border-radius: 26px; border: 2px solid var(--border);
+  width: clamp(245px, 24vw, 272px); padding: .9rem; border-radius: 26px; border: 2px solid var(--border);
   background: linear-gradient(160deg, #1b2436, #0b111e); color: #e6f1ff; box-shadow: var(--shadow);
   display: grid; gap: .6rem; margin-inline: auto;
 }
 .keypad-screen {
   background: #06212c; border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  color: #f8fafc;
   border-radius: 12px; padding: .6rem .7rem; font: 600 .8rem/1.4 ui-monospace, Consolas, sans-serif; min-height: 76px; height: auto;
   overflow-wrap: break-word; word-break: break-word;
 }
@@ -872,7 +873,26 @@ body.notes-off #sf-tip { display: none !important; }
   border: 1px solid rgb(255 255 255 / .1); font: 700 .95rem ui-monospace, Consolas, monospace;
 }
 .keypad-key.speed9 { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #04111d; border-color: transparent; animation: glow 2.4s ease-in-out infinite; }
-.keypad-scenarios { display: flex; flex-wrap: wrap; gap: .4rem; }
+.keypad-scenarios { display: grid; gap: .45rem; }
+.keypad-scenarios .chip {
+  width: 100%;
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 12px;
+  padding: .48rem .7rem;
+  font-size: .78rem;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  white-space: normal;
+}
+.keypad-scenarios .chip:hover,
+.keypad-scenarios .chip:focus-visible {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.16);
+  border-color: var(--accent);
+}
 
 /* --- Scanner Smart Routing (Red Scam vs Blue Civic Urimai) --- */
 .result.lvl-civic { border-color: #3b82f6; box-shadow: 0 0 34px rgb(59 130 246 / .25); }
@@ -1047,10 +1067,12 @@ body.notes-off #sf-tip { display: none !important; }
 .demo-phone-col { position: sticky; top: 5.5rem; align-self: start; }
 @media (max-width: 860px) { .demo-phone-col { position: static; } }
 .demo-sticky-phone {
-  margin-inline: auto; width: 100%; max-width: 320px; min-height: 550px;
-  border-radius: 40px; border: 8px solid var(--border); background: var(--bg2); padding: 1.1rem;
-  box-shadow: var(--shadow); display: flex; flex-direction: column; gap: .8rem;
+  margin-inline: auto; width: clamp(260px, 22vw, 320px); max-width: 320px; max-height: 58vh; min-height: 360px; aspect-ratio: 9 / 16;
+  overflow-y: auto; scrollbar-width: none;
+  border-radius: 36px; border: 6px solid color-mix(in srgb, var(--border) 90%, #94a3b8); background: var(--bg2); padding: .9rem;
+  box-shadow: var(--shadow); display: flex; flex-direction: column; gap: .6rem;
 }
+.demo-sticky-phone::-webkit-scrollbar { display: none; }
 .demo-notch { width: 96px; height: 18px; border-radius: 99px; background: var(--border); margin: 0 auto .2rem; }
 .demo-msg-bubble { padding: .9rem; border-radius: 16px 16px 16px 4px; background: color-mix(in srgb, var(--accent) 16%, transparent); font-size: .96rem; }
 .demo-verdict-box { padding: .9rem; border-radius: 16px; border: 2px solid var(--accent); background: var(--bg); }
@@ -1499,9 +1521,12 @@ main.app-restricted {
   .logo {
     font-size: 1.18rem;
   }
+  .mainnav {
+    gap: 10px;
+  }
   .mainnav a {
     font-size: .74rem;
-    padding: .34rem .46rem;
+    padding: 6px 8px;
   }
   .controls,
   .header-actions,
@@ -1548,6 +1573,7 @@ main.app-restricted {
     order: 3;
     width: 100%;
     justify-content: flex-start;
+    gap: 10px;
     overflow-x: auto;
     flex-wrap: nowrap;
     padding-bottom: .2rem;
@@ -1636,6 +1662,7 @@ main.app-restricted {
     order: 3;
     width: 100%;
     justify-content: flex-start;
+    gap: 10px;
     overflow-x: auto;
     flex-wrap: nowrap;
     padding-bottom: .25rem;
@@ -1645,7 +1672,7 @@ main.app-restricted {
     min-height: 44px;
     display: inline-flex;
     align-items: center;
-    padding: .4rem .75rem;
+    padding: 6px 8px;
   }
   .controls,
   .header-actions {

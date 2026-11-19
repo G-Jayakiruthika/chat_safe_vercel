@@ -152,13 +152,13 @@
 
 .demo-stage-visual {
   grid-area: visual; position: relative; z-index: 10; display: grid; place-items: center;
-  min-height: clamp(440px, 56vh, 520px); padding: 1.2rem 1.5rem;
+  min-height: min(500px, 60vh); padding: 1rem 1.5rem;
 }
 .phone-3d {
   position: relative; z-index: 4; display: flex; flex-direction: column;
-  width: clamp(248px, 23vw, 276px); height: min(500px, 60vh); min-height: 410px; max-height: 62vh;
-  border-radius: 36px; padding: 11px;
-  background: linear-gradient(160deg, #1e293b, #0b1220); border: 1px solid rgba(148, 163, 184, 0.28);
+  width: clamp(260px, 22vw, 320px); max-width: 320px; height: auto; max-height: 58vh; min-height: 360px; aspect-ratio: 9 / 16;
+  border-radius: 36px; padding: 10px;
+  background: linear-gradient(160deg, #1e293b, #0b1220); border: 1px solid rgba(148, 163, 184, 0.34);
   box-shadow: 0 28px 65px rgba(2, 6, 23, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 .phone-screen {
@@ -337,7 +337,7 @@
 
 @media (min-width: 1180px) {
   .demo-wrap {
-    grid-template-columns: auto minmax(560px, 1.35fr) minmax(300px, 0.85fr);
+    grid-template-columns: auto minmax(600px, 1.45fr) minmax(290px, 0.8fr);
     grid-template-areas: "rail visual copy";
     gap: 1.5rem clamp(1.25rem, 2.5vw, 2.5rem);
   }
@@ -345,7 +345,7 @@
 }
 @media (min-width: 768px) and (max-width: 899px) {
   .demo-stage-visual { padding: 1rem .4rem; }
-  .phone-3d { width: 224px; height: min(440px, 56vh); min-height: 380px; }
+  .phone-3d { width: clamp(232px, 28vw, 280px); max-width: 320px; max-height: 58vh; aspect-ratio: 9 / 16; min-height: 360px; }
   .demo-stage-visual .chip-a,
   .demo-stage-visual .chip-b,
   .demo-stage-visual .chip-c,
@@ -390,11 +390,11 @@
   gap: clamp(.45rem, 1.2vw, 1rem); flex-wrap: nowrap;
 }
 .landing-top .mainnav {
-  flex: 0 1 auto; justify-content: center; justify-content: safe center; gap: clamp(.12rem, .5vw, .35rem);
+  display: flex; align-items: center; gap: 14px; flex: 0 1 auto; justify-content: center;
   min-width: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
 }
 .landing-top .mainnav::-webkit-scrollbar { display: none; }
-.landing-top .mainnav a { font-size: clamp(.72rem, .92vw, .82rem); padding: .38rem clamp(.48rem, .7vw, .7rem); letter-spacing: .04em; white-space: nowrap; flex-shrink: 0; }
+.landing-top .mainnav a { font-size: clamp(.74rem, .86vw, .82rem); padding: 6px 8px; letter-spacing: .04em; white-space: nowrap; flex-shrink: 0; }
 .landing-top .controls,
 .landing-top .header-actions {
   flex: 0 0 auto; display: flex; flex-wrap: nowrap;
@@ -410,11 +410,15 @@
   .landing-top .header-actions { margin-left: 0; }
 }
 
+@media (max-width: 1240px) {
+  .landing-top .mainnav { gap: 10px; }
+}
+
 @media (max-width: 1024px) {
   .landing-top { flex-wrap: wrap; }
   .landing-top .controls,
   .landing-top .header-actions { margin-left: auto; }
-  .landing-top .mainnav { order: 3; width: 100%; justify-content: flex-start; overflow-x: auto; padding-bottom: .25rem; }
+  .landing-top .mainnav { order: 3; width: 100%; justify-content: flex-start; gap: 10px; overflow-x: auto; padding-bottom: .25rem; }
 }
 
 @media (min-width: 768px) and (max-width: 1024px) {
@@ -443,7 +447,7 @@
     min-height: auto; padding: .4rem 0;
   }
   .phone-3d {
-    grid-column: 1 / -1; width: min(286px, 100%); height: 440px; min-height: 420px; max-height: none;
+    grid-column: 1 / -1; width: min(286px, 100%); max-width: 320px; height: auto; max-height: 58vh; aspect-ratio: 9 / 16; min-height: 380px;
     margin-inline: auto; margin-bottom: .35rem;
   }
   .demo-stage-visual .chip-a,
