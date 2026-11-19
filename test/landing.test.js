@@ -5,7 +5,7 @@ import path from 'node:path';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 
-test('index.html, demo.html, app.html, and sw.js use cache-busted v=322 / v5.5 assets and populate phone screens', () => {
+test('index.html, demo.html, app.html, and sw.js use cache-busted v=323 / v5.6 assets and populate phone screens', () => {
   const html = fs.readFileSync(path.join(ROOT, 'public', 'index.html'), 'utf8');
   const demoHtml = fs.readFileSync(path.join(ROOT, 'public', 'demo.html'), 'utf8');
   const appHtml = fs.readFileSync(path.join(ROOT, 'public', 'app.html'), 'utf8');
@@ -16,15 +16,45 @@ test('index.html, demo.html, app.html, and sw.js use cache-busted v=322 / v5.5 a
   assert.match(html, /class="ps ps-1"[\s\S]*GEMINI ROUTER[\s\S]*99%[\s\S]*KAVACH SCAM X-RAY[\s\S]*URIMAI CIVIC ROUTE/);
   assert.match(html, /class="ps ps-2"[\s\S]*Father's Voice Note[\s\S]*5-Resident Signature Block[\s\S]*CM Helpline 1100[\s\S]*WhatsApp Proxy/);
   assert.match(html, /class="hud-safe-bar"/);
-  assert.match(html, /styles\.css\?v=322/);
-  assert.match(html, /palettes\.css\?v=322/);
-  assert.match(html, /landing\.css\?v=322/);
-  assert.match(demoHtml, /styles\.css\?v=322/);
-  assert.match(appHtml, /styles\.css\?v=322/);
-  assert.match(swJs, /chatsafe-vercel-v5\.5/);
+  assert.match(html, /styles\.css\?v=323/);
+  assert.match(html, /palettes\.css\?v=323/);
+  assert.match(html, /landing\.css\?v=323/);
+  assert.match(html, /avatar\.js\?v=323/);
+  assert.match(demoHtml, /styles\.css\?v=323/);
+  assert.match(appHtml, /styles\.css\?v=323/);
+  assert.match(appHtml, /avatar\.js\?v=323/);
+  assert.match(swJs, /chatsafe-vercel-v5\.6/);
   assert.match(html, /landing\.js\?v=320/);
   assert.match(html, /morph\.js\?v=320/);
   assert.match(html, /English \+ 22 Eighth Schedule/);
+});
+
+test('5 emotion faces render distinct mouths on index.html, app.html, and avatar.js; no Gemini 2.5 banners remain', () => {
+  const avatar = fs.readFileSync(path.join(ROOT, 'public', 'avatar.js'), 'utf8');
+  assert.match(avatar, /function drawMouth\(/);
+  assert.doesNotMatch(avatar, /const bars = 7/);
+  assert.match(avatar, /mood === 'safe'[\s\S]*quadraticCurveTo/);
+  assert.match(avatar, /mood === 'civic'[\s\S]*quadraticCurveTo/);
+  assert.match(avatar, /mood === 'suspicious'[\s\S]*bezierCurveTo/);
+  assert.match(avatar, /mood === 'critical'[\s\S]*quadraticCurveTo/);
+  assert.match(avatar, /angry: \{[^}]*smile: 0,/);
+  assert.match(avatar, /furious: \{[^}]*smile: 0,/);
+
+  for (const file of ['index.html', 'app.html']) {
+    const html = fs.readFileSync(path.join(ROOT, 'public', file), 'utf8');
+    for (const mood of ['idle', 'safe', 'civic', 'suspicious', 'critical']) {
+      assert.match(html, new RegExp(`data-mood="${mood}"`), `${file} missing ${mood}`);
+    }
+  }
+
+  const appHtml = fs.readFileSync(path.join(ROOT, 'public', 'app.html'), 'utf8');
+  assert.match(appHtml, /class="keypad-earpiece"/);
+  assert.match(appHtml, /class="keypad-callbar"/);
+
+  for (const file of ['app.html', 'app.js', 'index.html', 'i18n.js', 'videoExplainer.js', 'connect.html']) {
+    const src = fs.readFileSync(path.join(ROOT, 'public', file), 'utf8');
+    assert.doesNotMatch(src, /Gemini 2\.5/, `${file} still mentions Gemini 2.5`);
+  }
 });
 
 test('landing.css forces compact 9:16 phone proportions, frosted-white pills, tight nav spacing, and responsive rules', () => {

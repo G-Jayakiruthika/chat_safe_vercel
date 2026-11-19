@@ -10,8 +10,8 @@
   <link rel="preload" href="icon.svg" as="image">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="styles.css?v=322">
-  <link rel="stylesheet" href="palettes.css?v=322">
+  <link rel="stylesheet" href="styles.css?v=323">
+  <link rel="stylesheet" href="palettes.css?v=323">
   <script src="theme.js"></script>
 </head>
 <body data-default-palette="mandarin">
@@ -124,6 +124,13 @@
         <p class="hint" data-i18n="dragHint">Drag to spin · tap to poke · wheel to zoom</p>
         <button type="button" id="resetView" class="linkbtn" data-i18n="resetView">↺ Reset view</button>
         <p id="agentState" class="state-pill" role="status" aria-live="polite" data-i18n="state_idle">Ready to help</p>
+        <div class="app-mood-row" role="group" aria-label="Kavach emotion states">
+          <button type="button" class="app-mood-btn" data-preview-mood="idle" aria-pressed="true"><canvas data-mood="idle" role="img" aria-label="Calm: gentle neutral mouth, ready to help"></canvas><span>Calm</span></button>
+          <button type="button" class="app-mood-btn" data-preview-mood="safe" aria-pressed="false"><canvas data-mood="safe" role="img" aria-label="Happy: upward smile, safe message"></canvas><span>Happy</span></button>
+          <button type="button" class="app-mood-btn" data-preview-mood="civic" aria-pressed="false"><canvas data-mood="civic" role="img" aria-label="Urimai Blue: friendly smile, civic petition ready"></canvas><span>Urimai Blue</span></button>
+          <button type="button" class="app-mood-btn" data-preview-mood="suspicious" aria-pressed="false"><canvas data-mood="suspicious" role="img" aria-label="Squint: skeptical wavy mouth, verify"></canvas><span>Squint</span></button>
+          <button type="button" class="app-mood-btn" data-preview-mood="critical" aria-pressed="false"><canvas data-mood="critical" role="img" aria-label="Furious: downward frown, scam hang up"></canvas><span>Furious</span></button>
+        </div>
         <button type="button" id="mic" class="mic" aria-pressed="false">
           <svg class="mic-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/></svg>
           <span id="micLabel" data-i18n="micStart">Tap to speak</span>
@@ -170,22 +177,24 @@
 
           <!-- Keypad Phone Speed-Dial '9' Simulator -->
           <aside class="keypad-phone" aria-label="Rural Button Phone Speed-Dial 9 Single-Line IVR">
+            <div class="keypad-earpiece" aria-hidden="true"><span></span></div>
             <div class="keypad-screen" id="keypadScreen">
               <span class="kp-tag">BUTTON PHONE · SINGLE-LINE IVR</span>
               <span id="keypadText">Hold/Tap <b>9</b> to verify scams (Kavach) or draft petitions (Urimai)</span>
             </div>
+            <div class="keypad-callbar" aria-hidden="true"><span class="kp-call-green">CALL</span><span class="kp-dpad">OK</span><span class="kp-call-red">END</span></div>
             <div class="keypad-grid" role="group" aria-label="Phone keypad">
               <button type="button" class="keypad-key" data-digit="1">1</button>
-              <button type="button" class="keypad-key" data-digit="2">2</button>
-              <button type="button" class="keypad-key" data-digit="3">3</button>
-              <button type="button" class="keypad-key" data-digit="4">4</button>
-              <button type="button" class="keypad-key" data-digit="5">5</button>
-              <button type="button" class="keypad-key" data-digit="6">6</button>
-              <button type="button" class="keypad-key" data-digit="7">7</button>
-              <button type="button" class="keypad-key" data-digit="8">8</button>
+              <button type="button" class="keypad-key" data-digit="2">2<small>ABC</small></button>
+              <button type="button" class="keypad-key" data-digit="3">3<small>DEF</small></button>
+              <button type="button" class="keypad-key" data-digit="4">4<small>GHI</small></button>
+              <button type="button" class="keypad-key" data-digit="5">5<small>JKL</small></button>
+              <button type="button" class="keypad-key" data-digit="6">6<small>MNO</small></button>
+              <button type="button" class="keypad-key" data-digit="7">7<small>PQRS</small></button>
+              <button type="button" class="keypad-key" data-digit="8">8<small>TUV</small></button>
               <button type="button" class="keypad-key speed9" data-digit="9" data-tip="Speed-Dial 9: Answer in your chosen Indian language!">9 · IVR</button>
               <button type="button" class="keypad-key" data-digit="*">*</button>
-              <button type="button" class="keypad-key" data-digit="0">0</button>
+              <button type="button" class="keypad-key" data-digit="0">0<small>+</small></button>
               <button type="button" class="keypad-key" data-digit="#">#</button>
             </div>
             <div class="keypad-scenarios">
@@ -657,7 +666,7 @@
 
       <div class="google-grid">
         <article class="google-card">
-          <h3>Google Gemini 2.5 Flash</h3>
+          <h3>Google Gemini Flash</h3>
           <p class="small muted">Structured JSON Intent Classification (Scam vs Civic), Bilingual Urimai Legal Drafting, PII Auto-Redaction, and Kamala Paati Decoy.</p>
           <span class="pill green" id="geminiStatusPill">Offline + Live Ready</span>
         </article>
@@ -682,7 +691,7 @@
         </article>
         <article class="google-card">
           <h3>Vercel Serverless Proxy (<code>/api/gemini</code>)</h3>
-          <p class="small muted">Server-side Gemini 2.5 Flash intent routing via <code>api/gemini.js</code> with automatic zero-error Local Simulator fallback when offline or unconfigured.</p>
+          <p class="small muted">Server-side Gemini Flash intent routing via <code>api/gemini.js</code> with automatic zero-error Local Simulator fallback when offline or unconfigured.</p>
         </article>
       </div>
 
@@ -822,12 +831,12 @@
   <script src="scamtypes.js" defer></script>
   <script src="api.js" defer></script>
   <script src="history.js" defer></script>
-  <script src="avatar.js" defer></script>
+  <script src="avatar.js?v=323" defer></script>
   <script src="agentAvatars.js" defer></script>
   <script src="videoReels.js" defer></script>
   <script src="pdf.js" defer></script>
   <script src="fx.js" defer></script>
-  <script src="app.js" defer></script>
+  <script src="app.js?v=323" defer></script>
   <script src="cursor.js" defer></script>
 </body>
 </html>

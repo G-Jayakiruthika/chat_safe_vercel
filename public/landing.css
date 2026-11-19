@@ -83,7 +83,12 @@
 
 /* Eye showcase */
 .eye-row { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; width: 100%; }
-.eye-row li { display: grid; justify-items: center; gap: .25rem; text-align: center; background: var(--glass); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem .5rem; }
+.eye-row li {
+  display: grid; justify-items: center; gap: .3rem; text-align: center;
+  background: var(--glass); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem .65rem;
+  box-shadow: 0 8px 24px rgb(0 0 0 / .12);
+}
+.eye-row li strong { color: var(--ink); font-size: .95rem; font-weight: 800; line-height: 1.25; }
 .eye-row canvas { width: 100%; max-width: 150px; aspect-ratio: 1.4; }
 .eye-row span { color: var(--muted); font-size: .85rem; }
 

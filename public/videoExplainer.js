@@ -181,7 +181,7 @@
         const lt = time - 8;
         const p = seg(lt, 0, 1.5);
         ctx.globalAlpha = p;
-        text('Gemini 2.5 Flash — Real-Time Intent Routing', 640, 200, 32, C.ink, 800, 'center');
+        text('Gemini Flash — Real-Time Intent Routing', 640, 200, 32, C.ink, 800, 'center');
         // Scenario A (Red)
         rr(100, 250, 480, 320, 24);
         ctx.fillStyle = 'rgba(248,113,113,0.12)';

@@ -22,11 +22,11 @@
 
   const EXPRESSIONS = Object.freeze({
     calm: { open: 1, lidOuter: 0.05, lidInner: 0.05, smile: 0, pupil: 0.3, brow: 0, browAngle: 0, browSkew: 0 },
-    happy: { open: 1.05, lidOuter: 0.08, lidInner: 0.08, smile: 0.72, pupil: 0.3, brow: -0.22, browAngle: -0.14, browSkew: 0 },
-    civic: { open: 1.08, lidOuter: 0.04, lidInner: 0.04, smile: 0.45, pupil: 0.32, brow: -0.18, browAngle: -0.1, browSkew: 0 },
-    squint: { open: 0.85, lidOuter: 0.42, lidInner: 0.38, smile: 0, pupil: 0.27, brow: 0.16, browAngle: 0.16, browSkew: 0.42 },
-    angry: { open: 1, lidOuter: 0.05, lidInner: 0.5, smile: 0.12, pupil: 0.22, brow: 0.1, browAngle: 0.44, browSkew: 0 },
-    furious: { open: 1.05, lidOuter: 0, lidInner: 0.62, smile: 0.18, pupil: 0.14, brow: 0.16, browAngle: 0.62, browSkew: 0 },
+    happy: { open: 1.05, lidOuter: 0.06, lidInner: 0.06, smile: 0.50, pupil: 0.3, brow: -0.22, browAngle: -0.14, browSkew: 0 },
+    civic: { open: 1.06, lidOuter: 0.04, lidInner: 0.04, smile: 0.28, pupil: 0.32, brow: -0.18, browAngle: -0.1, browSkew: 0 },
+    squint: { open: 0.82, lidOuter: 0.42, lidInner: 0.38, smile: 0, pupil: 0.26, brow: 0.16, browAngle: 0.16, browSkew: 0.45 },
+    angry: { open: 1, lidOuter: 0.05, lidInner: 0.52, smile: 0, pupil: 0.22, brow: 0.12, browAngle: 0.46, browSkew: 0 },
+    furious: { open: 1.05, lidOuter: 0, lidInner: 0.62, smile: 0, pupil: 0.14, brow: 0.16, browAngle: 0.62, browSkew: 0 },
     wide: { open: 1.25, lidOuter: 0, lidInner: 0, smile: 0, pupil: 0.36, brow: -0.42, browAngle: -0.06, browSkew: 0 },
     thinking: { open: 0.95, lidOuter: 0.22, lidInner: 0.22, smile: 0, pupil: 0.26, brow: -0.16, browAngle: 0.12, browSkew: 0.3 },
     surprised: { open: 1.35, lidOuter: 0, lidInner: 0, smile: 0, pupil: 0.16, brow: -0.55, browAngle: -0.12, browSkew: 0 },
@@ -273,6 +273,59 @@
       ctx.restore();
     }
 
+    function drawMouth(vw, vh, time) {
+      const my = vh * 0.29;
+      const mw = vw * 0.36;
+      ctx.save();
+      ctx.strokeStyle = rgba(color, 0.98);
+      ctx.lineWidth = Math.max(2.6, vh * 0.048);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.shadowColor = rgba(color, 0.85);
+      ctx.shadowBlur = 9;
+
+      ctx.beginPath();
+      if (mood === 'safe') {
+        // Happy: clear upward U-shaped smile curve
+        ctx.moveTo(-mw * 0.52, my - vh * 0.045);
+        ctx.quadraticCurveTo(0, my + vh * 0.165, mw * 0.52, my - vh * 0.045);
+      } else if (mood === 'civic') {
+        // Urimai Blue: confident, friendly slight smile curve
+        ctx.moveTo(-mw * 0.46, my - vh * 0.015);
+        ctx.quadraticCurveTo(0, my + vh * 0.105, mw * 0.46, my - vh * 0.015);
+      } else if (mood === 'suspicious') {
+        // Squint: skeptical / cautious wavy asymmetrical line (~)
+        ctx.moveTo(-mw * 0.48, my + vh * 0.03);
+        ctx.bezierCurveTo(-mw * 0.16, my - vh * 0.085, mw * 0.16, my + vh * 0.105, mw * 0.48, my - vh * 0.035);
+      } else if (mood === 'critical') {
+        // Furious: clear downward frown arc / tense alert mouth
+        ctx.moveTo(-mw * 0.50, my + vh * 0.085);
+        ctx.quadraticCurveTo(0, my - vh * 0.115, mw * 0.50, my + vh * 0.085);
+      } else if (mood === 'high') {
+        // Angry: downward frown arc
+        ctx.moveTo(-mw * 0.46, my + vh * 0.065);
+        ctx.quadraticCurveTo(0, my - vh * 0.085, mw * 0.46, my + vh * 0.065);
+      } else {
+        // Calm: gentle neutral-relaxed mouth line with subtle soft curve
+        ctx.moveTo(-mw * 0.40, my);
+        ctx.quadraticCurveTo(0, my + vh * 0.042, mw * 0.40, my);
+      }
+      ctx.stroke();
+
+      if (mouth > 0.06) {
+        const openAmt = mouth * vh * 0.14 * (0.65 + 0.35 * Math.sin(time * 22));
+        ctx.fillStyle = rgba(color, 0.2);
+        ctx.beginPath();
+        ctx.moveTo(-mw * 0.36, my + vh * 0.01);
+        ctx.quadraticCurveTo(0, my + vh * 0.05 + openAmt, mw * 0.36, my + vh * 0.01);
+        ctx.quadraticCurveTo(0, my + vh * 0.01, -mw * 0.36, my + vh * 0.01);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
     function drawFace(vx, vy, vw, vh, time) {
       const visorFill = dark ? 'rgb(5,12,26)' : 'rgb(12,24,44)';
       ctx.save();
@@ -299,14 +352,7 @@
       }
       ctx.shadowBlur = 0;
 
-      ctx.fillStyle = rgba(color, 1);
-      const bars = 7;
-      const bw = vw * 0.04;
-      for (let i = 0; i < bars; i++) {
-        const k = 1 - Math.abs(i - (bars - 1) / 2) / bars;
-        const bh = 3 + mouth * vh * 0.28 * k * (0.6 + 0.4 * Math.sin(time * 22 + i * 1.7));
-        ctx.fillRect((i - (bars - 1) / 2) * bw * 1.7 - bw / 2, vh * 0.3 - bh / 2, bw, bh);
-      }
+      drawMouth(vw, vh, time);
 
       if (state === 'thinking' && !reduced) {
         const sy = -vh / 2 + ((time * 1.6) % 1) * vh;

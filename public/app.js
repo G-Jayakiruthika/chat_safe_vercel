@@ -68,7 +68,20 @@
   function setMood(mood) {
     kavach.setMood(mood);
     bg.setColor(MOOD_RGB[mood] || MOOD_RGB.idle, isDark() ? 0.6 : 0.35);
+    document.querySelectorAll('.app-mood-btn').forEach((b) => {
+      b.setAttribute('aria-pressed', String(b.dataset.previewMood === mood));
+    });
   }
+
+  const moodFaces = [];
+  document.querySelectorAll('.app-mood-row canvas').forEach((c) => {
+    const face = window.createKavach(c, { mini: true, reducedMotion, mood: c.dataset.mood });
+    face.setDark(isDark());
+    moodFaces.push(face);
+  });
+  document.querySelectorAll('.app-mood-btn').forEach((b) => {
+    b.addEventListener('click', () => setMood(b.dataset.previewMood));
+  });
 
   /* =========================================================================
    * MODAL ACCESSIBILITY: FOCUS TRAP & ESCAPE KEY GOVERNANCE
@@ -319,8 +332,8 @@
     const simBadge = $('demoSimulatorBadge');
     const simLabel = $('demoSimulatorLabel');
     if (mode === 'vercel') {
-      if (pill) pill.textContent = '🟢 Live: Vercel Gemini 2.5 Proxy';
-      if (simLabel) simLabel.textContent = 'Live AI Active: Vercel Serverless Gemini 2.5 Flash';
+      if (pill) pill.textContent = '🟢 Live: Vercel Gemini Proxy';
+      if (simLabel) simLabel.textContent = 'Live AI Active: Vercel Serverless Gemini Proxy';
       simBadge?.classList.add('live');
     } else if (mode === 'offline') {
       if (pill) pill.textContent = '⚡ Offline Local Simulator';
@@ -1168,7 +1181,7 @@
           ...proxy,
           threat_vectors: [
             `Department: ${kit?.department || 'Municipal Grievance Desk'}`,
-            'Vercel Gemini 2.5 Flash Verified',
+            'Vercel Gemini Flash Verified',
           ],
           action_payload: {
             summary: proxy.summary,
@@ -1532,10 +1545,12 @@
     const next = isDark() ? 'light' : 'dark';
     window.ChatSafeTheme?.set('mode', next);
     kavach.setDark(next === 'dark');
+    moodFaces.forEach((f) => f.setDark(next === 'dark'));
     setMood(kavach.mood);
   });
   window.ChatSafeTheme?.onChange?.((s) => {
     kavach.setDark(!s.light);
+    moodFaces.forEach((f) => f.setDark(!s.light));
     setMood(kavach.mood);
   });
 
@@ -1759,7 +1774,7 @@
       : String(ap.draft_text || '');
 
     const sourceBadge = verdict._source === 'vercel-proxy'
-      ? 'Live Vercel Gemini 2.5 Proxy'
+      ? 'Live Vercel Gemini Proxy'
       : verdict._offlineFallback
         ? 'Offline Local Simulator'
         : 'Local AI Simulator (Auto-Fallback)';
@@ -1800,7 +1815,7 @@
         ${vectors.length ? `<div class="hdc-vectors">${vectors.map((v) => `<span class="hdc-vector-chip">${escapeHtml(v)}</span>`).join('')}</div>` : ''}
         ${checklistHtml}
         <details class="hdc-json" open>
-          <summary>Gemini 2.5 Structured JSON Response</summary>
+          <summary>Gemini Structured JSON Response</summary>
           <pre dir="ltr">${escapeHtml(geminiJsonPreview)}</pre>
         </details>
         <div class="hdc-pdf-preview">
@@ -1864,7 +1879,7 @@
       ${displayVectors.length ? `<div class="hdc-vectors">${displayVectors.map((v) => `<span class="hdc-vector-chip">${escapeHtml(v)}</span>`).join('')}</div>` : ''}
       ${checklistHtml}
       <details class="hdc-json" open>
-        <summary>Gemini 2.5 Structured JSON Response</summary>
+        <summary>Gemini Structured JSON Response</summary>
         <pre dir="ltr">${escapeHtml(geminiJsonPreview)}</pre>
       </details>
       ${isCritical && draft ? `<pre class="hdc-draft" dir="${dir}">${escapeHtml(draft)}</pre>` : ''}
@@ -2430,7 +2445,7 @@
         }
       }
       res.engine = isVercelProxy
-        ? 'Live: Vercel Gemini 2.5 Proxy (/api/gemini)'
+        ? 'Live: Vercel Gemini Proxy (/api/gemini)'
         : 'Local AI Simulator (Auto-Fallback)';
 
       // 3) Override Risk Score to 100 & Force Deep Crimson Red if Safe Browsing flags a malicious URL
@@ -3354,7 +3369,7 @@
   /**
    * Executes the one-click Auto-Pilot Guided Demo showcase:
    *  1. Types a CBI digital-arrest cyber fraud prompt, lights up the Agent Bus, displays
-   *     the Gemini 2.5 JSON response, and morphs into the Red Scam Card with a 1930 draft.
+   *     the Gemini JSON response, and morphs into the Red Scam Card with a 1930 draft.
    *  2. Switches to a Urimai civic voice prompt ("Panchayat water pipe broke"), resolves
    *     geolocation, and morphs into the Blue Civic Card with an exportable bilingual PDF preview.
    *

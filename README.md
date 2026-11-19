@@ -2,7 +2,7 @@
 
 # Chat_Safe × Urimai — Vercel Evaluation Build (Serverless Gemini Proxy + Zero-Config Fallback)
 
-> **Vercel Serverless Gemini 2.5 Flash Proxy** (`api/gemini.js`) · **Static PWA Output** (`public/`) · **23 Indian Languages** (English + all 22 Eighth Schedule languages) · **Zero Heavy Dependencies** (`package.json` `"type": "module"`).
+> **Vercel Serverless Gemini Flash Proxy** (`api/gemini.js`) · **Static PWA Output** (`public/`) · **23 Indian Languages** (English + all 22 Eighth Schedule languages) · **Zero Heavy Dependencies** (`package.json` `"type": "module"`).
 
 - **Vercel Evaluation URL**: `https://chat-safe-vercel.vercel.app` (Live Workspace: `https://chat-safe-vercel.vercel.app/app.html`)
 - **Primary Repository**: `https://github.com/G-Jayakiruthika/chat_safe_vercel`
@@ -48,7 +48,7 @@ No API key prompt or blocking modal interrupts startup—open `/app.html` and ev
 +---------------------------------------+     +--------------------------------+
 | VERCEL SERVERLESS PROXY (api/gemini.js)|    | DETERMINISTIC LOCAL SIMULATOR  |
 | * Server-side process.env.GEMINI_API_KEY|   | (classifyLocalFallback +       |
-| * Calls Gemini 2.5 Flash REST API     |     |  public/core.js)               |
+| * Calls Gemini Flash REST API          |     |  public/core.js)               |
 | * Strict JSON schema + XML sandboxing |     | * All 8 Kavach scam types      |
 | * Clean 405 / 400 / 503 (no secrets)  |     | * All 5 Urimai civic categories|
 +-------------------+-------------------+     +---------------+----------------+

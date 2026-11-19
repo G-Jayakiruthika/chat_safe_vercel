@@ -41,7 +41,7 @@ window.CHATSAFE_I18N = Object.freeze({
     chipReal: 'Is this caller really from my bank?',
     chipArrest: 'What is a digital arrest?',
     chipWater: 'Panchayat water pipe broke 3 days ago',
-    offlineMode: 'Running in browser-local mode (offline Kavach + Urimai engine). Run server.js with GEMINI_API_KEY for live Gemini 2.5 Flash.',
+    offlineMode: 'Running in browser-local mode (offline Kavach + Urimai engine). Set server GEMINI_API_KEY for live Gemini Flash.',
     uiNote: 'Kavach & Urimai reply and draft petitions in {lang}.',
     gAsk: 'Is this message safe, or a scam?',
     gScam: 'SCAM',
