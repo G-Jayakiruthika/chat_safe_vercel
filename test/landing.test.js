@@ -26,6 +26,8 @@ test('index.html, demo.html, app.html, and sw.js use cache-busted v=323 / v5.6 a
   assert.match(swJs, /chatsafe-vercel-v5\.6/);
   assert.match(html, /landing\.js\?v=320/);
   assert.match(html, /morph\.js\?v=320/);
+  assert.match(html, /app\.js\?v=324/);
+  assert.match(appHtml, /app\.js\?v=324/);
   assert.match(html, /English \+ 22 Eighth Schedule/);
 });
 

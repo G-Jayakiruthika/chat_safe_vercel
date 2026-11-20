@@ -285,7 +285,7 @@ export function createGeminiHandler(deps = {}) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     const url = `${GEMINI_GENERATE_URL}?key=${encodeURIComponent(apiKey)}`;
-    const requestPayload = JSON.stringify({
+    const baseBody = {
       systemInstruction: {
         parts: [{
           text: `${SYSTEM_INSTRUCTION} Lang: ${cleanLang}. Mode: ${cleanMode}.`,
@@ -295,30 +295,45 @@ export function createGeminiHandler(deps = {}) {
         role: 'user',
         parts: [{ text: cleanPrompt }],
       }],
-      generationConfig: {
-        maxOutputTokens: 350,
-        temperature: 0.1,
-      },
+    };
+    const sendGenerate = (withThinkingConfig) => fetchFn(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        ...baseBody,
+        generationConfig: {
+          ...(withThinkingConfig ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
+          maxOutputTokens: 600,
+          temperature: 0.3,
+        },
+      }),
     });
 
     try {
-      const response = await fetchFn(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal,
-        body: requestPayload,
-      });
+      let response = await sendGenerate(true);
 
       if (!response?.ok) {
-        const upstreamStatus = Number.isInteger(response?.status) ? response.status : 503;
-        const errorText = await readSafeBody(response, apiKey);
-        console.error('Gemini API error:', upstreamStatus, errorText);
-        return res.status(503).json({
-          error: 'Live AI proxy error',
-          fallback: true,
-          upstreamStatus,
-          upstreamMessage: errorText.slice(0, 400),
-        });
+        let status = Number.isInteger(response?.status) ? response.status : 503;
+        let upstreamBody = await readSafeBody(response, apiKey);
+
+        if (status === 400 && /thinkingBudget|thinkingConfig|thinking_budget|thinking_config/i.test(upstreamBody)) {
+          response = await sendGenerate(false);
+          if (!response?.ok) {
+            status = Number.isInteger(response?.status) ? response.status : 503;
+            upstreamBody = await readSafeBody(response, apiKey);
+          }
+        }
+
+        if (!response?.ok) {
+          console.error('Gemini upstream failure:', status, upstreamBody);
+          return res.status(503).json({
+            error: 'Live AI proxy error',
+            fallback: true,
+            upstreamStatus: status,
+            upstreamBody: upstreamBody.slice(0, 400),
+          });
+        }
       }
 
       const upstreamJson = await response.json();
@@ -327,14 +342,14 @@ export function createGeminiHandler(deps = {}) {
         .join('') || '';
 
       if (!rawText.trim()) {
-        const upstreamStatus = Number.isInteger(response?.status) ? response.status : 502;
-        const errorText = 'Empty or malformed upstream response.';
-        console.error('Gemini API error:', upstreamStatus, errorText);
+        const status = Number.isInteger(response?.status) ? response.status : 502;
+        const upstreamBody = 'Empty or malformed upstream response.';
+        console.error('Gemini upstream failure:', status, upstreamBody);
         return res.status(503).json({
           error: 'Live AI proxy error',
           fallback: true,
-          upstreamStatus,
-          upstreamMessage: errorText.slice(0, 400),
+          upstreamStatus: status,
+          upstreamBody: upstreamBody.slice(0, 400),
         });
       }
 
@@ -344,19 +359,21 @@ export function createGeminiHandler(deps = {}) {
       const isTimeout = controller.signal.aborted || err?.name === 'AbortError';
       if (isTimeout) {
         console.error('Gemini request timed out');
+        console.error('Gemini upstream failure:', 504, 'Upstream Gemini request timed out');
         return res.status(503).json({
           error: 'Upstream Gemini request timed out',
           fallback: true,
           upstreamStatus: 504,
+          upstreamBody: 'Upstream Gemini request timed out',
         });
       }
       const errorText = sanitizeText(err?.message || 'Upstream request failed.', apiKey);
-      console.error('Gemini API error:', 503, errorText);
+      console.error('Gemini upstream failure:', 503, errorText);
       return res.status(503).json({
         error: 'Live AI proxy error',
         fallback: true,
         upstreamStatus: 503,
-        upstreamMessage: errorText.slice(0, 400),
+        upstreamBody: errorText.slice(0, 400),
       });
     } finally {
       clearTimeout(timer);

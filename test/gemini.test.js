@@ -99,13 +99,13 @@ test('POST /api/gemini logs exact upstream error safely and returns 503 diagnost
     assert.equal(resErr.body.error, 'Live AI proxy error');
     assert.equal(resErr.body.fallback, true);
     assert.equal(resErr.body.upstreamStatus, 403);
-    assert.ok(resErr.body.upstreamMessage.length <= 400);
-    assert.match(resErr.body.upstreamMessage, /API key \[REDACTED\]/);
+    assert.ok(resErr.body.upstreamBody.length <= 400);
+    assert.match(resErr.body.upstreamBody, /API key \[REDACTED\]/);
     assert.deepEqual(attemptedUrls, [
       'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=test-secret',
     ]);
     assert.doesNotMatch(JSON.stringify(resErr.body), /test-secret|GEMINI_API_KEY/);
-    assert.ok(loggedErrors.some((msg) => msg.includes('Gemini API error:') && msg.includes('403') && !msg.includes('test-secret')));
+    assert.ok(loggedErrors.some((msg) => msg.includes('Gemini upstream failure:') && msg.includes('403') && !msg.includes('test-secret')));
 
     const slowFetch = (_url, opts) => new Promise((_resolve, reject) => {
       opts.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
@@ -123,8 +123,10 @@ test('POST /api/gemini logs exact upstream error safely and returns 503 diagnost
       error: 'Upstream Gemini request timed out',
       fallback: true,
       upstreamStatus: 504,
+      upstreamBody: 'Upstream Gemini request timed out',
     });
     assert.ok(loggedErrors.includes('Gemini request timed out'));
+    assert.ok(loggedErrors.some((msg) => msg.includes('Gemini upstream failure:') && msg.includes('504')));
   } finally {
     console.error = origConsoleError;
   }
@@ -235,7 +237,11 @@ test('POST /api/gemini trims & encodes API key, sends clean gemini-3.8-flash pay
   assert.deepEqual(sentBody.contents, [
     { role: 'user', parts: [{ text: 'My CBI officer is calling me for digital arrest' }] },
   ]);
-  assert.deepEqual(sentBody.generationConfig, { maxOutputTokens: 350, temperature: 0.1 });
+  assert.deepEqual(sentBody.generationConfig, {
+    thinkingConfig: { thinkingBudget: 0 },
+    maxOutputTokens: 600,
+    temperature: 0.3,
+  });
   assert.ok(sentBody.systemInstruction.parts[0].text.length < 400);
   assert.deepEqual(Object.keys(scamRes.body).sort(), [
     'active_agents',
@@ -262,6 +268,54 @@ test('POST /api/gemini trims & encodes API key, sends clean gemini-3.8-flash pay
   assert.equal(civicRes.body.model, 'gemini-3.8-flash');
   assert.ok(!civicRes.body.active_agents.includes('kavach'));
   assert.deepEqual(civicRes.body.active_agents, ['vani', 'gemini', 'urimai', 'setu']);
+});
+
+test('POST /api/gemini retries immediately without thinkingConfig if upstream returns 400 complaining about thinkingBudget', async () => {
+  const bodies = [];
+  const retryFetch = async (_url, init) => {
+    const body = JSON.parse(init.body);
+    bodies.push(body);
+    if (bodies.length === 1) {
+      return {
+        ok: false,
+        status: 400,
+        text: async () => JSON.stringify({ error: { message: 'Unknown name "thinkingBudget" at generationConfig.thinkingConfig' } }),
+      };
+    }
+    return {
+      ok: true,
+      status: 200,
+      async json() {
+        return {
+          candidates: [{
+            content: {
+              parts: [{
+                text: JSON.stringify({
+                  intent: 'SCAM',
+                  confidence_score: 92,
+                  active_agents: ['vani', 'gemini', 'kavach'],
+                  summary: 'Retry succeeded without thinkingConfig.',
+                  action_draft: 'Dial 1930.',
+                  checklist: ['Do not share OTP'],
+                }),
+              }],
+            },
+          }],
+        };
+      },
+    };
+  };
+
+  const handler = createGeminiHandler({ env: { GEMINI_API_KEY: 'live-secret' }, fetchImpl: retryFetch });
+  const res = createMockRes();
+  await handler({ method: 'POST', body: { prompt: 'Share OTP now' } }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(bodies.length, 2);
+  assert.deepEqual(bodies[0].generationConfig, { thinkingConfig: { thinkingBudget: 0 }, maxOutputTokens: 600, temperature: 0.3 });
+  assert.deepEqual(bodies[1].generationConfig, { maxOutputTokens: 600, temperature: 0.3 });
+  assert.equal(res.body.intent, 'SCAM');
+  assert.equal(res.body.summary, 'Retry succeeded without thinkingConfig.');
 });
 
 test('manifest.webmanifest specifies valid share_target enctype', () => {
