@@ -89,14 +89,16 @@
   const bg = window.createBackground?.($('bg'), { reducedMotion });
 
   const list = $('demoSteps');
-  list.innerHTML = TYPES.map((s, i) => `
+  list.innerHTML = TYPES.map(
+    (s, i) => `
     <li class="demo-scroll-step ${i === 0 ? 'active' : ''}" data-idx="${i}" tabindex="0" role="button" aria-label="Step ${i + 1}: ${s.n}">
       <span class="eyebrow">${String(i + 1).padStart(2, '0')} / ${String(TYPES.length).padStart(2, '0')} · ${s.kind === 'civic' ? 'URIMAI CIVIC' : 'KAVACH SCAM'}</span>
       <h2 style="margin:0;font-size:clamp(1.5rem,3.2vw,2.3rem)">${s.n}</h2>
       <p class="muted" style="font-size:1.08rem;max-width:46ch">${s.d}</p>
       <p style="font-weight:700;margin:0">💡 ${s.tip}</p>
     </li>
-  `).join('');
+  `,
+  ).join('');
 
   const stepEls = Array.from(document.querySelectorAll('.demo-scroll-step'));
   let current = -1;
@@ -137,7 +139,7 @@
     let bestDist = Infinity;
     stepEls.forEach((el, i) => {
       const r = el.getBoundingClientRect();
-      const dist = Math.abs((r.top + r.height / 2) - mid);
+      const dist = Math.abs(r.top + r.height / 2 - mid);
       if (dist < bestDist) {
         bestDist = dist;
         bestIdx = i;
@@ -146,12 +148,16 @@
     show(bestIdx);
   }
 
-  window.addEventListener('scroll', () => {
-    if (!ticking) {
-      ticking = true;
-      requestAnimationFrame(syncFromScroll);
-    }
-  }, { passive: true });
+  window.addEventListener(
+    'scroll',
+    () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(syncFromScroll);
+      }
+    },
+    { passive: true },
+  );
 
   // Keyboard navigation: PageDown / ArrowDown -> next step, PageUp / ArrowUp -> previous step
   window.addEventListener('keydown', (e) => {

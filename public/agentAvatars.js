@@ -16,14 +16,86 @@
  */
 (() => {
   const AGENTS = [
-    { id: 'kavach', name: 'Kavach', role: '3D Voice & Scam Guardian', color: '#22d3ee', badge: '🛡️', hat: 'visor', item: 'shield', line: 'I listen in 23 languages and stop cyber scams before money moves.' },
-    { id: 'urimai', name: 'Urimai', role: 'Civic Legal Drafter', color: '#3b82f6', badge: '⚖️', hat: 'halo', item: 'scroll', line: 'I turn spoken village problems into bilingual official petitions & CM portal filings.' },
-    { id: 'vani', name: 'Vani', role: "Speed-Dial '9' Voice IVR", color: '#a855f7', badge: '📞', hat: 'headset', item: 'mic', line: 'I answer keypad phones on speed-dial 9 and route Scam vs Civic intent via Gemini.' },
-    { id: 'netra', name: 'Netra', role: 'X-Ray & PII Redactor', color: '#f43f5e', badge: '🔬', hat: 'glasses', item: 'lens', line: 'I mask personal names, Aadhaar & phone numbers on Radar with [REDACTED].' },
-    { id: 'payguard', name: 'Pay-Guard', role: 'SEBI @valid Checker', color: '#10b981', badge: '💳', hat: 'cap', item: 'coin', line: 'I verify broker UPI handles against SEBI @valid rules in real time.' },
-    { id: 'paati', name: 'Kamala Paati', role: 'AI Decoy Grandma', color: '#f59e0b', badge: '👵', hat: 'bun', item: 'cup', line: 'I waste scammers’ time politely about filter coffee & serials — zero real OTPs.' },
-    { id: 'setu', name: 'Setu', role: 'O2O & Proxy Bridge', color: '#06b6d4', badge: '🤝', hat: 'antenna', item: 'bridge', line: 'I route Scam & Urimai Action Kits to family smartphones, laptops, or Local Proxy neighbors anywhere.' },
-    { id: 'drishti', name: 'Drishti', role: 'Video News & Radar AI', color: '#ec4899', badge: '🎬', hat: 'beret', item: 'cam', line: 'I verify daily scam video reels and track local ward & city threats.' },
+    {
+      id: 'kavach',
+      name: 'Kavach',
+      role: '3D Voice & Scam Guardian',
+      color: '#22d3ee',
+      badge: '🛡️',
+      hat: 'visor',
+      item: 'shield',
+      line: 'I listen in 23 languages and stop cyber scams before money moves.',
+    },
+    {
+      id: 'urimai',
+      name: 'Urimai',
+      role: 'Civic Legal Drafter',
+      color: '#3b82f6',
+      badge: '⚖️',
+      hat: 'halo',
+      item: 'scroll',
+      line: 'I turn spoken village problems into bilingual official petitions & CM portal filings.',
+    },
+    {
+      id: 'vani',
+      name: 'Vani',
+      role: "Speed-Dial '9' Voice IVR",
+      color: '#a855f7',
+      badge: '📞',
+      hat: 'headset',
+      item: 'mic',
+      line: 'I answer keypad phones on speed-dial 9 and route Scam vs Civic intent via Gemini.',
+    },
+    {
+      id: 'netra',
+      name: 'Netra',
+      role: 'X-Ray & PII Redactor',
+      color: '#f43f5e',
+      badge: '🔬',
+      hat: 'glasses',
+      item: 'lens',
+      line: 'I mask personal names, Aadhaar & phone numbers on Radar with [REDACTED].',
+    },
+    {
+      id: 'payguard',
+      name: 'Pay-Guard',
+      role: 'SEBI @valid Checker',
+      color: '#10b981',
+      badge: '💳',
+      hat: 'cap',
+      item: 'coin',
+      line: 'I verify broker UPI handles against SEBI @valid rules in real time.',
+    },
+    {
+      id: 'paati',
+      name: 'Kamala Paati',
+      role: 'AI Decoy Grandma',
+      color: '#f59e0b',
+      badge: '👵',
+      hat: 'bun',
+      item: 'cup',
+      line: 'I waste scammers’ time politely about filter coffee & serials — zero real OTPs.',
+    },
+    {
+      id: 'setu',
+      name: 'Setu',
+      role: 'O2O & Proxy Bridge',
+      color: '#06b6d4',
+      badge: '🤝',
+      hat: 'antenna',
+      item: 'bridge',
+      line: 'I route Scam & Urimai Action Kits to family smartphones, laptops, or Local Proxy neighbors anywhere.',
+    },
+    {
+      id: 'drishti',
+      name: 'Drishti',
+      role: 'Video News & Radar AI',
+      color: '#ec4899',
+      badge: '🎬',
+      hat: 'beret',
+      item: 'cam',
+      line: 'I verify daily scam video reels and track local ward & city threats.',
+    },
   ];
 
   function drawBot(ctx, w, h, spec, t, mood = 'idle') {
@@ -92,7 +164,7 @@
     ctx.fill();
 
     // Visor / eyes
-    const blink = (t % 3.6) < 0.12 ? 0.15 : 1;
+    const blink = t % 3.6 < 0.12 ? 0.15 : 1;
     ctx.fillStyle = '#0f172a';
     ctx.beginPath();
     ctx.ellipse(cx - s * 0.15, hy - s * 0.02, s * 0.06, s * 0.075 * blink, 0, 0, Math.PI * 2);
@@ -169,7 +241,8 @@
 
   function mountAgentGrid(container) {
     if (!container) return;
-    container.innerHTML = AGENTS.map((a) => `
+    container.innerHTML = AGENTS.map(
+      (a) => `
       <article class="agent-card glass" data-agent="${a.id}" tabindex="0">
         <canvas width="180" height="180" data-agent-canvas="${a.id}" aria-label="${a.name}, ${a.role}"></canvas>
         <div class="agent-meta">
@@ -178,7 +251,8 @@
           <p>${a.line}</p>
         </div>
       </article>
-    `).join('');
+    `,
+    ).join('');
 
     const canvases = [...container.querySelectorAll('canvas[data-agent-canvas]')];
     const specById = new Map(AGENTS.map((a) => [a.id, a]));
@@ -194,11 +268,17 @@
     items.forEach((item) => {
       const card = item.canvas.closest('.agent-card');
       if (!card) return;
-      card.addEventListener('pointerenter', () => { moods[item.id] = 'talk'; });
-      card.addEventListener('pointerleave', () => { moods[item.id] = 'idle'; });
+      card.addEventListener('pointerenter', () => {
+        moods[item.id] = 'talk';
+      });
+      card.addEventListener('pointerleave', () => {
+        moods[item.id] = 'idle';
+      });
       card.addEventListener('click', () => {
         moods[item.id] = 'cheer';
-        setTimeout(() => { moods[item.id] = 'idle'; }, 1200);
+        setTimeout(() => {
+          moods[item.id] = 'idle';
+        }, 1200);
       });
     });
 
@@ -213,9 +293,8 @@
       for (const item of items) io.observe(item.canvas);
     }
 
-    const readMotionState = () => Boolean(
-      document.body?.classList.contains('no-motion') || document.body?.classList.contains('minimal'),
-    );
+    const readMotionState = () =>
+      Boolean(document.body?.classList.contains('no-motion') || document.body?.classList.contains('minimal'));
     let stillCached = readMotionState();
     if (typeof MutationObserver === 'function' && document.body) {
       new MutationObserver(() => {
@@ -227,7 +306,14 @@
       const t = now / 1000;
       for (const item of items) {
         if (!item.visible || !item.spec || !item.canvas.isConnected) continue;
-        drawBot(item.ctx, item.canvas.width, item.canvas.height, item.spec, stillCached ? 0.5 : t, moods[item.id] || 'idle');
+        drawBot(
+          item.ctx,
+          item.canvas.width,
+          item.canvas.height,
+          item.spec,
+          stillCached ? 0.5 : t,
+          moods[item.id] || 'idle',
+        );
       }
       requestAnimationFrame(loop);
     };

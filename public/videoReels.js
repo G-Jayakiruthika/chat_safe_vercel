@@ -22,7 +22,9 @@
   function saveUserReels(list) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(list.slice(0, 12)));
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
 
   function wrapText(c, str, x, y, maxW, lh, maxLines = 4) {
@@ -127,25 +129,37 @@
 
     ctx.fillStyle = '#f8fafc';
     ctx.font = 'bold 17px system-ui, sans-serif';
-    wrapText(ctx, sc.headline || reel.title, 32, H * 0.70, W - 64, 22, 2);
+    wrapText(ctx, sc.headline || reel.title, 32, H * 0.7, W - 64, 22, 2);
 
     ctx.fillStyle = '#cbd5e1';
     ctx.font = '13px system-ui, sans-serif';
     wrapText(ctx, sc.body || reel.summary || '', 32, H * 0.82, W - 64, 18, 2);
   }
 
-  const ICON_PLAY = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4l14 8-14 8V4z"/></svg>';
-  const ICON_PAUSE = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>';
-  const ICON_SHIELD = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
-  const ICON_CHECK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+  const ICON_PLAY =
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4l14 8-14 8V4z"/></svg>';
+  const ICON_PAUSE =
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>';
+  const ICON_SHIELD =
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
+  const ICON_CHECK =
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
 
   const activePauseHandlers = new Set();
 
   function stopAll() {
     for (const pauseFn of [...activePauseHandlers]) {
-      try { pauseFn(); } catch { /* ignore */ }
+      try {
+        pauseFn();
+      } catch {
+        /* ignore */
+      }
     }
-    try { window.speechSynthesis?.cancel(); } catch { /* ignore */ }
+    try {
+      window.speechSynthesis?.cancel();
+    } catch {
+      /* ignore */
+    }
     window.ChatSafeSound?.stopAll?.();
   }
 
@@ -157,7 +171,8 @@
     container.replaceChildren();
 
     if (!all.length) {
-      container.innerHTML = '<p class="muted small">No video reels match this city filter yet. Try "All India" or post a verified alert video!</p>';
+      container.innerHTML =
+        '<p class="muted small">No video reels match this city filter yet. Try "All India" or post a verified alert video!</p>';
       return;
     }
 
@@ -291,7 +306,9 @@
     });
   }
 
-  document.addEventListener('visibilitychange', () => { if (document.hidden) stopAll(); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopAll();
+  });
   window.addEventListener('pagehide', stopAll);
 
   function addUserReel(reel) {
@@ -302,7 +319,10 @@
   }
 
   function escapeHtml(s) {
-    return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    return String(s ?? '').replace(
+      /[&<>"']/g,
+      (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
+    );
   }
 
   window.ChatSafeReels = { renderReelsFeed, addUserReel, loadUserReels, stopAll };

@@ -36,7 +36,8 @@ window.SCAM_TYPES = [
     name: 'KYC / OTP',
     says: 'Your account will be blocked today. Tell me the OTP to keep it open.',
     rule: 'Your bank already knows your details. Nobody genuine ever asks for an OTP.',
-    sample: 'Dear customer, your KYC has expired and your account will be blocked today. Share the OTP now to update, or install this app: https://sbi-kyc.example.in/update.apk',
+    sample:
+      'Dear customer, your KYC has expired and your account will be blocked today. Share the OTP now to update, or install this app: https://sbi-kyc.example.in/update.apk',
   },
   {
     id: 'courier',
@@ -44,7 +45,8 @@ window.SCAM_TYPES = [
     name: 'Courier parcel',
     says: 'Your parcel has drugs inside. Customs has seized it.',
     rule: 'A courier company never phones about drugs. Hang up and call them yourself.',
-    sample: 'FedEx customs: a parcel sent in your name contains MDMA drugs and 3 passports. It is seized. Press 1 to speak to the cyber police officer immediately.',
+    sample:
+      'FedEx customs: a parcel sent in your name contains MDMA drugs and 3 passports. It is seized. Press 1 to speak to the cyber police officer immediately.',
   },
   {
     id: 'task_job',
@@ -52,7 +54,8 @@ window.SCAM_TYPES = [
     name: 'Task job',
     says: 'Like videos from home and earn ₹3,000 a day. Just pay a small fee first.',
     rule: 'A real job pays you. If you must pay to start, it is a scam.',
-    sample: 'Hi! Part time job from home. Like YouTube videos and earn ₹3000 daily. First do prepaid task of ₹500 to start. Contact 98765 43210 on WhatsApp.',
+    sample:
+      'Hi! Part time job from home. Like YouTube videos and earn ₹3000 daily. First do prepaid task of ₹500 to start. Contact 98765 43210 on WhatsApp.',
   },
   {
     id: 'reward_bill',
@@ -60,7 +63,8 @@ window.SCAM_TYPES = [
     name: 'Lottery / bill',
     says: 'You won a prize! Pay the processing fee. Or: your power is cut tonight.',
     rule: 'You cannot win a lottery you never entered, and bills are never settled by phone.',
-    sample: 'Congratulations! You are selected as KBC lucky draw winner of ₹25 lakh. Pay processing fee ₹8,500 to claim. Also your electricity connection will be disconnected tonight, call 98765 43210 immediately.',
+    sample:
+      'Congratulations! You are selected as KBC lucky draw winner of ₹25 lakh. Pay processing fee ₹8,500 to claim. Also your electricity connection will be disconnected tonight, call 98765 43210 immediately.',
   },
   {
     id: 'family_voice',
@@ -68,7 +72,8 @@ window.SCAM_TYPES = [
     name: 'Voice clone',
     says: 'Amma, I had an accident, send money fast — this is my new number.',
     rule: 'AI can copy any voice. Hang up and call the person on their own saved number.',
-    sample: 'Mummy this is my new number save it. I had an accident near the hospital and police station, urgent please transfer ₹40,000 now, do not tell papa.',
+    sample:
+      'Mummy this is my new number save it. I had an accident near the hospital and police station, urgent please transfer ₹40,000 now, do not tell papa.',
   },
   {
     id: 'sextortion_loan',
@@ -76,6 +81,7 @@ window.SCAM_TYPES = [
     name: 'Loan / blackmail',
     says: 'Pay now or we send your photos to all your contacts.',
     rule: 'This is a crime against you, not by you. Do not pay. Call 1930 and tell someone you trust.',
-    sample: 'We have your private photos and your full contact list from the loan app. Pay ₹20,000 in one hour or we send the morphed photos to your family and make it viral.',
+    sample:
+      'We have your private photos and your full contact list from the loan app. Pay ₹20,000 in one hour or we send the morphed photos to your family and make it viral.',
   },
 ];

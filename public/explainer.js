@@ -80,7 +80,11 @@
       step: '2',
       label: 'Step 2. Chat_Safe looks at the call for you.',
       build: (stage) => {
-        stage.append(pic('📱', 'xp-phone', 'The same call'), shield('check', 'Chat_Safe checking'), el('span', 'xp-beam'));
+        stage.append(
+          pic('📱', 'xp-phone', 'The same call'),
+          shield('check', 'Chat_Safe checking'),
+          el('span', 'xp-beam'),
+        );
       },
     },
     {

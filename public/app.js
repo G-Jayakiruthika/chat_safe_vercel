@@ -7,9 +7,20 @@
   const Sound = window.ChatSafeSound;
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const MOOD_RGB = window.KAVACH_MOOD_COLORS;
-  const CATEGORIES = ['investment', 'digital_arrest', 'kyc_otp', 'courier', 'task_job', 'reward_bill', 'family_voice', 'sextortion_loan'];
+  const CATEGORIES = [
+    'investment',
+    'digital_arrest',
+    'kyc_otp',
+    'courier',
+    'task_job',
+    'reward_bill',
+    'family_voice',
+    'sextortion_loan',
+  ];
 
-  let languages = [{ code: 'en', name: 'English', native: 'English', speech: 'en-IN', greeting: 'Hello! Tell me what happened.' }];
+  let languages = [
+    { code: 'en', name: 'English', native: 'English', speech: 'en-IN', greeting: 'Hello! Tell me what happened.' },
+  ];
   let lang = 'ta';
   const replyLang = 'ta';
   let decoyTurn = 0;
@@ -21,8 +32,10 @@
   let statePortals = {};
 
   const SAMPLES = {
-    stock: 'Welcome to SEBI VIP Stock Tips group! Guaranteed returns of 8% daily. Deposit ₹25,000 to rajesh.trader@ybl immediately. Join https://t.me/vipprofitclub',
-    arrest: 'This is Inspector Sharma from CBI Mumbai. A FedEx parcel in your name has drugs. Stay on video call, do not tell family. Transfer ₹1,50,000 to account 501002345678 IFSC HDFC0001234.',
+    stock:
+      'Welcome to SEBI VIP Stock Tips group! Guaranteed returns of 8% daily. Deposit ₹25,000 to rajesh.trader@ybl immediately. Join https://t.me/vipprofitclub',
+    arrest:
+      'This is Inspector Sharma from CBI Mumbai. A FedEx parcel in your name has drugs. Stay on video call, do not tell family. Transfer ₹1,50,000 to account 501002345678 IFSC HDFC0001234.',
     water: 'The panchayat water pipe on my street in Ward 12 broke 3 days ago and no one is fixing it.',
     road: 'Main road near Ward 4 temple has deep broken potholes causing accidents for school children for 2 weeks.',
     safe: 'Hi Amma, reached Chennai safely. Will call you after dinner. Take your BP tablet on time.',
@@ -36,23 +49,50 @@
     const dict = I18N || {};
     const localVal = dict[uiLang()]?.[key];
     const enVal = dict.en?.[key];
-    const s = (typeof localVal === 'string' && localVal.trim())
-      ? localVal
-      : (typeof enVal === 'string' && enVal.trim())
-        ? enVal
-        : (fallbackText || key);
-    return String(s).replace(/\{(\w+)\}/g, (_, k) => (vars[k] !== undefined && vars[k] !== null ? String(vars[k]) : ''));
+    const s =
+      typeof localVal === 'string' && localVal.trim()
+        ? localVal
+        : typeof enVal === 'string' && enVal.trim()
+          ? enVal
+          : fallbackText || key;
+    return String(s).replace(/\{(\w+)\}/g, (_, k) =>
+      vars[k] !== undefined && vars[k] !== null ? String(vars[k]) : '',
+    );
   };
   const langInfo = (code) => languages.find((l) => l.code === code) || languages[0];
-  const store = (k, v) => { try { localStorage.setItem(`chatsafe.${k}`, v); } catch { /* ignore */ } };
-  const load = (k) => { try { return localStorage.getItem(`chatsafe.${k}`); } catch { return null; } };
-  const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-  }[ch]));
+  const store = (k, v) => {
+    try {
+      localStorage.setItem(`chatsafe.${k}`, v);
+    } catch {
+      /* ignore */
+    }
+  };
+  const load = (k) => {
+    try {
+      return localStorage.getItem(`chatsafe.${k}`);
+    } catch {
+      return null;
+    }
+  };
+  const escapeHtml = (value) =>
+    String(value ?? '').replace(
+      /[&<>"']/g,
+      (ch) =>
+        ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;',
+        })[ch],
+    );
 
   const kavach = window.createKavach($('kavach'), {
     reducedMotion,
-    onPoke: () => { Sound.play('blip'); speak("I am Kavach and Urimai — ready to stop scams and draft civic petitions!", 'en'); },
+    onPoke: () => {
+      Sound.play('blip');
+      speak('I am Kavach and Urimai — ready to stop scams and draft civic petitions!', 'en');
+    },
   });
   const bg = window.createBackground($('bg'), { reducedMotion });
   const caseStore = window.createHistory();
@@ -118,9 +158,12 @@
    * @returns {() => void} Cleanup function that detaches listeners and optionally restores focus.
    */
   function trapModalFocus(modalEl, { onEscape, restoreFocusTo } = {}) {
-    const previousFocus = restoreFocusTo !== undefined
-      ? restoreFocusTo
-      : (document.activeElement instanceof HTMLElement ? document.activeElement : null);
+    const previousFocus =
+      restoreFocusTo !== undefined
+        ? restoreFocusTo
+        : document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null;
 
     const onKeyDown = (e) => {
       if (!modalEl || modalEl.hidden) return;
@@ -154,7 +197,11 @@
     return (skipRestore = false) => {
       document.removeEventListener('keydown', onKeyDown, true);
       if (!skipRestore && previousFocus && document.contains(previousFocus)) {
-        try { previousFocus.focus({ preventScroll: true }); } catch { /* ignore */ }
+        try {
+          previousFocus.focus({ preventScroll: true });
+        } catch {
+          /* ignore */
+        }
       }
     };
   }
@@ -200,20 +247,38 @@
    * @returns {void}
    */
   function killAllAudio() {
-    try { window.speechSynthesis?.cancel(); } catch (err) {
+    try {
+      window.speechSynthesis?.cancel();
+    } catch (err) {
       console.warn('[Chat_Safe][SpeechSynthesis] Cancel failed:', err?.message || err);
     }
-    try { Sound.stopAll?.(); } catch { /* ignore */ }
-    try { window.ChatSafeReels?.stopAll?.(); } catch { /* ignore */ }
-    try { window.ChatSafeExplainerStop?.(); } catch { /* ignore */ }
+    try {
+      Sound.stopAll?.();
+    } catch {
+      /* ignore */
+    }
+    try {
+      window.ChatSafeReels?.stopAll?.();
+    } catch {
+      /* ignore */
+    }
+    try {
+      window.ChatSafeExplainerStop?.();
+    } catch {
+      /* ignore */
+    }
     document.querySelectorAll('video, audio').forEach((mediaEl) => {
       try {
         if (!mediaEl.paused) mediaEl.pause();
         mediaEl.muted = true;
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     });
   }
-  document.addEventListener('visibilitychange', () => { if (document.hidden) killAllAudio(); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) killAllAudio();
+  });
   window.addEventListener('pagehide', killAllAudio);
 
   /**
@@ -237,7 +302,11 @@
     let releaseConsentTrap = null;
     const declineConsent = () => {
       killAllAudio();
-      try { sessionStorage.setItem('chatsafe.edgeConsentDeclined', '1'); } catch { /* ignore */ }
+      try {
+        sessionStorage.setItem('chatsafe.edgeConsentDeclined', '1');
+      } catch {
+        /* ignore */
+      }
       releaseConsentTrap?.(true);
       releaseConsentTrap = null;
       modal.hidden = true;
@@ -277,7 +346,9 @@
         sessionStorage.setItem(CONSENT_STORAGE_KEY, '1');
         sessionStorage.setItem('chatsafe.edgeConsentAt', ts);
         sessionStorage.removeItem('chatsafe.edgeConsentDeclined');
-      } catch { /* ignore storage restrictions */ }
+      } catch {
+        /* ignore storage restrictions */
+      }
       releaseConsentTrap?.(true);
       releaseConsentTrap = null;
       modal.hidden = true;
@@ -303,7 +374,11 @@
    * @returns {string} Trimmed stored string, or empty string if absent.
    */
   function getSessionKey(name) {
-    try { return (sessionStorage.getItem(name) || '').trim(); } catch { return ''; }
+    try {
+      return (sessionStorage.getItem(name) || '').trim();
+    } catch {
+      return '';
+    }
   }
 
   /**
@@ -381,9 +456,14 @@
       const data = await res.json().catch(() => null);
       if (!data || typeof data !== 'object' || data.fallback) return null;
 
-      const rawIntent = String(data.intent || '').toUpperCase().trim();
+      const rawIntent = String(data.intent || '')
+        .toUpperCase()
+        .trim();
       const intent = rawIntent === 'CIVIC' ? 'CIVIC' : 'SCAM';
-      const score = Math.max(0, Math.min(100, Math.round(Number(data.confidence_score) || (intent === 'CIVIC' ? 92 : 50))));
+      const score = Math.max(
+        0,
+        Math.min(100, Math.round(Number(data.confidence_score) || (intent === 'CIVIC' ? 92 : 50))),
+      );
       const summary = String(data.summary || '').trim() || (intent === 'CIVIC' ? clean : getThreatTier(score).verdict);
       const actionDraft = String(data.action_draft || '').trim();
       const checklist = Array.isArray(data.checklist)
@@ -398,13 +478,13 @@
         active_agents: activeAgents,
         summary,
         action_draft: actionDraft,
-        checklist: checklist.length ? checklist : (
-          intent === 'CIVIC'
+        checklist: checklist.length
+          ? checklist
+          : intent === 'CIVIC'
             ? ['Export bilingual Urimai PDF or submit via State CM Helpline.']
             : score <= 25
               ? ['Never share OTPs or PINs with strangers.']
-              : ['Do not pay or share OTPs.', 'Report immediately at 1930 or cybercrime.gov.in.']
-        ),
+              : ['Do not pay or share OTPs.', 'Report immediately at 1930 or cybercrime.gov.in.'],
         risk_score: intent === 'CIVIC' ? 0 : score,
         details: summary,
         action: checklist[0] || '',
@@ -454,7 +534,18 @@
    * @param {Object} params Scam payload components.
    * @returns {Object} Structured SCAM fallback verdict compatible with `/api/gemini`.
    */
-  function buildScamFallbackPayload({ tier, agents, summary, draft, checklist, vectors, scamType, department, details, baseAnalysis }) {
+  function buildScamFallbackPayload({
+    tier,
+    agents,
+    summary,
+    draft,
+    checklist,
+    vectors,
+    scamType,
+    department,
+    details,
+    baseAnalysis,
+  }) {
     return {
       _source: 'local-fallback',
       intent: 'SCAM',
@@ -497,12 +588,14 @@
     const deterministic = classifyLocalFallback(clean, { location });
     if (deterministic) {
       if (deterministic.intent === 'CIVIC') {
-        const kit = base?.urimaiKit || await API.call('urimai', {
-          text: clean,
-          lang,
-          location,
-          department: deterministic.department,
-        }).catch(() => null);
+        const kit =
+          base?.urimaiKit ||
+          (await API.call('urimai', {
+            text: clean,
+            lang,
+            location,
+            department: deterministic.department,
+          }).catch(() => null));
         const finalDraft = kit?.englishLetter || deterministic.action_draft;
         const department = kit?.department || deterministic.department;
         if (kit && !kit.department) kit.department = deterministic.department;
@@ -520,12 +613,11 @@
 
       const tier = deterministic.tier || getThreatTier(deterministic.confidence_score);
       const mergedCategories = [...new Set([...(deterministic.categoryIds || []), ...(base?.categoryIds || [])])];
-      const mergedFlags = tier.tier === 'safe'
-        ? []
-        : [...new Set([...(deterministic.threat_vectors || []), ...(base?.redFlags || [])])].slice(0, 6);
-      const finalDraft = tier.tier === 'critical'
-        ? (deterministic.action_draft || base?.complaint || '')
-        : '';
+      const mergedFlags =
+        tier.tier === 'safe'
+          ? []
+          : [...new Set([...(deterministic.threat_vectors || []), ...(base?.redFlags || [])])].slice(0, 6);
+      const finalDraft = tier.tier === 'critical' ? deterministic.action_draft || base?.complaint || '' : '';
 
       return buildScamFallbackPayload({
         tier,
@@ -554,7 +646,7 @@
 
     // Fallback to core.js token rules for general/multilingual queries not matched above
     if (base?.intent === 'CIVIC') {
-      const kit = base.urimaiKit || await API.call('urimai', { text: clean, lang, location }).catch(() => null);
+      const kit = base.urimaiKit || (await API.call('urimai', { text: clean, lang, location }).catch(() => null));
       const dept = kit?.department || 'Local Gram Panchayat / Municipal Ward Office';
       const summary = kit?.summary || clean;
       const draft = kit?.englishLetter || buildLocalCivicDraft(clean, dept, location);
@@ -577,19 +669,29 @@
     const ruleScore = Math.max(0, Math.min(100, Math.round(Number(base?.score) || 0)));
     const tier = getThreatTier(ruleScore);
     const vectors = tier.tier === 'safe' ? [] : [...(base?.redFlags || [])];
-    if (tier.tier !== 'safe' && !vectors.length) vectors.push('Unverified Link or Urgent Call-to-Action — Verify Sender');
-    const summary = tier.tier === 'safe' ? tier.verdict : (base?.verdict || tier.verdict);
-    const checklist = tier.tier === 'safe'
-      ? ['No common scam pattern found. Continue practicing safe digital hygiene and never share OTPs.']
-      : (base?.nextSteps?.length ? base.nextSteps : [
-        'Verify this request via the official website, app, or printed customer-care number.',
-        'Do not click shortened links or share OTP, PIN, or KYC documents.',
-      ]);
-    const draft = tier.tier === 'critical'
-      ? (base?.complaint || buildLocal1930Draft(clean, tier.score, vectors, base?.scamType || 'Cyber Fraud'))
-      : '';
+    if (tier.tier !== 'safe' && !vectors.length) {
+      vectors.push('Unverified Link or Urgent Call-to-Action — Verify Sender');
+    }
+    const summary = tier.tier === 'safe' ? tier.verdict : base?.verdict || tier.verdict;
+    const checklist =
+      tier.tier === 'safe'
+        ? ['No common scam pattern found. Continue practicing safe digital hygiene and never share OTPs.']
+        : base?.nextSteps?.length
+          ? base.nextSteps
+          : [
+              'Verify this request via the official website, app, or printed customer-care number.',
+              'Do not click shortened links or share OTP, PIN, or KYC documents.',
+            ];
+    const draft =
+      tier.tier === 'critical'
+        ? base?.complaint || buildLocal1930Draft(clean, tier.score, vectors, base?.scamType || 'Cyber Fraud')
+        : '';
     const agents = normalizeBusAgents(
-      tier.tier === 'critical' ? ['vani', 'gemini', 'kavach', 'netra', 'setu'] : tier.tier === 'moderate' ? ['vani', 'gemini', 'kavach', 'netra'] : ['vani', 'gemini', 'kavach'],
+      tier.tier === 'critical'
+        ? ['vani', 'gemini', 'kavach', 'netra', 'setu']
+        : tier.tier === 'moderate'
+          ? ['vani', 'gemini', 'kavach', 'netra']
+          : ['vani', 'gemini', 'kavach'],
       'SCAM',
       tier.score,
     );
@@ -602,7 +704,7 @@
       checklist,
       vectors,
       department: tier.tier === 'critical' ? 'National Cybercrime Helpline (1930) / I4C' : 'Kavach Local Shield',
-      details: tier.tier === 'safe' ? tier.verdict : (base?.explanation || summary),
+      details: tier.tier === 'safe' ? tier.verdict : base?.explanation || summary,
       baseAnalysis: base,
     });
   }
@@ -652,17 +754,17 @@
       }
 
       const tier = getThreatTier(proxy.confidence_score);
-      const vectors = tier.tier === 'safe'
-        ? []
-        : [...new Set([...(base?.redFlags || []), ...(proxy.checklist.slice(0, 2))])];
+      const vectors =
+        tier.tier === 'safe' ? [] : [...new Set([...(base?.redFlags || []), ...proxy.checklist.slice(0, 2)])];
       return {
         ...proxy,
         ui_intent: tier.intent,
         threat_vectors: vectors,
         action_payload: {
           summary: tier.tier === 'safe' ? tier.verdict : proxy.summary,
-          department_or_agency: tier.tier === 'critical' ? 'National Cybercrime Helpline (1930) / I4C' : 'Kavach Shield',
-          draft_text: tier.tier === 'critical' ? (proxy.action_draft || base?.complaint || '') : '',
+          department_or_agency:
+            tier.tier === 'critical' ? 'National Cybercrime Helpline (1930) / I4C' : 'Kavach Shield',
+          draft_text: tier.tier === 'critical' ? proxy.action_draft || base?.complaint || '' : '',
           regional_draft_text: '',
           next_steps: proxy.checklist,
         },
@@ -731,7 +833,10 @@
           navigator.geolocation.getCurrentPosition(
             (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
             (geoErr) => {
-              console.warn('[Chat_Safe][Geolocation] Position lookup failed or denied:', { code: geoErr?.code, message: geoErr?.message });
+              console.warn('[Chat_Safe][Geolocation] Position lookup failed or denied:', {
+                code: geoErr?.code,
+                message: geoErr?.message,
+              });
               denied = true;
               resolve(null);
             },
@@ -771,7 +876,10 @@
           if (addr) return { address: `${addr} (${coordLabel})`, coords: { lat, lng }, source: 'google-maps-api' };
         }
       } catch (err) {
-        console.warn('[Chat_Safe][Maps] Reverse geocoding request failed, using coordinate fallback:', err?.message || err);
+        console.warn(
+          '[Chat_Safe][Maps] Reverse geocoding request failed, using coordinate fallback:',
+          err?.message || err,
+        );
       }
     }
 
@@ -779,7 +887,11 @@
       try {
         const serverGeo = await API.call('reverse-geocode', { lat, lng });
         if (serverGeo?.address) {
-          return { address: `${serverGeo.address} (${coordLabel})`, coords: { lat, lng }, source: serverGeo.source || 'server-geocode' };
+          return {
+            address: `${serverGeo.address} (${coordLabel})`,
+            coords: { lat, lng },
+            source: serverGeo.source || 'server-geocode',
+          };
         }
       } catch (err) {
         console.warn('[Chat_Safe][Maps] Server reverse-geocode unavailable:', err?.message || err);
@@ -793,7 +905,8 @@
     };
   }
 
-  const URL_DETECT_REGEX = /\b(?:https?:\/\/|www\.)[^\s<>"')]+|\b(?:bit\.ly|tinyurl\.com|t\.me|wa\.me|rb\.gy|cutt\.ly)\/[^\s<>"')]+/gi;
+  const URL_DETECT_REGEX =
+    /\b(?:https?:\/\/|www\.)[^\s<>"')]+|\b(?:bit\.ly|tinyurl\.com|t\.me|wa\.me|rb\.gy|cutt\.ly)\/[^\s<>"')]+/gi;
 
   /**
    * Extracts up to 10 normalized HTTP/HTTPS URLs from citizen-submitted text.
@@ -824,19 +937,22 @@
     const sbKey = getSessionKey('SAFE_BROWSING_KEY') || getSessionKey('SAFE_BROWSING_API_KEY');
     if (sbKey) {
       try {
-        const res = await fetch(`https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${encodeURIComponent(sbKey)}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            client: { clientId: 'chatsafe-urimai', clientVersion: '3.0.0' },
-            threatInfo: {
-              threatTypes: ['MALWARE', 'SOCIAL_ENGINEERING', 'UNWANTED_SOFTWARE', 'POTENTIALLY_HARMFUL_APPLICATION'],
-              platformTypes: ['ANY_PLATFORM'],
-              threatEntryTypes: ['URL'],
-              threatEntries: urls.map((url) => ({ url })),
-            },
-          }),
-        });
+        const res = await fetch(
+          `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${encodeURIComponent(sbKey)}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              client: { clientId: 'chatsafe-urimai', clientVersion: '3.0.0' },
+              threatInfo: {
+                threatTypes: ['MALWARE', 'SOCIAL_ENGINEERING', 'UNWANTED_SOFTWARE', 'POTENTIALLY_HARMFUL_APPLICATION'],
+                platformTypes: ['ANY_PLATFORM'],
+                threatEntryTypes: ['URL'],
+                threatEntries: urls.map((url) => ({ url })),
+              },
+            }),
+          },
+        );
         if (res.ok) {
           const data = await res.json();
           const apiMatches = Array.isArray(data.matches)
@@ -847,14 +963,20 @@
           }
         }
       } catch (err) {
-        console.warn('[Chat_Safe][SafeBrowsing] API check failed, falling back to heuristic check:', err?.message || err);
+        console.warn(
+          '[Chat_Safe][SafeBrowsing] API check failed, falling back to heuristic check:',
+          err?.message || err,
+        );
       }
     }
 
     try {
       return await API.call('safebrowsing', { urls });
     } catch (err) {
-      console.warn('[Chat_Safe][SafeBrowsing] Local heuristic check failed, returning safe fallback:', err?.message || err);
+      console.warn(
+        '[Chat_Safe][SafeBrowsing] Local heuristic check failed, returning safe fallback:',
+        err?.message || err,
+      );
       return { safe: true, matches: [], urls, source: 'offline-fallback' };
     }
   }
@@ -929,11 +1051,15 @@
    */
   function pulseBus(activeIds) {
     const normalized = new Set(
-      (Array.isArray(activeIds) ? activeIds : []).map((id) => {
-        const token = String(id || '').toLowerCase().trim();
-        if (token === 'payguard') return 'kavach';
-        return token;
-      }).filter((token) => CANONICAL_BUS_AGENTS.includes(token)),
+      (Array.isArray(activeIds) ? activeIds : [])
+        .map((id) => {
+          const token = String(id || '')
+            .toLowerCase()
+            .trim();
+          if (token === 'payguard') return 'kavach';
+          return token;
+        })
+        .filter((token) => CANONICAL_BUS_AGENTS.includes(token)),
     );
     document.querySelectorAll('#agentBus .bus-node').forEach((n) => {
       const isOn = normalized.has(n.dataset.bus);
@@ -958,10 +1084,22 @@
     document.documentElement.dir = resolved;
     document.body.dir = resolved;
     [
-      'agentLog', 'heroDynamicCard', 'result', 'urimaiScanResult',
-      'familyKitCard', 'chatLog', 'autoOut', 'payResult', 'xrayStatus',
-      'agentInput', 'message', 'usRegLetter', 'fhRegLetter', 'explanation',
-      'redFlags', 'nextSteps',
+      'agentLog',
+      'heroDynamicCard',
+      'result',
+      'urimaiScanResult',
+      'familyKitCard',
+      'chatLog',
+      'autoOut',
+      'payResult',
+      'xrayStatus',
+      'agentInput',
+      'message',
+      'usRegLetter',
+      'fhRegLetter',
+      'explanation',
+      'redFlags',
+      'nextSteps',
     ].forEach((id) => {
       const node = $(id);
       if (node) node.setAttribute('dir', resolved);
@@ -1026,7 +1164,10 @@
     } catch (err) {
       console.warn('[Chat_Safe][i18n] Failed to load remote language catalog, using fallback:', err?.message || err);
     }
-    const opts = [new Option(t('autoDetect'), 'auto'), ...languages.map((l) => new Option(`${l.native} — ${l.name}`, l.code))];
+    const opts = [
+      new Option(t('autoDetect'), 'auto'),
+      ...languages.map((l) => new Option(`${l.native} — ${l.name}`, l.code)),
+    ];
     $('lang').replaceChildren(...opts);
     const saved = load('lang');
     $('lang').value = saved === 'auto' || languages.some((l) => l.code === saved) ? saved : 'ta';
@@ -1067,7 +1208,10 @@
   }
   const voiceFor = (code) => {
     const tag = langInfo(code).speech.toLowerCase();
-    return voices.find((v) => v.lang.toLowerCase() === tag) || voices.find((v) => v.lang.toLowerCase().startsWith(`${code}-`));
+    return (
+      voices.find((v) => v.lang.toLowerCase() === tag) ||
+      voices.find((v) => v.lang.toLowerCase().startsWith(`${code}-`))
+    );
   };
 
   /**
@@ -1079,7 +1223,12 @@
    * @returns {Promise<boolean>} Resolves `true` when playback completes, or `false` if unavailable/failed.
    */
   async function triggerVoiceSynthesis(text, code = replyLang) {
-    if (!text || typeof window === 'undefined' || !('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') {
+    if (
+      !text ||
+      typeof window === 'undefined' ||
+      !('speechSynthesis' in window) ||
+      typeof SpeechSynthesisUtterance === 'undefined'
+    ) {
       return false;
     }
     return new Promise((resolve) => {
@@ -1092,7 +1241,10 @@
         u.rate = 0.96;
         u.onstart = () => setAgentState('speaking');
         u.onboundary = () => kavach.pulse();
-        u.onend = () => { setAgentState('idle'); resolve(true); };
+        u.onend = () => {
+          setAgentState('idle');
+          resolve(true);
+        };
         u.onerror = (evt) => {
           console.warn('[Chat_Safe][SpeechSynthesis] Utterance error:', evt?.error || 'unknown');
           setAgentState('idle');
@@ -1130,13 +1282,22 @@
    * @returns {void}
    */
   function startMic(onText) {
-    if (!SR) { toast(t('noMic')); return; }
+    if (!SR) {
+      toast(t('noMic'));
+      return;
+    }
     if (recognizer) {
-      try { recognizer.stop(); } catch { recognizer = null; }
+      try {
+        recognizer.stop();
+      } catch {
+        recognizer = null;
+      }
       return;
     }
     try {
-      try { window.speechSynthesis?.cancel(); } catch (err) {
+      try {
+        window.speechSynthesis?.cancel();
+      } catch (err) {
         console.warn('[Chat_Safe][SpeechSynthesis] Cancel before mic start failed:', err?.message || err);
       }
       Sound.play('blip');
@@ -1154,7 +1315,10 @@
         if (said) onText(said);
       };
       rec.onerror = (evt) => {
-        console.warn('[Chat_Safe][SpeechRecognition] Microphone capture error:', { error: evt?.error, message: evt?.message });
+        console.warn('[Chat_Safe][SpeechRecognition] Microphone capture error:', {
+          error: evt?.error,
+          message: evt?.message,
+        });
         const denied = evt?.error === 'not-allowed' || evt?.error === 'service-not-allowed';
         const msg = denied
           ? 'Microphone permission denied. Please type your message below.'
@@ -1181,10 +1345,12 @@
     }
   }
   $('mic').addEventListener('click', () => startMic((said) => askAgent(said, { mode: 'voice' })));
-  $('scannerMicBtn').addEventListener('click', () => startMic((said) => {
-    $('message').value = said;
-    runSmartScan(said, { mode: 'voice' });
-  }));
+  $('scannerMicBtn').addEventListener('click', () =>
+    startMic((said) => {
+      $('message').value = said;
+      runSmartScan(said, { mode: 'voice' });
+    }),
+  );
 
   /* ---------- Chat & Speed-Dial '9' Voice IVR ---------- */
   /**
@@ -1244,9 +1410,19 @@
    */
   function renderHeroCivicCardContent(card, ctx) {
     const {
-      verdict, rawText, geoAddress, dir, score, ap,
-      vectors, summaryText, actionDraft, sourceBadge,
-      agentPillsHtml, checklistHtml, geminiJsonPreview,
+      verdict,
+      rawText,
+      geoAddress,
+      dir,
+      score,
+      ap,
+      vectors,
+      summaryText,
+      actionDraft,
+      sourceBadge,
+      agentPillsHtml,
+      checklistHtml,
+      geminiJsonPreview,
     } = ctx;
     const wardText = geoAddress || 'Acquiring live GPS ward coordinates…';
     const draftPreview = actionDraft || verdict.urimaiKit?.englishLetter || '';
@@ -1317,8 +1493,16 @@
    */
   function renderHeroScamCardContent(card, ctx) {
     const {
-      rawText, dir, score, vectors, summaryText, actionDraft,
-      sourceBadge, agentPillsHtml, checklistHtml, geminiJsonPreview,
+      rawText,
+      dir,
+      score,
+      vectors,
+      summaryText,
+      actionDraft,
+      sourceBadge,
+      agentPillsHtml,
+      checklistHtml,
+      geminiJsonPreview,
     } = ctx;
     const tier = getThreatTier(score);
     const isCritical = tier.tier === 'critical';
@@ -1326,7 +1510,8 @@
     const displayVectors = isSafe ? [] : vectors;
     const cardSummary = isSafe ? tier.verdict : summaryText;
     const draft = isCritical
-      ? (actionDraft || `NATIONAL CYBER CRIME HELPLINE (1930 | https://cybercrime.gov.in)\nSuspected Scam (${tier.score}/100): ${rawText}`)
+      ? actionDraft ||
+        `NATIONAL CYBER CRIME HELPLINE (1930 | https://cybercrime.gov.in)\nSuspected Scam (${tier.score}/100): ${rawText}`
       : '';
 
     card.className = `hero-dynamic-card ${tier.cardClass}`;
@@ -1355,7 +1540,9 @@
       </div>
     `;
 
-    $('hdcCopy1930Btn')?.addEventListener('click', () => copyTextToClipboard(draft, '1930 Cybercrime complaint copied!', 'Clipboard'));
+    $('hdcCopy1930Btn')?.addEventListener('click', () =>
+      copyTextToClipboard(draft, '1930 Cybercrime complaint copied!', 'Clipboard'),
+    );
     $('hdcFullScanBtn')?.addEventListener('click', () => {
       $('message').value = rawText;
       activateTab($('tab-scanner'));
@@ -1383,20 +1570,23 @@
     const ap = verdict.action_payload || {};
     const vectors = Array.isArray(verdict.threat_vectors) ? verdict.threat_vectors : [];
     const activeAgents = normalizeBusAgents(verdict.active_agents, contractIntent, score);
-    const checklist = Array.isArray(verdict.checklist) && verdict.checklist.length
-      ? verdict.checklist
-      : (Array.isArray(ap.next_steps) ? ap.next_steps : []);
+    const checklist =
+      Array.isArray(verdict.checklist) && verdict.checklist.length
+        ? verdict.checklist
+        : Array.isArray(ap.next_steps)
+          ? ap.next_steps
+          : [];
     const summaryText = isCivic
-      ? (verdict.summary || ap.summary || rawText)
-      : (verdict.summary || ap.summary || verdict.details || getThreatTier(score).verdict);
-    const actionDraft = verdict.action_draft !== undefined
-      ? String(verdict.action_draft || '')
-      : String(ap.draft_text || '');
-    const sourceBadge = verdict._source === 'vercel-proxy'
-      ? 'Live Vercel Gemini Proxy'
-      : verdict._offlineFallback
-        ? 'Offline Local Simulator'
-        : 'Local AI Simulator (Auto-Fallback)';
+      ? verdict.summary || ap.summary || rawText
+      : verdict.summary || ap.summary || verdict.details || getThreatTier(score).verdict;
+    const actionDraft =
+      verdict.action_draft !== undefined ? String(verdict.action_draft || '') : String(ap.draft_text || '');
+    const sourceBadge =
+      verdict._source === 'vercel-proxy'
+        ? 'Live Vercel Gemini Proxy'
+        : verdict._offlineFallback
+          ? 'Offline Local Simulator'
+          : 'Local AI Simulator (Auto-Fallback)';
 
     const ctx = {
       verdict,
@@ -1415,15 +1605,19 @@
       checklistHtml: checklist.length
         ? `<div class="hdc-checklist-wrap"><p class="small" style="margin:0;font-weight:700">Action Checklist</p><ol class="hdc-checklist" dir="${dir}">${checklist.map((step) => `<li>${escapeHtml(step)}</li>`).join('')}</ol></div>`
         : '',
-      geminiJsonPreview: JSON.stringify({
-        intent: contractIntent,
-        confidence_score: score,
-        active_agents: activeAgents,
-        summary: summaryText,
-        action_draft: actionDraft,
-        checklist,
-        engine_source: sourceBadge,
-      }, null, 2),
+      geminiJsonPreview: JSON.stringify(
+        {
+          intent: contractIntent,
+          confidence_score: score,
+          active_agents: activeAgents,
+          summary: summaryText,
+          action_draft: actionDraft,
+          checklist,
+          engine_source: sourceBadge,
+        },
+        null,
+        2,
+      ),
     };
 
     if (isCivic) renderHeroCivicCardContent(card, ctx);
@@ -1462,10 +1656,12 @@
         setMood(routed._offlineFallback ? 'suspicious' : 'civic');
         Sound.play('civic');
 
-        const kit = routed.urimaiKit || await API.call('urimai', { text: clean, lang, location: 'Ward 12, Coimbatore' }).catch((err) => {
-          console.warn('[Chat_Safe][Urimai] Kit generation fallback:', err?.message || err);
-          return null;
-        });
+        const kit =
+          routed.urimaiKit ||
+          (await API.call('urimai', { text: clean, lang, location: 'Ward 12, Coimbatore' }).catch((err) => {
+            console.warn('[Chat_Safe][Urimai] Kit generation fallback:', err?.message || err);
+            return null;
+          }));
         if (!kit) {
           throw new Error('Unable to generate Urimai kit');
         }
@@ -1501,27 +1697,34 @@
       setMood(tier.mood);
       Sound.play(tier.tier === 'critical' ? 'alert' : 'safe');
 
-      const summaryLine = tier.tier === 'safe'
-        ? tier.verdict
-        : (routed.summary || ap.summary || routed.details || tier.verdict);
+      const summaryLine =
+        tier.tier === 'safe' ? tier.verdict : routed.summary || ap.summary || routed.details || tier.verdict;
       const nextStep = routed.checklist?.[0] || ap.next_steps?.[0] || routed.action || '';
-      const replyText = tier.tier === 'safe'
-        ? `${summaryLine} (Risk ${tier.score}/100)`
-        : `${summaryLine} (Risk ${tier.score}/100)\n${vectors.length ? `Vectors: ${vectors.join(' · ')}\n` : ''}${nextStep ? `Next: ${nextStep}` : ''}`;
+      const replyText =
+        tier.tier === 'safe'
+          ? `${summaryLine} (Risk ${tier.score}/100)`
+          : `${summaryLine} (Risk ${tier.score}/100)\n${vectors.length ? `Vectors: ${vectors.join(' · ')}\n` : ''}${nextStep ? `Next: ${nextStep}` : ''}`;
 
-      addAgentMessage('Kavach', `kavach ${tier.tier === 'critical' ? 'lvl-critical' : tier.tier === 'moderate' ? 'lvl-suspicious' : ''}`.trim(), replyText);
-      renderHeroDynamicCard({
-        ...routed,
-        intent: 'SCAM',
-        confidence_score: tier.score,
-        active_agents: activeAgents,
-        summary: summaryLine,
-        threat_vectors: tier.tier === 'safe' ? [] : vectors,
-        action_payload: {
-          ...ap,
+      addAgentMessage(
+        'Kavach',
+        `kavach ${tier.tier === 'critical' ? 'lvl-critical' : tier.tier === 'moderate' ? 'lvl-suspicious' : ''}`.trim(),
+        replyText,
+      );
+      renderHeroDynamicCard(
+        {
+          ...routed,
+          intent: 'SCAM',
+          confidence_score: tier.score,
+          active_agents: activeAgents,
           summary: summaryLine,
+          threat_vectors: tier.tier === 'safe' ? [] : vectors,
+          action_payload: {
+            ...ap,
+            summary: summaryLine,
+          },
         },
-      }, clean);
+        clean,
+      );
 
       if (tier.tier === 'critical') {
         triggerFamilySos(clean, {
@@ -1536,7 +1739,8 @@
       console.warn('[Chat_Safe][Agent] Message handling failed, reverting to offline notice:', err?.message || err);
       setAgentState('idle');
       setMood('suspicious');
-      const notice = API.OFFLINE_NOTICE || 'Network unstable. Reverting to Offline Rule Engine. Please verify manually.';
+      const notice =
+        API.OFFLINE_NOTICE || 'Network unstable. Reverting to Offline Rule Engine. Please verify manually.';
       addAgentMessage('Kavach (Offline)', 'kavach', notice);
       toast(notice);
     }
@@ -1573,7 +1777,8 @@
     setTimeout(() => Sound.play('ring'), 180);
     const info = langInfo(uiLang());
     const greeting = info.greeting || 'Vanakkam. Tell me what happened.';
-    $('keypadText').innerHTML = `<span class="kp-tag">CONNECTED · ${escapeHtml(info.native.toUpperCase())}</span>"${escapeHtml(greeting)}"`;
+    $('keypadText').innerHTML =
+      `<span class="kp-tag">CONNECTED · ${escapeHtml(info.native.toUpperCase())}</span>"${escapeHtml(greeting)}"`;
     pulseBus(['vani', 'gemini']);
     addAgentMessage('Vani IVR (Speed-Dial 9)', 'kavach', greeting);
     if ($('autoSpeak').checked) speak(greeting, info.code);
@@ -1581,9 +1786,12 @@
     if (autoRoute) {
       const typed = $('agentInput')?.value?.trim();
       const prompt = typed || SPEED_DIAL_SCENARIOS[speedDialCursor++ % SPEED_DIAL_SCENARIOS.length];
-      setTimeout(() => {
-        askAgent(prompt, { mode: 'speed_dial_9' });
-      }, reducedMotion ? 100 : 420);
+      setTimeout(
+        () => {
+          askAgent(prompt, { mode: 'speed_dial_9' });
+        },
+        reducedMotion ? 100 : 420,
+      );
     }
   }
 
@@ -1594,14 +1802,15 @@
         triggerSpeedDial9({ autoRoute: true });
       } else {
         Sound.playDtmf(d);
-        $('keypadText').innerHTML = `<span class="kp-tag">KEYPAD</span>Dialed ${escapeHtml(d)} — press <b>9</b> for Kavach × Urimai AI`;
+        $('keypadText').innerHTML =
+          `<span class="kp-tag">KEYPAD</span>Dialed ${escapeHtml(d)} — press <b>9</b> for Kavach × Urimai AI`;
       }
     });
   });
 
   document.addEventListener('keydown', (e) => {
     if (e.key !== '9' || e.ctrlKey || e.metaKey || e.altKey) return;
-    const tag = (e.target && e.target.tagName) ? e.target.tagName.toUpperCase() : '';
+    const tag = e.target && e.target.tagName ? e.target.tagName.toUpperCase() : '';
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target?.isContentEditable) return;
     e.preventDefault();
     triggerSpeedDial9({ autoRoute: true });
@@ -1609,19 +1818,42 @@
 
   $('simScamCall').addEventListener('click', () => {
     triggerSpeedDial9({ autoRoute: false });
-    setTimeout(() => askAgent('A man asked for my OTP for the bank and said my account will be blocked today.', { mode: 'speed_dial_9' }), 450);
+    setTimeout(
+      () =>
+        askAgent('A man asked for my OTP for the bank and said my account will be blocked today.', {
+          mode: 'speed_dial_9',
+        }),
+      450,
+    );
   });
   $('simCivicCall').addEventListener('click', () => {
     triggerSpeedDial9({ autoRoute: false });
-    setTimeout(() => askAgent('The panchayat water pipe on my street broke 3 days ago and no one is fixing it.', { mode: 'speed_dial_9' }), 450);
+    setTimeout(
+      () =>
+        askAgent('The panchayat water pipe on my street broke 3 days ago and no one is fixing it.', {
+          mode: 'speed_dial_9',
+        }),
+      450,
+    );
   });
 
-  $('agentForm').addEventListener('submit', (e) => { e.preventDefault(); askAgent($('agentInput').value, { mode: 'chat' }); });
-  $('agentInput').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); askAgent($('agentInput').value, { mode: 'chat' }); }
+  $('agentForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    askAgent($('agentInput').value, { mode: 'chat' });
   });
-  document.querySelectorAll('[data-ask]').forEach((b) => b.addEventListener('click', () => askAgent(t(b.dataset.ask), { mode: 'quick_chip' })));
-  $('resetView').addEventListener('click', () => { kavach.resetView(); Sound.play('blip'); });
+  $('agentInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      askAgent($('agentInput').value, { mode: 'chat' });
+    }
+  });
+  document
+    .querySelectorAll('[data-ask]')
+    .forEach((b) => b.addEventListener('click', () => askAgent(t(b.dataset.ask), { mode: 'quick_chip' })));
+  $('resetView').addEventListener('click', () => {
+    kavach.resetView();
+    Sound.play('blip');
+  });
   $('newChat').addEventListener('click', () => {
     caseStore.startNew();
     $('agentLog').replaceChildren();
@@ -1637,7 +1869,11 @@
    * @returns {string[]} Array of unlocked category identifiers.
    */
   function getLearned() {
-    try { return (localStorage.getItem('chatsafe.learned') || '').split(',').filter(Boolean); } catch { return []; }
+    try {
+      return (localStorage.getItem('chatsafe.learned') || '').split(',').filter(Boolean);
+    } catch {
+      return [];
+    }
   }
 
   /**
@@ -1651,7 +1887,11 @@
     const set = new Set(getLearned());
     if (set.has(id)) return;
     set.add(id);
-    try { localStorage.setItem('chatsafe.learned', [...set].join(',')); } catch { /* ignore */ }
+    try {
+      localStorage.setItem('chatsafe.learned', [...set].join(','));
+    } catch {
+      /* ignore */
+    }
     Sound.play('unlock');
     renderHud();
     toast(`Unlocked scam badge: ${id}`);
@@ -1665,12 +1905,14 @@
   function renderHud() {
     const got = new Set(getLearned());
     $('hudCount').textContent = `${got.size}/${CATEGORIES.length}`;
-    $('hudList').replaceChildren(...CATEGORIES.map((id) => {
-      const li = document.createElement('li');
-      li.className = got.has(id) ? 'on' : '';
-      li.textContent = `${got.has(id) ? '✓ ' : ''}${id.replace('_', ' ')}`;
-      return li;
-    }));
+    $('hudList').replaceChildren(
+      ...CATEGORIES.map((id) => {
+        const li = document.createElement('li');
+        li.className = got.has(id) ? 'on' : '';
+        li.textContent = `${got.has(id) ? '✓ ' : ''}${id.replace('_', ' ')}`;
+        return li;
+      }),
+    );
   }
 
   /* ---------- Tabs ---------- */
@@ -1734,7 +1976,9 @@
       $('radarCivicCount').textContent = `${data.civic.length} active issues`;
 
       // Scams
-      $('radarScamList').innerHTML = data.scams.map((s) => `
+      $('radarScamList').innerHTML = data.scams
+        .map(
+          (s) => `
         <article class="radar-item scam" data-tone="scam">
           <div class="radar-meta">
             <span class="pill red">🔥 ${s.category}</span>
@@ -1748,18 +1992,24 @@
             <span class="small muted">${redactionEnabled ? `🔒 ${s.redactedCount} PII fields masked` : '⚠️ Unredacted preview'}</span>
           </div>
         </article>
-      `).join('');
+      `,
+        )
+        .join('');
 
-      $('radarScamList').querySelectorAll('.radar-scan-btn').forEach((b) => {
-        b.addEventListener('click', () => {
-          $('message').value = decodeURIComponent(b.dataset.text);
-          activateTab($('tab-scanner'));
-          runSmartScan($('message').value);
+      $('radarScamList')
+        .querySelectorAll('.radar-scan-btn')
+        .forEach((b) => {
+          b.addEventListener('click', () => {
+            $('message').value = decodeURIComponent(b.dataset.text);
+            activateTab($('tab-scanner'));
+            runSmartScan($('message').value);
+          });
         });
-      });
 
       // Civic Watch
-      $('radarCivicList').innerHTML = data.civic.map((c) => `
+      $('radarCivicList').innerHTML = data.civic
+        .map(
+          (c) => `
         <article class="radar-item civic" data-tone="civic">
           <div class="radar-meta">
             <span class="pill blue">⚠️ ${c.department}</span>
@@ -1773,15 +2023,19 @@
             <button type="button" class="chip sm civic-upvote">👍 Support (<span>${c.upvotes}</span>)</button>
           </div>
         </article>
-      `).join('');
+      `,
+        )
+        .join('');
 
-      $('radarCivicList').querySelectorAll('.civic-upvote').forEach((b) => {
-        b.addEventListener('click', () => {
-          const sp = b.querySelector('span');
-          sp.textContent = String(Number(sp.textContent) + 1);
-          Sound.play('blip');
+      $('radarCivicList')
+        .querySelectorAll('.civic-upvote')
+        .forEach((b) => {
+          b.addEventListener('click', () => {
+            const sp = b.querySelector('span');
+            sp.textContent = String(Number(sp.textContent) + 1);
+            Sound.play('blip');
+          });
         });
-      });
 
       // Daily Video Reels (3-Column Grid)
       window.ChatSafeReels?.renderReelsFeed($('reelScroller'), data.reels, {
@@ -1829,8 +2083,12 @@
   });
 
   // Verified User Video Publisher
-  $('openPublisherBtn').addEventListener('click', () => { $('videoPublisherForm').hidden = !$('videoPublisherForm').hidden; });
-  $('cancelPubBtn').addEventListener('click', () => { $('videoPublisherForm').hidden = true; });
+  $('openPublisherBtn').addEventListener('click', () => {
+    $('videoPublisherForm').hidden = !$('videoPublisherForm').hidden;
+  });
+  $('cancelPubBtn').addEventListener('click', () => {
+    $('videoPublisherForm').hidden = true;
+  });
   $('videoPublisherForm').addEventListener('submit', (e) => {
     e.preventDefault();
     const title = $('pubTitle').value.trim();
@@ -1901,7 +2159,10 @@
     const confScore = Math.max(0, Math.min(100, Math.round(Number(routed.confidence_score ?? routed.risk_score) || 0)));
 
     if (routed.intent === 'CIVIC') {
-      const kit = routed.urimaiKit || res.urimaiKit || await API.call('urimai', { text: clean, lang, location: 'Ward 12, Coimbatore' });
+      const kit =
+        routed.urimaiKit ||
+        res.urimaiKit ||
+        (await API.call('urimai', { text: clean, lang, location: 'Ward 12, Coimbatore' }));
       hydrateUrimaiKitFromVerdict(kit, routed, ap);
       res.intent = 'CIVIC';
       res.level = 'civic';
@@ -1915,31 +2176,56 @@
     res.intent = tier.intent;
     res.score = tier.score;
     res.level = tier.level;
-    const checklistSteps = Array.isArray(routed.checklist) && routed.checklist.length
-      ? routed.checklist
-      : (ap.next_steps || []);
+    const checklistSteps =
+      Array.isArray(routed.checklist) && routed.checklist.length ? routed.checklist : ap.next_steps || [];
 
     if (tier.tier === 'safe') {
       res.verdict = tier.verdict;
       res.scamType = tier.scamType;
       res.redFlags = [];
       res.complaint = '';
-      res.nextSteps = checklistSteps.length ? checklistSteps : ['No common scam pattern found. Never share OTPs or PINs with strangers.'];
+      res.nextSteps = checklistSteps.length
+        ? checklistSteps
+        : ['No common scam pattern found. Never share OTPs or PINs with strangers.'];
       res.explanation = tier.verdict;
     } else if (tier.tier === 'moderate') {
       res.verdict = routed.summary || ap.summary || (!origBaseSafe && res.verdict ? res.verdict : tier.verdict);
       res.scamType = vectors[0] || res.scamType || tier.scamType;
-      res.redFlags = vectors.length ? vectors : (res.redFlags?.length ? res.redFlags : ['Unverified request or suspicious link — verify independently.']);
+      res.redFlags = vectors.length
+        ? vectors
+        : res.redFlags?.length
+          ? res.redFlags
+          : ['Unverified request or suspicious link — verify independently.'];
       res.complaint = '';
-      res.nextSteps = checklistSteps.length ? checklistSteps : (!origBaseSafe && res.nextSteps?.length ? res.nextSteps : ['Verify sender through an official app or website before taking action.']);
-      res.explanation = routed.summary || ap.summary || routed.details || (!origBaseSafe && res.explanation ? res.explanation : tier.verdict);
+      res.nextSteps = checklistSteps.length
+        ? checklistSteps
+        : !origBaseSafe && res.nextSteps?.length
+          ? res.nextSteps
+          : ['Verify sender through an official app or website before taking action.'];
+      res.explanation =
+        routed.summary ||
+        ap.summary ||
+        routed.details ||
+        (!origBaseSafe && res.explanation ? res.explanation : tier.verdict);
     } else {
       res.verdict = routed.summary || ap.summary || (!origBaseSafe && res.verdict ? res.verdict : tier.verdict);
       res.scamType = routed.scam_type || vectors[0] || res.scamType || tier.scamType;
-      res.redFlags = vectors.length ? [...new Set([...vectors, ...(res.redFlags || [])])] : (res.redFlags || ['High-Risk Cyber Fraud Pattern']);
-      res.nextSteps = checklistSteps.length ? [...new Set([...checklistSteps, ...(res.nextSteps || [])])] : (res.nextSteps || []);
-      res.complaint = routed.action_draft || ap.draft_text || res.complaint || `NATIONAL CYBER CRIME REPORTING PORTAL (https://cybercrime.gov.in | Helpline 1930)\nSuspected Scam (${res.score}/100): ${routed.details || clean}\nRecommended Action: ${routed.action || 'Freeze bank/UPI and dial 1930 immediately.'}`;
-      res.explanation = routed.summary || ap.summary || routed.details || (!origBaseSafe && res.explanation ? res.explanation : res.verdict);
+      res.redFlags = vectors.length
+        ? [...new Set([...vectors, ...(res.redFlags || [])])]
+        : res.redFlags || ['High-Risk Cyber Fraud Pattern'];
+      res.nextSteps = checklistSteps.length
+        ? [...new Set([...checklistSteps, ...(res.nextSteps || [])])]
+        : res.nextSteps || [];
+      res.complaint =
+        routed.action_draft ||
+        ap.draft_text ||
+        res.complaint ||
+        `NATIONAL CYBER CRIME REPORTING PORTAL (https://cybercrime.gov.in | Helpline 1930)\nSuspected Scam (${res.score}/100): ${routed.details || clean}\nRecommended Action: ${routed.action || 'Freeze bank/UPI and dial 1930 immediately.'}`;
+      res.explanation =
+        routed.summary ||
+        ap.summary ||
+        routed.details ||
+        (!origBaseSafe && res.explanation ? res.explanation : res.verdict);
     }
     return res;
   }
@@ -1996,7 +2282,17 @@
    * @param {Object} params Civic render context.
    * @returns {Promise<void>} Resolves once location lookup and petition DOM updates complete.
    */
-  async function renderUrimaiScanResult({ res, routed, activeAgents, clean, mapsBadge, detectedAddrEl, degraded, offlineFallbackMsg, isVercelProxy }) {
+  async function renderUrimaiScanResult({
+    res,
+    routed,
+    activeAgents,
+    clean,
+    mapsBadge,
+    detectedAddrEl,
+    degraded,
+    offlineFallbackMsg,
+    isVercelProxy,
+  }) {
     pulseBus(activeAgents);
     switchIntentPalette('CIVIC', 0);
     setMood(degraded ? 'suspicious' : 'civic');
@@ -2030,7 +2326,19 @@
    * @param {Object} params Scam render context.
    * @returns {void}
    */
-  function renderKavachScanResult({ res, routed, activeAgents, clean, detectedUrls, flaggedUrls, sbResult, sbWidget, sbStatus, degraded, offlineFallbackMsg }) {
+  function renderKavachScanResult({
+    res,
+    routed,
+    activeAgents,
+    clean,
+    detectedUrls,
+    flaggedUrls,
+    sbResult,
+    sbWidget,
+    sbStatus,
+    degraded,
+    offlineFallbackMsg,
+  }) {
     const finalTier = getThreatTier(res.score);
     res.score = finalTier.score;
     res.level = finalTier.level;
@@ -2045,22 +2353,26 @@
     setMood(flaggedUrls.length ? 'critical' : degraded ? 'suspicious' : finalTier.mood);
     Sound.play(finalTier.tier === 'critical' ? 'alert' : 'safe');
     $('xrayStatus').textContent = degraded ? offlineFallbackMsg : '';
-    renderHeroDynamicCard({
-      ...routed,
-      intent: 'SCAM',
-      confidence_score: finalTier.score,
-      active_agents: finalAgents,
-      summary: res.verdict,
-      action_draft: finalTier.tier === 'critical' ? (res.complaint || '') : '',
-      checklist: res.nextSteps || [],
-      threat_vectors: finalTier.tier === 'safe' ? [] : (res.redFlags || routed?.threat_vectors || []),
-      action_payload: {
+    renderHeroDynamicCard(
+      {
+        ...routed,
+        intent: 'SCAM',
+        confidence_score: finalTier.score,
+        active_agents: finalAgents,
         summary: res.verdict,
-        department_or_agency: finalTier.tier === 'critical' ? 'National Cybercrime Helpline (1930)' : 'Kavach Local Shield',
-        draft_text: finalTier.tier === 'critical' ? (res.complaint || '') : '',
-        next_steps: res.nextSteps || [],
+        action_draft: finalTier.tier === 'critical' ? res.complaint || '' : '',
+        checklist: res.nextSteps || [],
+        threat_vectors: finalTier.tier === 'safe' ? [] : res.redFlags || routed?.threat_vectors || [],
+        action_payload: {
+          summary: res.verdict,
+          department_or_agency:
+            finalTier.tier === 'critical' ? 'National Cybercrime Helpline (1930)' : 'Kavach Local Shield',
+          draft_text: finalTier.tier === 'critical' ? res.complaint || '' : '',
+          next_steps: res.nextSteps || [],
+        },
       },
-    }, clean);
+      clean,
+    );
 
     $('result').className = `result lvl-${finalTier.level}`;
     $('result').hidden = false;
@@ -2081,9 +2393,12 @@
 
     if (res.upiChecks?.length) {
       $('upiBlock').hidden = false;
-      $('upiList').innerHTML = res.upiChecks.map((u) =>
-        `<li class="${u.verdict === 'validated' ? 'good' : 'bad'}"><code>${escapeHtml(u.upi)}</code> — ${escapeHtml(u.reason)}</li>`,
-      ).join('');
+      $('upiList').innerHTML = res.upiChecks
+        .map(
+          (u) =>
+            `<li class="${u.verdict === 'validated' ? 'good' : 'bad'}"><code>${escapeHtml(u.upi)}</code> — ${escapeHtml(u.reason)}</li>`,
+        )
+        .join('');
     } else {
       $('upiBlock').hidden = true;
     }
@@ -2091,7 +2406,8 @@
     if (res.complaint) {
       $('complaintBlock').hidden = false;
       $('complaint').value = res.complaint;
-      $('familyAlert').href = `https://wa.me/?text=${encodeURIComponent(`🚨 Scam Warning (${res.scamType}): ${res.verdict}\n${clean.slice(0, 180)}`)}`;
+      $('familyAlert').href =
+        `https://wa.me/?text=${encodeURIComponent(`🚨 Scam Warning (${res.scamType}): ${res.verdict}\n${clean.slice(0, 180)}`)}`;
     } else {
       $('complaintBlock').hidden = true;
     }
@@ -2137,13 +2453,19 @@
       const routed = await analyzeIntent(clean, { mode });
       const isVercelProxy = routed?._source === 'vercel-proxy';
       const aiOffline = Boolean(routed?._offlineFallback);
-      const baseAnalysis = routed._baseAnalysis || await API.call('analyze', { text: clean, lang, location: 'Ward 12, Coimbatore' });
+      const baseAnalysis =
+        routed._baseAnalysis || (await API.call('analyze', { text: clean, lang, location: 'Ward 12, Coimbatore' }));
       const res = await enrichScanVerdict(routed, { ...baseAnalysis }, clean);
-      const confScore = Math.max(0, Math.min(100, Math.round(Number(routed.confidence_score ?? routed.risk_score) || 0)));
-      const activeAgents = normalizeBusAgents(routed.active_agents, routed.intent === 'CIVIC' ? 'CIVIC' : 'SCAM', confScore);
-      res.engine = isVercelProxy
-        ? 'Live: Vercel Gemini Proxy (/api/gemini)'
-        : 'Local AI Simulator (Auto-Fallback)';
+      const confScore = Math.max(
+        0,
+        Math.min(100, Math.round(Number(routed.confidence_score ?? routed.risk_score) || 0)),
+      );
+      const activeAgents = normalizeBusAgents(
+        routed.active_agents,
+        routed.intent === 'CIVIC' ? 'CIVIC' : 'SCAM',
+        confScore,
+      );
+      res.engine = isVercelProxy ? 'Live: Vercel Gemini Proxy (/api/gemini)' : 'Local AI Simulator (Auto-Fallback)';
 
       // 3) Override Risk Score to 100 & Force Deep Crimson Red if Safe Browsing flags a malicious URL
       const flaggedUrls = sbResult && !sbResult.safe && sbResult.matches?.length ? sbResult.matches : [];
@@ -2161,11 +2483,33 @@
       const offlineFallbackMsg = 'Offline mode — running local rule engine. Please verify manually.';
       const degraded = Boolean(aiOffline);
       if (res.intent === 'CIVIC' && res.urimaiKit) {
-        await renderUrimaiScanResult({ res, routed, activeAgents, clean, mapsBadge, detectedAddrEl, degraded, offlineFallbackMsg, isVercelProxy });
+        await renderUrimaiScanResult({
+          res,
+          routed,
+          activeAgents,
+          clean,
+          mapsBadge,
+          detectedAddrEl,
+          degraded,
+          offlineFallbackMsg,
+          isVercelProxy,
+        });
         return;
       }
 
-      renderKavachScanResult({ res, routed, activeAgents, clean, detectedUrls, flaggedUrls, sbResult, sbWidget, sbStatus, degraded, offlineFallbackMsg });
+      renderKavachScanResult({
+        res,
+        routed,
+        activeAgents,
+        clean,
+        detectedUrls,
+        flaggedUrls,
+        sbResult,
+        sbWidget,
+        sbStatus,
+        degraded,
+        offlineFallbackMsg,
+      });
     } catch (err) {
       console.warn('[Chat_Safe][SmartScan] Scan pipeline failed, switching to offline notice:', err?.message || err);
       $('scanBox').classList.remove('scanning');
@@ -2182,16 +2526,25 @@
    * @returns {void}
    */
   function renderScanHistory() {
-    $('scanHistoryList').innerHTML = scanHistory.slice(0, 6).map((h) => `
+    $('scanHistoryList').innerHTML =
+      scanHistory
+        .slice(0, 6)
+        .map(
+          (h) => `
       <li class="got">
         <span>${h.mode === 'CIVIC' ? '⚖️' : '🛡️'}</span>
         <span><strong>${escapeHtml(h.mode)}</strong> — ${escapeHtml(h.text)}</span>
         <span class="small muted">${escapeHtml(h.time)}</span>
       </li>
-    `).join('') || '<li class="small muted">No scans yet in this session.</li>';
+    `,
+        )
+        .join('') || '<li class="small muted">No scans yet in this session.</li>';
   }
 
-  $('xrayForm').addEventListener('submit', (e) => { e.preventDefault(); runSmartScan($('message').value); });
+  $('xrayForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    runSmartScan($('message').value);
+  });
   document.querySelectorAll('[data-sample]').forEach((b) => {
     b.addEventListener('click', () => {
       $('message').value = SAMPLES[b.dataset.sample];
@@ -2201,7 +2554,9 @@
   $('readAloud').addEventListener('click', () => {
     if (lastResult) speak(`${lastResult.verdict}. ${(lastResult.nextSteps || [])[0] || ''}`, lastResult.lang);
   });
-  $('copyComplaint').addEventListener('click', () => copyTextToClipboard($('complaint').value, '1930 Cybercrime complaint copied!', 'Clipboard'));
+  $('copyComplaint').addEventListener('click', () =>
+    copyTextToClipboard($('complaint').value, '1930 Cybercrime complaint copied!', 'Clipboard'),
+  );
   $('sendToFamilyBtn').addEventListener('click', () => {
     if (!activeUrimaiKit) return;
     dispatchUrimaiKitToFamily(activeUrimaiKit);
@@ -2229,10 +2584,13 @@
   function triggerFamilySos(utterance, analysis) {
     $('familyBadge').hidden = false;
     $('familySosBanner').hidden = false;
-    $('sosDetails').textContent = `Parent reported: "${utterance}" -> Kavach flagged ${analysis.scamType} (${analysis.score}/100)`;
+    $('sosDetails').textContent =
+      `Parent reported: "${utterance}" -> Kavach flagged ${analysis.scamType} (${analysis.score}/100)`;
     $('sosPlayVoice').onclick = () => speak(utterance, analysis.lang || uiLang());
   }
-  $('sosDismiss').addEventListener('click', () => { $('familySosBanner').hidden = true; });
+  $('sosDismiss').addEventListener('click', () => {
+    $('familySosBanner').hidden = true;
+  });
 
   /**
    * Populates the Family Hub view with an active Urimai civic petition kit,
@@ -2252,14 +2610,16 @@
     $('fhRegHeading').textContent = `${kit.langName} (${kit.langNative}) Official Petition`;
     $('fhRegLetter').textContent = kit.regionalLetter;
     $('fhOfflineInstr').textContent = kit.offlineInstructions;
-    $('fhWaBtn').href = `https://wa.me/?text=${encodeURIComponent(`⚖️ Urimai Action Kit (${kit.kitId})\nDept: ${kit.department}\nIssue: ${kit.summary}\n\n${kit.englishLetter.slice(0, 400)}`)}`;
+    $('fhWaBtn').href =
+      `https://wa.me/?text=${encodeURIComponent(`⚖️ Urimai Action Kit (${kit.kitId})\nDept: ${kit.department}\nIssue: ${kit.summary}\n\n${kit.englishLetter.slice(0, 400)}`)}`;
 
     // Populate Digital Bypass & Local Proxy
     updatePortalUI(kit.state || 'Tamil Nadu');
     const fullProxyUrl = new URL(kit.localProxy.proxyUrl, location.href).href;
     $('proxyLinkInput').value = fullProxyUrl;
     $('previewProxyPageBtn').href = kit.localProxy.proxyUrl;
-    $('proxyWaSendBtn').href = `https://wa.me/?text=${encodeURIComponent(kit.localProxy.whatsappText.replace(kit.localProxy.proxyUrl, fullProxyUrl))}`;
+    $('proxyWaSendBtn').href =
+      `https://wa.me/?text=${encodeURIComponent(kit.localProxy.whatsappText.replace(kit.localProxy.proxyUrl, fullProxyUrl))}`;
     toast('🚨 Family Hub updated: Urimai Action Kit Ready!');
   }
 
@@ -2301,13 +2661,25 @@
     $('openSecondaryPortalBtn').textContent = `📱 ${p.secondaryName}`;
     $('openSecondaryPortalBtn').href = p.secondaryUrl;
     if (activeUrimaiKit) {
-      $('portalCopyArea').value = `[${activeUrimaiKit.department}] Location: ${activeUrimaiKit.location}. Grievance: ${activeUrimaiKit.originalText} (Ref: ${activeUrimaiKit.kitId} — Submitted via Urimai Civic Bridge)`.slice(0, p.limitChars);
+      $('portalCopyArea').value =
+        `[${activeUrimaiKit.department}] Location: ${activeUrimaiKit.location}. Grievance: ${activeUrimaiKit.originalText} (Ref: ${activeUrimaiKit.kitId} — Submitted via Urimai Civic Bridge)`.slice(
+          0,
+          p.limitChars,
+        );
     }
   }
 
   $('portalStateSelect').addEventListener('change', (e) => updatePortalUI(e.target.value));
-  $('copyPortalTextBtn').addEventListener('click', () => copyTextToClipboard($('portalCopyArea').value, '📋 CM Helpline portal text copied! Paste on the govt portal.', 'Clipboard'));
-  $('copyProxyLinkBtn').addEventListener('click', () => copyTextToClipboard($('proxyLinkInput').value, '📋 Local Proxy WhatsApp link copied!', 'Clipboard'));
+  $('copyPortalTextBtn').addEventListener('click', () =>
+    copyTextToClipboard(
+      $('portalCopyArea').value,
+      '📋 CM Helpline portal text copied! Paste on the govt portal.',
+      'Clipboard',
+    ),
+  );
+  $('copyProxyLinkBtn').addEventListener('click', () =>
+    copyTextToClipboard($('proxyLinkInput').value, '📋 Local Proxy WhatsApp link copied!', 'Clipboard'),
+  );
 
   // Pathway buttons (Local O2O vs Solution 1 Digital Bypass vs Solution 2 Local Proxy)
   /**
@@ -2380,14 +2752,46 @@
 
   /* ---------- TAB 4: DAILY STREAK (SWIPE-TO-SURVIVE) ---------- */
   const DECK = [
-    { t: 'India Post: Your parcel delivery failed. Update address at http://inida-post.com/track or return.', scam: true, clue: 'Look at the URL — it says "inida-post.com" instead of indiapost.gov.in!' },
-    { t: 'SBI: Your KYC expires today. Update at bit.ly/sbi-kyc-now or account blocked tonight.', scam: true, clue: 'Urgency + shortened link. Banks never ask you to update KYC via SMS links.' },
-    { t: 'Your OTP for Swiggy order is 482913. Do not share it with anyone.', scam: false, clue: 'You triggered this OTP yourself, and it warns you not to share it.' },
-    { t: 'This is CBI Mumbai. A parcel in your name has drugs. Stay on video call — you are under digital arrest.', scam: true, clue: 'Real police never arrest anyone on video call. Authority + fear is the trick.' },
-    { t: 'Your electricity bill of ₹1,240 is due on 20 Nov. Pay on the official TNEB app.', scam: false, clue: 'Routine reminder directing you to the official utility app with no threat.' },
-    { t: 'Earn ₹5,000/day liking YouTube videos! Deposit ₹500 prepaid task to unlock.', scam: true, clue: 'Real jobs never ask you to deposit money first.' },
-    { t: 'Join SEBI VIP Stock Tips! 10% guaranteed daily returns. Pay rajesh.trader@ybl.', scam: true, clue: 'SEBI-registered brokers only use @valid UPI IDs and never guarantee returns.' },
-    { t: 'Hi Appa, reached hostel safely. Talk to you tonight!', scam: false, clue: 'Normal personal message with no payment, link, or urgency.' },
+    {
+      t: 'India Post: Your parcel delivery failed. Update address at http://inida-post.com/track or return.',
+      scam: true,
+      clue: 'Look at the URL — it says "inida-post.com" instead of indiapost.gov.in!',
+    },
+    {
+      t: 'SBI: Your KYC expires today. Update at bit.ly/sbi-kyc-now or account blocked tonight.',
+      scam: true,
+      clue: 'Urgency + shortened link. Banks never ask you to update KYC via SMS links.',
+    },
+    {
+      t: 'Your OTP for Swiggy order is 482913. Do not share it with anyone.',
+      scam: false,
+      clue: 'You triggered this OTP yourself, and it warns you not to share it.',
+    },
+    {
+      t: 'This is CBI Mumbai. A parcel in your name has drugs. Stay on video call — you are under digital arrest.',
+      scam: true,
+      clue: 'Real police never arrest anyone on video call. Authority + fear is the trick.',
+    },
+    {
+      t: 'Your electricity bill of ₹1,240 is due on 20 Nov. Pay on the official TNEB app.',
+      scam: false,
+      clue: 'Routine reminder directing you to the official utility app with no threat.',
+    },
+    {
+      t: 'Earn ₹5,000/day liking YouTube videos! Deposit ₹500 prepaid task to unlock.',
+      scam: true,
+      clue: 'Real jobs never ask you to deposit money first.',
+    },
+    {
+      t: 'Join SEBI VIP Stock Tips! 10% guaranteed daily returns. Pay rajesh.trader@ybl.',
+      scam: true,
+      clue: 'SEBI-registered brokers only use @valid UPI IDs and never guarantee returns.',
+    },
+    {
+      t: 'Hi Appa, reached hostel safely. Talk to you tonight!',
+      scam: false,
+      clue: 'Normal personal message with no payment, link, or urgency.',
+    },
   ];
 
   let gIdx = 0;
@@ -2416,8 +2820,11 @@
         </div>
       `;
       $('gReplay').onclick = () => {
-        gIdx = 0; gHearts = 3; gScore = 0;
-        $('gameBoard').hidden = false; $('gDone').hidden = true;
+        gIdx = 0;
+        gHearts = 3;
+        gScore = 0;
+        $('gameBoard').hidden = false;
+        $('gDone').hidden = true;
         renderGameCard();
       };
       return;
@@ -2462,7 +2869,10 @@
       <p class="g-why">💡 Giveaway Clue: ${card.clue}</p>
       <button type="button" id="gNextBtn" class="primary sm" style="margin-top:.5rem">Next Message →</button>
     `;
-    $('gNextBtn').onclick = () => { gIdx += 1; renderGameCard(); };
+    $('gNextBtn').onclick = () => {
+      gIdx += 1;
+      renderGameCard();
+    };
   }
 
   $('gScam').addEventListener('click', () => answerGame(true));
@@ -2504,7 +2914,10 @@
   });
   $('autoForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const lines = $('autoInput').value.split('\n').map((s) => s.trim()).filter(Boolean);
+    const lines = $('autoInput')
+      .value.split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean);
     if (!lines.length) return;
     try {
       const res = await API.call('autopilot', {
@@ -2526,7 +2939,9 @@
           <p class="aw-text">${res.worst.verdict}</p>
         </div>
         <ol class="auto-plan">
-          ${res.plan.map((st) => `
+          ${res.plan
+            .map(
+              (st) => `
             <li class="st ${st.tone === 'danger' ? 'st-danger' : 'st-auto'}">
               <span class="st-ico">${st.icon || '⚡'}</span>
               <div class="st-main">
@@ -2535,7 +2950,9 @@
                 ${st.text ? `<pre class="st-text">${st.text}</pre>` : ''}
               </div>
             </li>
-          `).join('')}
+          `,
+            )
+            .join('')}
         </ol>
       `;
     } catch (err) {
@@ -2552,7 +2969,8 @@
     pulseBus(['vani', 'gemini', 'kavach']);
     try {
       const r = await API.call('upi-check', { upi });
-      $('payResult').innerHTML = `<div class="urimai-card" style="border-color:${r.verdict === 'validated' ? 'var(--safe)' : 'var(--critical)'}"><strong>${r.verdict === 'validated' ? '✅ SEBI @valid Handle' : '⚠️ Not SEBI @valid'}</strong><p style="margin:0">${r.reason}</p></div>`;
+      $('payResult').innerHTML =
+        `<div class="urimai-card" style="border-color:${r.verdict === 'validated' ? 'var(--safe)' : 'var(--critical)'}"><strong>${r.verdict === 'validated' ? '✅ SEBI @valid Handle' : '⚠️ Not SEBI @valid'}</strong><p style="margin:0">${r.reason}</p></div>`;
     } catch (err) {
       console.warn('[Chat_Safe][PayCheck] UPI verification failed:', err?.message || err);
       toast('Unable to verify UPI handle right now.');
@@ -2578,18 +2996,20 @@
 
   /* ---------- TAB 8: 8 SCAMS GRID ---------- */
   if (window.SCAM_TYPES) {
-    $('typeGrid').replaceChildren(...window.SCAM_TYPES.map((s) => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'type-card';
-      btn.innerHTML = `<span class="ico">${s.icon}</span><span class="nm">${s.name}</span><p class="says">“${s.says}”</p><p class="rule">${s.rule}</p><span class="cta">Test in AI Scanner →</span>`;
-      btn.addEventListener('click', () => {
-        $('message').value = s.sample || s.says;
-        activateTab($('tab-scanner'));
-        runSmartScan($('message').value);
-      });
-      return btn;
-    }));
+    $('typeGrid').replaceChildren(
+      ...window.SCAM_TYPES.map((s) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'type-card';
+        btn.innerHTML = `<span class="ico">${s.icon}</span><span class="nm">${s.name}</span><p class="says">“${s.says}”</p><p class="rule">${s.rule}</p><span class="cta">Test in AI Scanner →</span>`;
+        btn.addEventListener('click', () => {
+          $('message').value = s.sample || s.says;
+          activateTab($('tab-scanner'));
+          runSmartScan($('message').value);
+        });
+        return btn;
+      }),
+    );
   }
 
   /* ---------- TAB 9: GOOGLE ECOSYSTEM & 8 AGENTS ---------- */
@@ -2605,10 +3025,14 @@
     try {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          $('geoStatus').textContent = `📍 Lat ${pos.coords.latitude.toFixed(4)}, Lng ${pos.coords.longitude.toFixed(4)} — Ward matched! Ready for Google Maps & CM Helpline routing.`;
+          $('geoStatus').textContent =
+            `📍 Lat ${pos.coords.latitude.toFixed(4)}, Lng ${pos.coords.longitude.toFixed(4)} — Ward matched! Ready for Google Maps & CM Helpline routing.`;
         },
         (geoErr) => {
-          console.warn('[Chat_Safe][Geolocation] Manual location probe failed:', { code: geoErr?.code, message: geoErr?.message });
+          console.warn('[Chat_Safe][Geolocation] Manual location probe failed:', {
+            code: geoErr?.code,
+            message: geoErr?.message,
+          });
           $('geoStatus').textContent = deniedMsg;
           if ($('detected-address')) $('detected-address').textContent = deniedMsg;
         },
@@ -2635,7 +3059,9 @@
   function renderCases() {
     const list = caseStore.search('').map((entry) => entry.case);
     $('caseCount').textContent = `${list.length} saved chats`;
-    $('caseList').innerHTML = list.map((c) => `
+    $('caseList').innerHTML = list
+      .map(
+        (c) => `
       <li class="case ${c.id === caseStore.currentId ? 'current' : ''}">
         <button type="button" class="case-open" data-cid="${escapeHtml(c.id)}">
           <span class="dot lvl-${escapeHtml(c.mood || 'idle')}"></span>
@@ -2644,7 +3070,9 @@
           <span class="snippet">${escapeHtml((c.messages?.[0]?.text || '').slice(0, 60))}</span>
         </button>
       </li>
-    `).join('');
+    `,
+      )
+      .join('');
   }
 
   let releaseCasesTrap = null;
@@ -2675,8 +3103,14 @@
     else closeCasesDrawer();
   });
   $('closeCases').addEventListener('click', closeCasesDrawer);
-  $('openSearch').addEventListener('click', () => { $('searchBar').hidden = false; $('caseSearch').focus(); });
-  $('closeSearch').addEventListener('click', () => { $('searchBar').hidden = true; $('openSearch')?.focus(); });
+  $('openSearch').addEventListener('click', () => {
+    $('searchBar').hidden = false;
+    $('caseSearch').focus();
+  });
+  $('closeSearch').addEventListener('click', () => {
+    $('searchBar').hidden = true;
+    $('openSearch')?.focus();
+  });
   $('searchBar')?.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       e.preventDefault();
@@ -2691,7 +3125,11 @@
     a.download = 'chatsafe-cases.json';
     a.click();
   });
-  $('clearCases').addEventListener('click', () => { caseStore.clear(); renderCases(); $('agentLog').replaceChildren(); });
+  $('clearCases').addEventListener('click', () => {
+    caseStore.clear();
+    renderCases();
+    $('agentLog').replaceChildren();
+  });
 
   $('soundBtn').setAttribute('aria-pressed', String(Sound.muted));
   $('soundBtn').addEventListener('click', () => {
@@ -2710,7 +3148,9 @@
     }
   });
   $('closeHelp').addEventListener('click', () => helpDialogEl?.close());
-  helpDialogEl?.addEventListener('close', () => { $('helpBtn')?.focus(); });
+  helpDialogEl?.addEventListener('close', () => {
+    $('helpBtn')?.focus();
+  });
 
   /* ---------- TAB 10: ISO/IEC 27701 DATA PRIVACY, CONSENT VAULT & COOKIE BANNER ---------- */
   let csrfPrivacyToken = '';
@@ -2770,7 +3210,9 @@
     const form = e.target;
     const data = Object.fromEntries(new FormData(form));
     const name = String(data.name || '').trim();
-    const email = String(data.email || '').trim().toLowerCase();
+    const email = String(data.email || '')
+      .trim()
+      .toLowerCase();
     const city = String(data.city || '').trim();
     const password = String(data.password || '');
     const marketingOptIn = Boolean($('privAlertsOptIn')?.checked);
@@ -2784,7 +3226,10 @@
 
     // Store minimal consent record locally + sync to encrypted SQLite/Node DB when server is running
     const localRecord = {
-      name, email, city, lang: uiLang(),
+      name,
+      email,
+      city,
+      lang: uiLang(),
       consentVersion: 'ISO-27701-v3.0',
       consentAt: new Date().toISOString(),
       ageVerified: true,
@@ -2796,11 +3241,22 @@
     if (API.mode() === 'server') {
       try {
         if (password.length >= 8) {
-          await privacyServerCall('auth/signup', {
-            name, email, city, password, lang: uiLang(),
-            website: data.website || '',
-            consent: true, ageConsent: true, marketingOptIn, cookiePref,
-          }, 'POST');
+          await privacyServerCall(
+            'auth/signup',
+            {
+              name,
+              email,
+              city,
+              password,
+              lang: uiLang(),
+              website: data.website || '',
+              consent: true,
+              ageConsent: true,
+              marketingOptIn,
+              cookiePref,
+            },
+            'POST',
+          );
           statusEl.textContent = '✅ Account & encrypted citizen profile saved cleanly to SQLite (Argon2id hashed).';
         } else {
           await privacyServerCall('privacy/profile', { name, city, lang: uiLang(), marketingOptIn, cookiePref }, 'PUT');
@@ -2815,7 +3271,8 @@
         return;
       }
     }
-    statusEl.textContent = '✅ Saved locally in encrypted browser session/profile (static mode; enter 8+ char pass on server for SQLite Argon2id storage).';
+    statusEl.textContent =
+      '✅ Saved locally in encrypted browser session/profile (static mode; enter 8+ char pass on server for SQLite Argon2id storage).';
     statusEl.className = 'status';
     toast('Privacy consent & profile saved locally.');
   });
@@ -2832,7 +3289,11 @@
     }
     if (!payload) {
       let localProfile = null;
-      try { localProfile = JSON.parse(load('privacyProfile') || 'null'); } catch { localProfile = null; }
+      try {
+        localProfile = JSON.parse(load('privacyProfile') || 'null');
+      } catch {
+        localProfile = null;
+      }
       payload = {
         standard: 'ISO/IEC 27701 & India DPDP Act 2023 Data Portability Export',
         exportedAt: new Date().toISOString(),
@@ -2854,14 +3315,21 @@
     if ($('privAlertsOptIn')) $('privAlertsOptIn').checked = false;
     try {
       const p = JSON.parse(load('privacyProfile') || 'null');
-      if (p) { p.marketingOptIn = false; store('privacyProfile', JSON.stringify(p)); }
-    } catch { /* ignore */ }
+      if (p) {
+        p.marketingOptIn = false;
+        store('privacyProfile', JSON.stringify(p));
+      }
+    } catch {
+      /* ignore */
+    }
     if (API.mode() === 'server') {
       await privacyServerCall('privacy/unsubscribe', {}).catch((err) => {
         console.warn('[Chat_Safe][PrivacyUnsub] Server unsubscribe skipped:', err?.message || err);
       });
     }
-    if ($('privacyRightsStatus')) $('privacyRightsStatus').textContent = '🔕 Unsubscribed from all optional alert emails/digests.';
+    if ($('privacyRightsStatus')) {
+      $('privacyRightsStatus').textContent = '🔕 Unsubscribed from all optional alert emails/digests.';
+    }
     toast('Unsubscribed cleanly.');
   });
 
@@ -2872,10 +3340,17 @@
         console.warn('[Chat_Safe][PrivacyDelete] Server account deletion skipped:', err?.message || err);
       });
     }
-    try { localStorage.clear(); sessionStorage.clear(); } catch { /* ignore */ }
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch {
+      /* ignore */
+    }
     caseStore.clear();
     $('privacyProfileForm')?.reset();
-    if ($('privacyRightsStatus')) $('privacyRightsStatus').textContent = '🗑️ All server & browser personal data permanently erased.';
+    if ($('privacyRightsStatus')) {
+      $('privacyRightsStatus').textContent = '🗑️ All server & browser personal data permanently erased.';
+    }
     toast('All personal data erased (Right to Erasure).');
   });
 
@@ -2986,7 +3461,9 @@
     }
   }
 
-  $('demoBtn')?.addEventListener('click', () => { runAutoDemo(); });
+  $('demoBtn')?.addEventListener('click', () => {
+    runAutoDemo();
+  });
 
   /* ---------- Boot & Vercel Serverless Proxy Lifecycle ---------- */
   $('lang').addEventListener('change', (e) => applyLanguage(e.target.value));

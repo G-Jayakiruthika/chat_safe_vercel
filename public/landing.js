@@ -25,26 +25,32 @@
     const glyphs = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789×';
     let pct = 0;
 
-    const timer = setInterval(() => {
-      pct = Math.min(100, pct + (reducedMotion ? 50 : 8));
-      if (pctEl) pctEl.textContent = `${pct}%`;
-      if (barEl) barEl.style.width = `${pct}%`;
-      if (labelEl && !reducedMotion) {
-        const reveal = Math.floor((pct / 100) * targetText.length);
-        labelEl.textContent = targetText
-          .split('')
-          .map((ch, i) => (i < reveal || ch === ' ' ? ch : glyphs[Math.floor(Math.random() * glyphs.length)]))
-          .join('');
-      }
-      if (pct >= 100) {
-        clearInterval(timer);
-        if (labelEl) labelEl.textContent = targetText;
-        setTimeout(() => {
-          boot.classList.add('done');
-          setTimeout(() => boot.remove(), 700);
-        }, reducedMotion ? 50 : 220);
-      }
-    }, reducedMotion ? 30 : 40);
+    const timer = setInterval(
+      () => {
+        pct = Math.min(100, pct + (reducedMotion ? 50 : 8));
+        if (pctEl) pctEl.textContent = `${pct}%`;
+        if (barEl) barEl.style.width = `${pct}%`;
+        if (labelEl && !reducedMotion) {
+          const reveal = Math.floor((pct / 100) * targetText.length);
+          labelEl.textContent = targetText
+            .split('')
+            .map((ch, i) => (i < reveal || ch === ' ' ? ch : glyphs[Math.floor(Math.random() * glyphs.length)]))
+            .join('');
+        }
+        if (pct >= 100) {
+          clearInterval(timer);
+          if (labelEl) labelEl.textContent = targetText;
+          setTimeout(
+            () => {
+              boot.classList.add('done');
+              setTimeout(() => boot.remove(), 700);
+            },
+            reducedMotion ? 50 : 220,
+          );
+        }
+      },
+      reducedMotion ? 30 : 40,
+    );
   })();
 
   /* ---------- 60-Second Interactive Video Explainer (Hero Top) ---------- */
@@ -76,29 +82,39 @@
     let learned = [];
     try {
       learned = (localStorage.getItem('chatsafe.learned') || '').split(',');
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
 
-    grid.replaceChildren(...window.SCAM_TYPES.map((t, i) => {
-      const card = document.createElement('a');
-      card.className = `type-card${learned.includes(t.id) ? ' learned' : ''}`;
-      card.href = `app.html?try=${encodeURIComponent(t.id)}`;
-      card.style.animationDelay = `${i * 60}ms`;
-      const el = (tag, cls, text) => {
-        const n = document.createElement(tag);
-        n.className = cls;
-        n.textContent = text;
-        return n;
-      };
-      const ico = el('span', 'ico');
-      ico.append(window.scamIcon ? window.scamIcon(t.id, 34) : document.createTextNode(t.icon));
-      card.append(ico, el('span', 'nm', t.name), el('p', 'says', `\u201c${t.says}\u201d`), el('p', 'rule', t.rule), el('span', 'cta', 'Try this one \u2192'));
-      if (learned.includes(t.id)) {
-        const b = el('span', 'badge-learned', '\u2705');
-        b.title = 'You have already seen this one';
-        card.append(b);
-      }
-      return card;
-    }));
+    grid.replaceChildren(
+      ...window.SCAM_TYPES.map((t, i) => {
+        const card = document.createElement('a');
+        card.className = `type-card${learned.includes(t.id) ? ' learned' : ''}`;
+        card.href = `app.html?try=${encodeURIComponent(t.id)}`;
+        card.style.animationDelay = `${i * 60}ms`;
+        const el = (tag, cls, text) => {
+          const n = document.createElement(tag);
+          n.className = cls;
+          n.textContent = text;
+          return n;
+        };
+        const ico = el('span', 'ico');
+        ico.append(window.scamIcon ? window.scamIcon(t.id, 34) : document.createTextNode(t.icon));
+        card.append(
+          ico,
+          el('span', 'nm', t.name),
+          el('p', 'says', `\u201c${t.says}\u201d`),
+          el('p', 'rule', t.rule),
+          el('span', 'cta', 'Try this one \u2192'),
+        );
+        if (learned.includes(t.id)) {
+          const b = el('span', 'badge-learned', '\u2705');
+          b.title = 'You have already seen this one';
+          card.append(b);
+        }
+        return card;
+      }),
+    );
   })();
 
   /* ---------- Scroll morph + HUD ---------- */
@@ -123,8 +139,12 @@
   const countUp = (el) => {
     const to = Number(el.dataset.count);
     const dec = Number(el.dataset.decimals || 0);
-    const fmt = (v) => `${el.dataset.prefix || ''}${v.toLocaleString('en-IN', { minimumFractionDigits: dec, maximumFractionDigits: dec })}${el.dataset.suffix || ''}`;
-    if (reducedMotion) { el.textContent = fmt(to); return; }
+    const fmt = (v) =>
+      `${el.dataset.prefix || ''}${v.toLocaleString('en-IN', { minimumFractionDigits: dec, maximumFractionDigits: dec })}${el.dataset.suffix || ''}`;
+    if (reducedMotion) {
+      el.textContent = fmt(to);
+      return;
+    }
     const start = performance.now();
     const step = (now) => {
       const k = Math.min(1, (now - start) / 1400);
@@ -133,14 +153,17 @@
     };
     requestAnimationFrame(step);
   };
-  const io = new IntersectionObserver((entries) => {
-    for (const e of entries) {
-      if (!e.isIntersecting) continue;
-      e.target.classList.add('in');
-      e.target.querySelectorAll('[data-count]').forEach(countUp);
-      io.unobserve(e.target);
-    }
-  }, { threshold: 0.25 });
+  const io = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        e.target.classList.add('in');
+        e.target.querySelectorAll('[data-count]').forEach(countUp);
+        io.unobserve(e.target);
+      }
+    },
+    { threshold: 0.25 },
+  );
   document.querySelectorAll('.reveal-on-scroll').forEach((el) => io.observe(el));
 
   /* ---------- Eye showcase ---------- */
@@ -159,11 +182,24 @@
     const screens = Array.from(section.querySelectorAll('.ps'));
     const chips = Array.from(section.querySelectorAll('[class*="chip-"]'));
     const COPY = [
-      ['Single Voice Prompt', "Rural parents press '9' on their keypad phone. Vani answers in Tamil, Hindi, or any of 23 Indian languages: \"Vanakkam. Tell me what happened.\""],
-      ['Gemini Intent Router', 'Gemini classifies the speech instantly: bank OTP or digital arrest goes to Kavach (Red); broken water pipe or road goes to Urimai (Blue).'],
-      ['Multi-Modal O2O Handoff', "Son receives Father's voice recording, bilingual PDF with photo + 5-signature block, OR 1-click CM Helpline / Local Proxy WhatsApp link."],
+      [
+        'Single Voice Prompt',
+        'Rural parents press \'9\' on their keypad phone. Vani answers in Tamil, Hindi, or any of 23 Indian languages: "Vanakkam. Tell me what happened."',
+      ],
+      [
+        'Gemini Intent Router',
+        'Gemini classifies the speech instantly: bank OTP or digital arrest goes to Kavach (Red); broken water pipe or road goes to Urimai (Blue).',
+      ],
+      [
+        'Multi-Modal O2O Handoff',
+        "Son receives Father's voice recording, bilingual PDF with photo + 5-signature block, OR 1-click CM Helpline / Local Proxy WhatsApp link.",
+      ],
     ];
-    const CHIPS = [[0, 2], [1, 2], [2, 3]];
+    const CHIPS = [
+      [0, 2],
+      [1, 2],
+      [2, 3],
+    ];
     let step = -1;
     let timer = null;
 

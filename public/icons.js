@@ -26,7 +26,11 @@
       label: 'A video call window showing a fake police badge',
       draw: (add) => {
         add('rect', { x: 2.5, y: 4.5, width: 19, height: 15, rx: 2.5, 'stroke-width': 2 });
-        add('path', { d: 'M9 10.5 12 8l3 2.5v3.2c0 2-1.4 3.2-3 3.8-1.6-.6-3-1.8-3-3.8Z', 'stroke-width': 1.8, danger: true });
+        add('path', {
+          d: 'M9 10.5 12 8l3 2.5v3.2c0 2-1.4 3.2-3 3.8-1.6-.6-3-1.8-3-3.8Z',
+          'stroke-width': 1.8,
+          danger: true,
+        });
         add('path', { d: 'M2.5 8.2h19', 'stroke-width': 1.4 });
       },
     },
@@ -65,7 +69,10 @@
       draw: (add) => {
         add('rect', { x: 3, y: 9.5, width: 18, height: 11, rx: 2, 'stroke-width': 2 });
         add('path', { d: 'M3 13.5h18M12 9.5V20.5', 'stroke-width': 1.6 });
-        add('path', { d: 'M12 9.5C9.4 9.5 7 8.6 7 6.8S9 4 10.2 5c.9.8 1.8 2.6 1.8 4.5Zm0 0c2.6 0 5-.9 5-2.7S15 4 13.8 5c-.9.8-1.8 2.6-1.8 4.5Z', 'stroke-width': 1.7 });
+        add('path', {
+          d: 'M12 9.5C9.4 9.5 7 8.6 7 6.8S9 4 10.2 5c.9.8 1.8 2.6 1.8 4.5Zm0 0c2.6 0 5-.9 5-2.7S15 4 13.8 5c-.9.8-1.8 2.6-1.8 4.5Z',
+          'stroke-width': 1.7,
+        });
         add('path', { d: 'm17.5 15.5 3.5 3.5-2.4 2.4-3.5-3.5Z', 'stroke-width': 1.7, danger: true });
       },
     },
@@ -84,7 +91,11 @@
       draw: (add) => {
         add('rect', { x: 6, y: 2.5, width: 12, height: 19, rx: 2.6, 'stroke-width': 2 });
         add('path', { d: 'M10.5 5.3h3', 'stroke-width': 1.6 });
-        add('path', { d: 'M9.6 13.4a2.4 2.4 0 0 1 0-3.4l1.2-1.2a2.4 2.4 0 0 1 3.4 3.4l-.5.5m-1 1-.5.5a2.4 2.4 0 1 1-3.4-3.4', 'stroke-width': 1.8, danger: true });
+        add('path', {
+          d: 'M9.6 13.4a2.4 2.4 0 0 1 0-3.4l1.2-1.2a2.4 2.4 0 0 1 3.4 3.4l-.5.5m-1 1-.5.5a2.4 2.4 0 1 1-3.4-3.4',
+          'stroke-width': 1.8,
+          danger: true,
+        });
       },
     },
   };

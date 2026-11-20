@@ -15,7 +15,9 @@
   let mode = 'system';
   try {
     mode = localStorage.getItem('chatsafe.cursor') || 'system';
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   if (!fine || still) mode = 'system';
 
   const REVEAL = 'section, .card, .type-card, .lang-chip, .step, .ch-card, .faq-item, .agent-card, .reel-card';
@@ -42,7 +44,6 @@
     });
   }
 
-
   let ring, dot, cv, ctx;
   let tx = window.innerWidth / 2;
   let ty = window.innerHeight / 2;
@@ -58,7 +59,15 @@
     for (let i = 0; i < n; i++) {
       const a = Math.random() * Math.PI * 2;
       const s = 1 + Math.random() * 4;
-      parts.push({ x: bx, y: by, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 1, r: 1.5 + Math.random() * 2.2, h: Math.random() < 0.5 ? 186 : 326 });
+      parts.push({
+        x: bx,
+        y: by,
+        vx: Math.cos(a) * s,
+        vy: Math.sin(a) * s,
+        life: 1,
+        r: 1.5 + Math.random() * 2.2,
+        h: Math.random() < 0.5 ? 186 : 326,
+      });
     }
   }
 
@@ -70,7 +79,7 @@
     document.documentElement.classList.toggle('has-cursor', custom);
     ring.style.display = activeMode === 'orb' ? '' : 'none';
     dot.style.display = custom ? '' : 'none';
-    cv.style.display = (activeMode === 'comet' || activeMode === 'neon' || activeMode === 'spark') ? '' : 'none';
+    cv.style.display = activeMode === 'comet' || activeMode === 'neon' || activeMode === 'spark' ? '' : 'none';
     parts = [];
     trail = [];
     document.querySelectorAll('#cursor-menu button').forEach((b) => b.classList.toggle('on', b.dataset.mode === mode));
@@ -98,32 +107,47 @@
     resize();
     applyMode();
 
-    window.addEventListener('pointermove', (e) => {
-      if (e.pointerType === 'touch') return;
-      tx = e.clientX;
-      ty = e.clientY;
-      if (!shown) {
-        shown = true;
-        rx = tx;
-        ry = ty;
-        ring.classList.add('on');
-        dot.classList.add('on');
-      }
-      const sp = Math.hypot(tx - px, ty - py);
-      if (mode === 'comet') {
-        for (let i = 0; i < Math.min(4, 1 + sp / 8); i++) {
-          parts.push({ x: tx, y: ty, vx: (Math.random() - 0.5) * 1.2, vy: (Math.random() - 0.5) * 1.2, life: 1, r: 2 + Math.random() * 3, h: 180 + Math.random() * 140 });
+    window.addEventListener(
+      'pointermove',
+      (e) => {
+        if (e.pointerType === 'touch') return;
+        tx = e.clientX;
+        ty = e.clientY;
+        if (!shown) {
+          shown = true;
+          rx = tx;
+          ry = ty;
+          ring.classList.add('on');
+          dot.classList.add('on');
         }
-      } else if (mode === 'spark' && sp > 20) {
-        burst(tx, ty, 4);
-      }
-      px = tx;
-      py = ty;
-      const hit = e.target instanceof Element ? e.target.closest('a, button, input, select, textarea, [role="button"], .type-card, .card, .agent-card') : null;
-      ring.classList.toggle('hot', Boolean(hit));
-      ring.classList.toggle('danger', Boolean(hit && hit.closest('[data-tone="scam"], .type-card, .verdict-scam')));
-      ring.classList.toggle('civic-hover', Boolean(hit && hit.closest('[data-tone="civic"], .urimai-card')));
-    }, { passive: true });
+        const sp = Math.hypot(tx - px, ty - py);
+        if (mode === 'comet') {
+          for (let i = 0; i < Math.min(4, 1 + sp / 8); i++) {
+            parts.push({
+              x: tx,
+              y: ty,
+              vx: (Math.random() - 0.5) * 1.2,
+              vy: (Math.random() - 0.5) * 1.2,
+              life: 1,
+              r: 2 + Math.random() * 3,
+              h: 180 + Math.random() * 140,
+            });
+          }
+        } else if (mode === 'spark' && sp > 20) {
+          burst(tx, ty, 4);
+        }
+        px = tx;
+        py = ty;
+        const hit =
+          e.target instanceof Element
+            ? e.target.closest('a, button, input, select, textarea, [role="button"], .type-card, .card, .agent-card')
+            : null;
+        ring.classList.toggle('hot', Boolean(hit));
+        ring.classList.toggle('danger', Boolean(hit && hit.closest('[data-tone="scam"], .type-card, .verdict-scam')));
+        ring.classList.toggle('civic-hover', Boolean(hit && hit.closest('[data-tone="civic"], .urimai-card')));
+      },
+      { passive: true },
+    );
 
     window.addEventListener('pointerdown', () => {
       ring.classList.add('press');
@@ -147,7 +171,11 @@
       menuCursor.querySelectorAll('button[data-mode]').forEach((b) => {
         b.addEventListener('click', () => {
           mode = b.dataset.mode;
-          try { localStorage.setItem('chatsafe.cursor', mode); } catch { /* ignore */ }
+          try {
+            localStorage.setItem('chatsafe.cursor', mode);
+          } catch {
+            /* ignore */
+          }
           applyMode();
           menuCursor.hidden = true;
         });

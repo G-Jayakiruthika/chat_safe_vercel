@@ -5,7 +5,7 @@
   const cache = {};
   function require(name) {
     const key = name.replace(/^\.\//, '').replace(/\.js$/, '');
-    if (!defs[key]) throw new Error('core: unknown module ' + name);
+    if (!defs[key]) throw new Error(`core: unknown module ${  name}`);
     if (!cache[key]) {
       const module = { exports: {} };
       cache[key] = module;

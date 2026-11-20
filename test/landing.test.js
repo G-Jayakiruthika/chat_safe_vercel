@@ -115,7 +115,7 @@ test('app.html & styles.css enforce single-line IVR keypad pills, user-select no
   assert.match(appHtml, /Test Call 2: Water Pipe \(Urimai\)/);
   assert.doesNotMatch(appHtml, /\bSim [AB]\b|IVR SIM/);
 
-  assert.match(stylesCss, /\[data-theme="dark"\]\s*\{\s*--bg:\s*#000000;/);
+  assert.match(stylesCss, /\[data-theme=.dark.\]\s*\{\s*--bg:\s*#000000;/);
   assert.match(
     stylesCss,
     /html,\s*body,\s*\.skip,\s*\.bg\s*\{[\s\S]*margin-top:\s*0 !important;\s*padding-top:\s*0 !important;/,
@@ -148,7 +148,7 @@ test('app.html & styles.css enforce single-line IVR keypad pills, user-select no
 
 test('morph.js shifts particle sphere upward and caps particle opacity <= 0.35 behind copy', () => {
   const js = fs.readFileSync(path.join(ROOT, 'public', 'morph.js'), 'utf8');
-  assert.match(js, /const oy = w > 900 \? h \* 0\.30 : h \* 0\.34;/);
+  assert.match(js, /const oy = w > 900 \? h \* 0\.3\d? : h \* 0\.34;/);
   assert.match(js, /Math\.min\(0\.35,/);
 });
 

@@ -53,14 +53,18 @@
         S = { ...DEFAULTS };
         localStorage.removeItem(KEY);
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
 
   function save() {
     try {
       localStorage.setItem(KEY, JSON.stringify(S));
       localStorage.setItem('chatsafe.theme', isLight() ? 'light' : 'dark');
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
 
   function isLight() {
@@ -131,29 +135,57 @@
 
   /* ---------------- Settings Panel & Tooltips ---------------- */
   const seg = (key, opts) =>
-    `<div class="set-seg" role="radiogroup" data-key="${key}">` +
-    opts.map(([v, label, tip]) => `<button type="button" role="radio" aria-checked="${S[key] === v}" class="${S[key] === v ? 'on' : ''}" data-v="${v}" data-tip="${tip || ''}">${label}</button>`).join('') +
-    '</div>';
+    `<div class="set-seg" role="radiogroup" data-key="${key}">${opts
+      .map(
+        ([v, label, tip]) =>
+          `<button type="button" role="radio" aria-checked="${S[key] === v}" class="${S[key] === v ? 'on' : ''}" data-v="${v}" data-tip="${tip || ''}">${label}</button>`,
+      )
+      .join('')}</div>`;
 
   function panelHtml() {
     const off = visualsOff();
     const warn = off.length
       ? `<div class="set-warn"><b>${off.join(' + ')} is active.</b> 3D effects are simplified.<button type="button" class="button secondary sm" id="set-restore">Restore full 3D look</button></div>`
       : '';
-    const swatches = PALETTES.map(([id, name, bg]) =>
-      `<button type="button" class="sw ${S.palette === id ? 'on' : ''}" data-v="${id}" style="background:${bg}" data-tip="${name}" aria-label="${name}"></button>`
+    const swatches = PALETTES.map(
+      ([id, name, bg]) =>
+        `<button type="button" class="sw ${S.palette === id ? 'on' : ''}" data-v="${id}" style="background:${bg}" data-tip="${name}" aria-label="${name}"></button>`,
     ).join('');
     return `
       <div class="set-head"><h3>Display &amp; Accessibility</h3><button type="button" class="icon-btn" id="set-close" aria-label="Close settings">✕</button></div>
       ${warn}
-      <label class="lbl">Brightness</label>${seg('mode', [['dark', '🌙 Dark', 'Dark theme'], ['light', '☀️ Bright', 'Light theme'], ['auto', 'Auto', 'Match OS']])}
-      <label class="lbl">Visual Style</label>${seg('style', [['immersive', '✨ Immersive', '3D morph, avatars & glow'], ['minimal', '▢ Minimalist', 'Calm, flat accessible layout']])}
+      <label class="lbl">Brightness</label>${seg('mode', [
+        ['dark', '🌙 Dark', 'Dark theme'],
+        ['light', '☀️ Bright', 'Light theme'],
+        ['auto', 'Auto', 'Match OS'],
+      ])}
+      <label class="lbl">Visual Style</label>${seg('style', [
+        ['immersive', '✨ Immersive', '3D morph, avatars & glow'],
+        ['minimal', '▢ Minimalist', 'Calm, flat accessible layout'],
+      ])}
       <label class="lbl">Colour Palette</label><div class="swatches" data-key="palette">${swatches}</div>
-      <label class="lbl">Text Size</label>${seg('text', [['1', 'A', 'Normal'], ['1.15', 'A+', 'Large'], ['1.3', 'A++', 'Larger'], ['1.5', 'A+++', 'Extra large']])}
-      <label class="lbl">Contrast</label>${seg('contrast', [['normal', 'Normal', ''], ['high', 'High Contrast', 'Sharper borders & high-contrast ink']])}
-      <label class="lbl">Motion</label>${seg('motion', [['full', 'Animated', ''], ['reduced', 'Reduce Motion', 'Stops 3D motion']])}
-      <label class="lbl">Reading Spacing</label>${seg('spacing', [['normal', 'Normal', ''], ['wide', 'Wide Spacing', 'Dyslexia-friendly letter & line spacing']])}
-      <label class="lbl">Hover Notes</label>${seg('notes', [['on', 'Show notes', 'Tooltips on hover'], ['off', 'Hide notes', '']])}
+      <label class="lbl">Text Size</label>${seg('text', [
+        ['1', 'A', 'Normal'],
+        ['1.15', 'A+', 'Large'],
+        ['1.3', 'A++', 'Larger'],
+        ['1.5', 'A+++', 'Extra large'],
+      ])}
+      <label class="lbl">Contrast</label>${seg('contrast', [
+        ['normal', 'Normal', ''],
+        ['high', 'High Contrast', 'Sharper borders & high-contrast ink'],
+      ])}
+      <label class="lbl">Motion</label>${seg('motion', [
+        ['full', 'Animated', ''],
+        ['reduced', 'Reduce Motion', 'Stops 3D motion'],
+      ])}
+      <label class="lbl">Reading Spacing</label>${seg('spacing', [
+        ['normal', 'Normal', ''],
+        ['wide', 'Wide Spacing', 'Dyslexia-friendly letter & line spacing'],
+      ])}
+      <label class="lbl">Hover Notes</label>${seg('notes', [
+        ['on', 'Show notes', 'Tooltips on hover'],
+        ['off', 'Hide notes', ''],
+      ])}
       <div class="set-foot"><button type="button" class="button secondary sm" id="set-reset">Reset to defaults</button></div>
     `;
   }
@@ -170,8 +202,13 @@
     }
     p.innerHTML = panelHtml();
     p.hidden = false;
-    p.querySelector('#set-close').onclick = () => { p.hidden = true; };
-    p.querySelector('#set-reset').onclick = () => { reset(); openPanel(); };
+    p.querySelector('#set-close').onclick = () => {
+      p.hidden = true;
+    };
+    p.querySelector('#set-reset').onclick = () => {
+      reset();
+      openPanel();
+    };
     const restore = p.querySelector('#set-restore');
     if (restore) {
       restore.onclick = () => {
@@ -239,7 +276,10 @@
     positionTip(lastTipRect, lastVpW);
     tipEl.classList.add('show');
   }
-  const hideTip = () => { clearTimeout(tipTimer); tipEl?.classList.remove('show'); };
+  const hideTip = () => {
+    clearTimeout(tipTimer);
+    tipEl?.classList.remove('show');
+  };
 
   document.addEventListener('DOMContentLoaded', () => {
     apply();
@@ -263,7 +303,9 @@
       clearTimeout(tipTimer);
       tipTimer = setTimeout(() => showTip(t), 350);
     });
-    document.addEventListener('pointerout', (e) => { if (e.target.closest?.('[data-tip]')) hideTip(); });
+    document.addEventListener('pointerout', (e) => {
+      if (e.target.closest?.('[data-tip]')) hideTip();
+    });
     document.addEventListener('scroll', hideTip, { passive: true, capture: true });
   });
 

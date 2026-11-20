@@ -22,25 +22,90 @@
 
   const EXPRESSIONS = Object.freeze({
     calm: { open: 1, lidOuter: 0.05, lidInner: 0.05, smile: 0, pupil: 0.3, brow: 0, browAngle: 0, browSkew: 0 },
-    happy: { open: 1.05, lidOuter: 0.06, lidInner: 0.06, smile: 0.50, pupil: 0.3, brow: -0.22, browAngle: -0.14, browSkew: 0 },
-    civic: { open: 1.06, lidOuter: 0.04, lidInner: 0.04, smile: 0.28, pupil: 0.32, brow: -0.18, browAngle: -0.1, browSkew: 0 },
-    squint: { open: 0.82, lidOuter: 0.42, lidInner: 0.38, smile: 0, pupil: 0.26, brow: 0.16, browAngle: 0.16, browSkew: 0.45 },
+    happy: {
+      open: 1.05,
+      lidOuter: 0.06,
+      lidInner: 0.06,
+      smile: 0.5,
+      pupil: 0.3,
+      brow: -0.22,
+      browAngle: -0.14,
+      browSkew: 0,
+    },
+    civic: {
+      open: 1.06,
+      lidOuter: 0.04,
+      lidInner: 0.04,
+      smile: 0.28,
+      pupil: 0.32,
+      brow: -0.18,
+      browAngle: -0.1,
+      browSkew: 0,
+    },
+    squint: {
+      open: 0.82,
+      lidOuter: 0.42,
+      lidInner: 0.38,
+      smile: 0,
+      pupil: 0.26,
+      brow: 0.16,
+      browAngle: 0.16,
+      browSkew: 0.45,
+    },
     angry: { open: 1, lidOuter: 0.05, lidInner: 0.52, smile: 0, pupil: 0.22, brow: 0.12, browAngle: 0.46, browSkew: 0 },
-    furious: { open: 1.05, lidOuter: 0, lidInner: 0.62, smile: 0, pupil: 0.14, brow: 0.16, browAngle: 0.62, browSkew: 0 },
+    furious: {
+      open: 1.05,
+      lidOuter: 0,
+      lidInner: 0.62,
+      smile: 0,
+      pupil: 0.14,
+      brow: 0.16,
+      browAngle: 0.62,
+      browSkew: 0,
+    },
     wide: { open: 1.25, lidOuter: 0, lidInner: 0, smile: 0, pupil: 0.36, brow: -0.42, browAngle: -0.06, browSkew: 0 },
-    thinking: { open: 0.95, lidOuter: 0.22, lidInner: 0.22, smile: 0, pupil: 0.26, brow: -0.16, browAngle: 0.12, browSkew: 0.3 },
-    surprised: { open: 1.35, lidOuter: 0, lidInner: 0, smile: 0, pupil: 0.16, brow: -0.55, browAngle: -0.12, browSkew: 0 },
+    thinking: {
+      open: 0.95,
+      lidOuter: 0.22,
+      lidInner: 0.22,
+      smile: 0,
+      pupil: 0.26,
+      brow: -0.16,
+      browAngle: 0.12,
+      browSkew: 0.3,
+    },
+    surprised: {
+      open: 1.35,
+      lidOuter: 0,
+      lidInner: 0,
+      smile: 0,
+      pupil: 0.16,
+      brow: -0.55,
+      browAngle: -0.12,
+      browSkew: 0,
+    },
   });
-  const MOOD_EXPRESSION = { idle: 'calm', safe: 'happy', civic: 'civic', suspicious: 'squint', high: 'angry', critical: 'furious' };
+  const MOOD_EXPRESSION = {
+    idle: 'calm',
+    safe: 'happy',
+    civic: 'civic',
+    suspicious: 'squint',
+    high: 'angry',
+    critical: 'furious',
+  };
 
   let cachedVpW = typeof window !== 'undefined' ? window.innerWidth : 1280;
   let cachedVpH = typeof window !== 'undefined' ? window.innerHeight : 720;
   let bodyNoMotion = false;
   if (typeof window !== 'undefined') {
-    window.addEventListener('resize', () => {
-      cachedVpW = window.innerWidth;
-      cachedVpH = window.innerHeight;
-    }, { passive: true });
+    window.addEventListener(
+      'resize',
+      () => {
+        cachedVpW = window.innerWidth;
+        cachedVpH = window.innerHeight;
+      },
+      { passive: true },
+    );
   }
   function syncBodyMotion() {
     bodyNoMotion = Boolean(typeof document !== 'undefined' && document.body?.classList.contains('no-motion'));
@@ -52,12 +117,19 @@
         new MutationObserver(syncBodyMotion).observe(document.body, { attributes: true, attributeFilter: ['class'] });
       }
     } else {
-      document.addEventListener('DOMContentLoaded', () => {
-        syncBodyMotion();
-        if (typeof MutationObserver === 'function' && document.body) {
-          new MutationObserver(syncBodyMotion).observe(document.body, { attributes: true, attributeFilter: ['class'] });
-        }
-      }, { once: true });
+      document.addEventListener(
+        'DOMContentLoaded',
+        () => {
+          syncBodyMotion();
+          if (typeof MutationObserver === 'function' && document.body) {
+            new MutationObserver(syncBodyMotion).observe(document.body, {
+              attributes: true,
+              attributeFilter: ['class'],
+            });
+          }
+        },
+        { once: true },
+      );
     }
   }
 
@@ -69,12 +141,40 @@
   function buildIcosphere() {
     const t = (1 + Math.sqrt(5)) / 2;
     const verts = [
-      [-1, t, 0], [1, t, 0], [-1, -t, 0], [1, -t, 0], [0, -1, t], [0, 1, t],
-      [0, -1, -t], [0, 1, -t], [t, 0, -1], [t, 0, 1], [-t, 0, -1], [-t, 0, 1],
+      [-1, t, 0],
+      [1, t, 0],
+      [-1, -t, 0],
+      [1, -t, 0],
+      [0, -1, t],
+      [0, 1, t],
+      [0, -1, -t],
+      [0, 1, -t],
+      [t, 0, -1],
+      [t, 0, 1],
+      [-t, 0, -1],
+      [-t, 0, 1],
     ].map(normalize);
     let faces = [
-      [0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11], [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6], [7, 1, 8],
-      [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9], [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1],
+      [0, 11, 5],
+      [0, 5, 1],
+      [0, 1, 7],
+      [0, 7, 10],
+      [0, 10, 11],
+      [1, 5, 9],
+      [5, 11, 4],
+      [11, 10, 2],
+      [10, 7, 6],
+      [7, 1, 8],
+      [3, 9, 4],
+      [3, 4, 2],
+      [3, 2, 6],
+      [3, 6, 8],
+      [3, 8, 9],
+      [4, 9, 5],
+      [2, 4, 11],
+      [6, 2, 10],
+      [8, 6, 7],
+      [9, 8, 1],
     ];
     const midCache = new Map();
     const mid = (a, b) => {
@@ -89,12 +189,21 @@
       const ab = mid(a, b);
       const bc = mid(b, c);
       const ca = mid(c, a);
-      return [[a, ab, ca], [b, bc, ab], [c, ca, bc], [ab, bc, ca]];
+      return [
+        [a, ab, ca],
+        [b, bc, ab],
+        [c, ca, bc],
+        [ab, bc, ca],
+      ];
     });
     const seen = new Set();
     const edges = [];
     for (const [a, b, c] of faces) {
-      for (const [p, q] of [[a, b], [b, c], [c, a]]) {
+      for (const [p, q] of [
+        [a, b],
+        [b, c],
+        [c, a],
+      ]) {
         const key = p < q ? `${p}_${q}` : `${q}_${p}`;
         if (!seen.has(key)) {
           seen.add(key);
@@ -350,16 +459,16 @@
         ctx.bezierCurveTo(-mw * 0.16, my - vh * 0.085, mw * 0.16, my + vh * 0.105, mw * 0.48, my - vh * 0.035);
       } else if (mood === 'critical') {
         // Furious: clear downward frown arc / tense alert mouth
-        ctx.moveTo(-mw * 0.50, my + vh * 0.085);
-        ctx.quadraticCurveTo(0, my - vh * 0.115, mw * 0.50, my + vh * 0.085);
+        ctx.moveTo(-mw * 0.5, my + vh * 0.085);
+        ctx.quadraticCurveTo(0, my - vh * 0.115, mw * 0.5, my + vh * 0.085);
       } else if (mood === 'high') {
         // Angry: downward frown arc
         ctx.moveTo(-mw * 0.46, my + vh * 0.065);
         ctx.quadraticCurveTo(0, my - vh * 0.085, mw * 0.46, my + vh * 0.065);
       } else {
         // Calm: gentle neutral-relaxed mouth line with subtle soft curve
-        ctx.moveTo(-mw * 0.40, my);
-        ctx.quadraticCurveTo(0, my + vh * 0.042, mw * 0.40, my);
+        ctx.moveTo(-mw * 0.4, my);
+        ctx.quadraticCurveTo(0, my + vh * 0.042, mw * 0.4, my);
       }
       ctx.stroke();
 
@@ -533,16 +642,24 @@
       canvas.addEventListener('pointerenter', scheduleBoundsRefresh, { passive: true });
       canvas.addEventListener('pointerdown', onPointerDown);
       window.addEventListener('pointerup', onPointerUp);
-      canvas.addEventListener('wheel', (e) => {
-        e.preventDefault();
-        zoomBy(e.deltaY < 0 ? 1.12 : 1 / 1.12);
-      }, { passive: false });
+      canvas.addEventListener(
+        'wheel',
+        (e) => {
+          e.preventDefault();
+          zoomBy(e.deltaY < 0 ? 1.12 : 1 / 1.12);
+        },
+        { passive: false },
+      );
       canvas.addEventListener('keydown', (e) => {
         const keys = {
           Enter: poke,
           ' ': poke,
-          ArrowLeft: () => { spinVel -= 4; },
-          ArrowRight: () => { spinVel += 4; },
+          ArrowLeft: () => {
+            spinVel -= 4;
+          },
+          ArrowRight: () => {
+            spinVel += 4;
+          },
           ArrowUp: () => zoomBy(1.12),
           ArrowDown: () => zoomBy(1 / 1.12),
           '+': () => zoomBy(1.15),
@@ -569,17 +686,25 @@
     }, 0);
 
     return {
-      setState(s) { state = s; },
+      setState(s) {
+        state = s;
+      },
       setMood(m) {
         mood = MOOD_COLORS[m] ? m : 'idle';
         if (mood === 'critical' || mood === 'high') alertUntil = performance.now() + 700;
       },
-      pulse() { mouthTarget = 0.9; },
+      pulse() {
+        mouthTarget = 0.9;
+      },
       poke,
       zoomBy,
       resetView,
-      setDark(isDark) { dark = isDark; },
-      get mood() { return mood; },
+      setDark(isDark) {
+        dark = isDark;
+      },
+      get mood() {
+        return mood;
+      },
     };
   }
 
