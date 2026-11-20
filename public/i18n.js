@@ -21,7 +21,8 @@ window.CHATSAFE_I18N = Object.freeze({
     navAccount: 'Account / Login',
     tagline: 'Kavach × Urimai',
     agentTitle: 'Kavach & Urimai — Scam Shield & Civic Petitions',
-    agentIntro: 'Speak, paste, or press Speed-Dial 9 on a button phone. Kavach stops cyber scams (1930) while Urimai generates automated local legal petitions—manage rural issues remotely from any smartphone or laptop.',
+    agentIntro:
+      'Speak, paste, or press Speed-Dial 9 on a button phone. Kavach stops cyber scams (1930) while Urimai generates automated local legal petitions—manage rural issues remotely from any smartphone or laptop.',
     micStart: 'Tap to speak',
     micStop: 'Stop listening',
     typeHere: 'Ask a question, paste a suspicious message, or report a street/water civic issue…',
@@ -41,7 +42,8 @@ window.CHATSAFE_I18N = Object.freeze({
     chipReal: 'Is this caller really from my bank?',
     chipArrest: 'What is a digital arrest?',
     chipWater: 'Panchayat water pipe broke 3 days ago',
-    offlineMode: 'Running in browser-local mode (offline Kavach + Urimai engine). Set server GEMINI_API_KEY for live Gemini Flash.',
+    offlineMode:
+      'Running in browser-local mode (offline Kavach + Urimai engine). Set server GEMINI_API_KEY for live Gemini Flash.',
     uiNote: 'Kavach & Urimai reply and draft petitions in {lang}.',
     gAsk: 'Is this message safe, or a scam?',
     gScam: 'SCAM',

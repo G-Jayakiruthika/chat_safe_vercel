@@ -13,8 +13,8 @@
     "coverage": "node --test --experimental-test-coverage \"test/**/*.test.js\"",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write \"api/**/*.js\" \"test/**/*.js\"",
-    "format:check": "prettier --check \"api/**/*.js\" \"test/**/*.js\""
+    "format": "prettier --write \"**/*.{js,css,html,json,md,yml}\"",
+    "format:check": "prettier --check \"**/*.{js,css,html,json,md,yml}\""
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

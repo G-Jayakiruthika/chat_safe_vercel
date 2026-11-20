@@ -7,7 +7,8 @@
   const dept = q.get('dept') || 'Municipal Water Board';
   const loc = q.get('loc') || 'Ward 12, Coimbatore';
   const lang = q.get('lang') || 'ta';
-  const summary = q.get('summary') || 'The panchayat water pipe on our street broke 3 days ago and needs urgent repair.';
+  const summary =
+    q.get('summary') || 'The panchayat water pipe on our street broke 3 days ago and needs urgent repair.';
 
   $('pxKitId').textContent = kitId;
   $('pxDept').textContent = dept;
@@ -32,7 +33,9 @@
       $('pxStatus').textContent = '✅ Photo attached! Ready to generate PDF.';
       try {
         localStorage.setItem(`chatsafe.proxyPhoto.${kitId}`, photoUrl);
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     };
     r.readAsDataURL(f);
   });

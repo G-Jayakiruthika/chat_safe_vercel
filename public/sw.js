@@ -6,22 +6,59 @@
  */
 const CACHE = 'chatsafe-vercel-v5.7';
 const SHELL = [
-  './', 'index.html', 'app.html', 'demo.html', 'proxy.html', 'connect.html', 'account.html', 'privacy.html',
-  'styles.css', 'landing.css', 'palettes.css',
-  'theme.js', 'i18n.js', 'api.js', 'history.js', 'sound.js', 'fx.js', 'avatar.js', 'agentAvatars.js',
-  'videoExplainer.js', 'videoReels.js', 'pdf.js', 'fallbackEngine.js', 'app.js', 'demo.js', 'proxy.js',
-  'morph.js', 'landing.js', 'icons.js', 'cursor.js', 'connect.js', 'account.js', 'scamtypes.js', 'core.js', 'icon.svg', 'manifest.webmanifest',
+  './',
+  'index.html',
+  'app.html',
+  'demo.html',
+  'proxy.html',
+  'connect.html',
+  'account.html',
+  'privacy.html',
+  'styles.css',
+  'landing.css',
+  'palettes.css',
+  'theme.js',
+  'i18n.js',
+  'api.js',
+  'history.js',
+  'sound.js',
+  'fx.js',
+  'avatar.js',
+  'agentAvatars.js',
+  'videoExplainer.js',
+  'videoReels.js',
+  'pdf.js',
+  'fallbackEngine.js',
+  'app.js',
+  'demo.js',
+  'proxy.js',
+  'morph.js',
+  'landing.js',
+  'icons.js',
+  'cursor.js',
+  'connect.js',
+  'account.js',
+  'scamtypes.js',
+  'core.js',
+  'icon.svg',
+  'manifest.webmanifest',
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((c) => Promise.allSettled(SHELL.map((url) => c.add(url)))).then(() => self.skipWaiting()),
+    caches
+      .open(CACHE)
+      .then((c) => Promise.allSettled(SHELL.map((url) => c.add(url))))
+      .then(() => self.skipWaiting()),
   );
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()),
+    caches
+      .keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim()),
   );
 });
 

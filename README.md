@@ -52,6 +52,7 @@
 ```
 
 ### Key Modules
+
 - [`api/gemini.js`](api/gemini.js) — Stateless Vercel Serverless Function (`maxDuration: 30` in `vercel.json`) validating `process.env.GEMINI_API_KEY`, calling `gemini-3.8-flash:generateContent` with `thinkingLevel: "minimal"` and JSON output (automatic retry without `thinkingConfig` if rejected with HTTP `400`). If the primary model times out (9s) or is overloaded, it retries once on the faster `gemini-3.5-flash-lite` (8s). The API key travels in the `x-goog-api-key` header, never in a URL. Also includes a per-IP rate limit (20/min → `429`), truncated-JSON recovery and key redaction in logs.
 - [`public/fallbackEngine.js`](public/fallbackEngine.js) — Pure, DOM-free offline classifier (threat tiers, agent bus normalisation, 9 scam + 5 civic rule sets, 1930 and petition draft builders), exposed as `window.ChatSafeEngine` and unit-tested directly.
 - [`public/app.js`](public/app.js) — Client orchestrator routing prompts through `/api/gemini` with automatic fallback to `window.ChatSafeFallback`, updating the 3D Kavach avatar, Google Maps / Safe Browsing widgets, Family Hub, and Scanner UI.
@@ -65,11 +66,13 @@
 ## 2. Core Workflows: Kavach & Urimai
 
 ### Kavach (Cyber Scam Defense)
+
 1. **Intent Classification & 3-Tier Scoring**: Evaluates text/voice transcripts across all **8 fraud vectors** (`digital_arrest`, `kyc_otp`, `fake_investment`, `courier_parcel`, `electricity_bill`, `task_job`, `reward_bill`, `family_voice`) plus `sextortion_loan` blackmail, assigning `SAFE` (`0–25`), `MODERATE` (`26–65`), or `CRITICAL` (`66–100`) tiers.
 2. **Safe Browsing & Pay-Check**: Scans extracted URLs against Google Safe Browsing v4 (or local phishing domain heuristics) and verifies broker UPI handles against SEBI `@valid` rules.
 3. **Golden-Hour Escalation**: Generates a ready-to-file **1930 Cybercrime Portal** draft, triggers a Family SOS alert on critical scams, and offers **Kamala Paati** decoy responses for scam-baiting practice.
 
 ### Urimai (Civic Grievance & Legal Petitions)
+
 1. **Button-Phone Speed-Dial `9`**: Elders press `9` on the keypad simulator (or dial via IVR) and describe village issues across **5 municipal categories** (`water_pipe`, `damaged_road`, `street_light`, `sanitation`, `municipal_petition`).
 2. **GPS Ward Resolution & Bilingual Drafting**: Acquires browser GPS / Google Maps ward coordinates and produces a formal English legal petition paired with a regional-script draft.
 3. **O2O + Digital-First Execution**:
@@ -109,11 +112,13 @@
 ## 5. Deployment & Verification
 
 ### Vercel Setup
+
 1. Import `G-Jayakiruthika/chat_safe_vercel` into Vercel (`vercel.json` configures `outputDirectory: "public"`, `api/gemini.js` `maxDuration: 30`, and strict security headers).
 2. Add `GEMINI_API_KEY` under **Vercel Project Settings → Environment Variables**.
 3. Optional: override models with `GEMINI_MODEL` (default `gemini-3.8-flash`) and `GEMINI_BACKUP_MODEL` (default `gemini-3.5-flash-lite`).
 
 ### Local Verification
+
 ```bash
 npm ci              # installs dev tools only (ESLint, Prettier)
 npm run lint        # ESLint 9 flat config, zero warnings
@@ -124,14 +129,14 @@ npm run format:check
 
 GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs lint and coverage on every push and pull request.
 
-| Test file | What it covers |
-|---|---|
-| `test/gemini.test.js` | API contract, key redaction, JSON recovery, thinking-config retry |
-| `test/api-resilience.test.js` | Backup-model failover on timeout / 429 / 5xx / empty output, env model overrides, 405, rate limiting (429 + `Retry-After`) |
-| `test/fallback-engine.test.js` | Threat-tier boundaries, agent bus rules, scam / civic / safe classification, draft builders |
-| `test/classification-and-fallback.test.js` | End-to-end classification through `app.js` with the proxy online, failing, timing out and offline |
-| `test/fallback.test.js` | UI fallback flow and agent bus rendering |
-| `test/landing.test.js` | Landing page structure, phone mockup proportions, cache-busting, LCP rules |
+| Test file                                  | What it covers                                                                                                             |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| `test/gemini.test.js`                      | API contract, key redaction, JSON recovery, thinking-config retry                                                          |
+| `test/api-resilience.test.js`              | Backup-model failover on timeout / 429 / 5xx / empty output, env model overrides, 405, rate limiting (429 + `Retry-After`) |
+| `test/fallback-engine.test.js`             | Threat-tier boundaries, agent bus rules, scam / civic / safe classification, draft builders                                |
+| `test/classification-and-fallback.test.js` | End-to-end classification through `app.js` with the proxy online, failing, timing out and offline                          |
+| `test/fallback.test.js`                    | UI fallback flow and agent bus rendering                                                                                   |
+| `test/landing.test.js`                     | Landing page structure, phone mockup proportions, cache-busting, LCP rules                                                 |
 
 API coverage: ~96% of lines.
 

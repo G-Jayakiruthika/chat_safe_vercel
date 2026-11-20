@@ -11,7 +11,11 @@
   $('themeToggle').addEventListener('click', () => {
     const next = isDark() ? 'light' : 'dark';
     document.documentElement.dataset.theme = next;
-    try { localStorage.setItem('chatsafe.theme', next); } catch { /* ignore */ }
+    try {
+      localStorage.setItem('chatsafe.theme', next);
+    } catch {
+      /* ignore */
+    }
     paint();
   });
 
@@ -53,22 +57,24 @@
     $('statScans').textContent = String(user.scans);
     const types = window.SCAM_TYPES || [];
     $('statLearned').textContent = `${user.learned.length}/${types.length || 8}`;
-    $('profLearned').replaceChildren(...types.map((t) => {
-      const li = document.createElement('li');
-      const got = user.learned.includes(t.id);
-      li.className = got ? 'got' : '';
-      const ico = document.createElement('span');
-      ico.className = 'ico-sm';
-      ico.append(window.scamIcon ? window.scamIcon(t.id, 22) : document.createTextNode(t.icon));
-      const nm = document.createElement('span');
-      nm.textContent = t.name;
-      const mark = document.createElement('span');
-      mark.className = 'mark';
-      mark.textContent = got ? '✅' : '⬜';
-      li.append(ico, nm, mark);
-      li.setAttribute('aria-label', `${t.name}: ${got ? 'learned' : 'not yet'}`);
-      return li;
-    }));
+    $('profLearned').replaceChildren(
+      ...types.map((t) => {
+        const li = document.createElement('li');
+        const got = user.learned.includes(t.id);
+        li.className = got ? 'got' : '';
+        const ico = document.createElement('span');
+        ico.className = 'ico-sm';
+        ico.append(window.scamIcon ? window.scamIcon(t.id, 22) : document.createTextNode(t.icon));
+        const nm = document.createElement('span');
+        nm.textContent = t.name;
+        const mark = document.createElement('span');
+        mark.className = 'mark';
+        mark.textContent = got ? '✅' : '⬜';
+        li.append(ico, nm, mark);
+        li.setAttribute('aria-label', `${t.name}: ${got ? 'learned' : 'not yet'}`);
+        return li;
+      }),
+    );
     show('profileCard');
   }
 
@@ -141,7 +147,9 @@
         const synced = await call('auth/progress', { learned, scanned: false }, 'PUT');
         renderProfile(synced.user);
         return;
-      } catch { /* ignore sync fallback */ }
+      } catch {
+        /* ignore sync fallback */
+      }
       renderProfile(user);
     } catch (err) {
       msgEl.textContent = err.message;
@@ -210,7 +218,12 @@
     if (!window.confirm('Permanently delete your account and erase all personal data? This cannot be undone.')) return;
     try {
       await call('auth/account', {}, 'DELETE');
-      try { localStorage.clear(); sessionStorage.clear(); } catch { /* ignore */ }
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch {
+        /* ignore */
+      }
       $('profMsg').textContent = '';
       show('authCard');
       $('authMsg').textContent = 'Account and personal data permanently erased.';
@@ -234,7 +247,11 @@
       const { user } = await call('auth/me');
       if (!user) return show('authCard');
       const learned = (() => {
-        try { return (localStorage.getItem('chatsafe.learned') || '').split(',').filter(Boolean); } catch { return []; }
+        try {
+          return (localStorage.getItem('chatsafe.learned') || '').split(',').filter(Boolean);
+        } catch {
+          return [];
+        }
       })();
       try {
         const synced = await call('auth/progress', { learned, scanned: false }, 'PUT');

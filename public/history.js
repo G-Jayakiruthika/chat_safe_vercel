@@ -48,7 +48,15 @@ window.createHistory = function createHistory({ key = 'chatsafe.cases', max = 60
       const now = Date.now();
       let c = cases.find((x) => x.id === currentId);
       if (!c) {
-        c = { id: newId(), title: who === 'you' ? text.slice(0, 70) : 'Conversation', created: now, updated: now, mood: 'idle', lang, messages: [] };
+        c = {
+          id: newId(),
+          title: who === 'you' ? text.slice(0, 70) : 'Conversation',
+          created: now,
+          updated: now,
+          mood: 'idle',
+          lang,
+          messages: [],
+        };
         cases.unshift(c);
         currentId = c.id;
       }
@@ -66,7 +74,9 @@ window.createHistory = function createHistory({ key = 'chatsafe.cases', max = 60
      * @returns {{case: any, snippet: string, match: [number, number]|null}[]}
      */
     search(query) {
-      const q = String(query || '').trim().toLocaleLowerCase();
+      const q = String(query || '')
+        .trim()
+        .toLocaleLowerCase();
       return cases
         .map((c) => {
           if (!q) {

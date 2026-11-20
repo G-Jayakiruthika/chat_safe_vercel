@@ -25,19 +25,55 @@
 
   const AGENTS = ['Vani IVR (9)', 'Gemini Router', 'Kavach', 'Urimai', 'Setu O2O', 'Pay-Guard', 'Netra PII', 'Drishti'];
   const CHAPTERS = [
-    { t: 0, name: "Speed-Dial '9'", cap: "Rural father presses '9' on his keypad phone. Vani answers in Tamil: 'Vanakkam. Tell me what happened.'" },
-    { t: 8, name: 'Gemini Intent', cap: 'Gemini classifies speech in <1s: Scenario A = Bank OTP Scam (Kavach) vs Scenario B = Broken Water Pipe (Urimai).' },
-    { t: 18, name: 'Urimai Handoff', cap: "AI tells Appa: 'I drafted an official complaint to the Municipal Water Board and sent it to your son.'" },
-    { t: 28, name: 'Family Hub Kit', cap: "Son gets a live alert with Appa's voice recording, bilingual English + Tamil petition, and Photo Prompt." },
-    { t: 38, name: 'Photo + 5 Signs', cap: 'Son uploads a photo of the broken pipe. Urimai embeds it into a PDF with a 5-resident signature table.' },
-    { t: 48, name: 'Remote Bypass', cap: 'In another city? Switch to Digital-First CM Helpline (Mudhalvarin Mugavari) or send a Local Proxy WhatsApp link!' },
+    {
+      t: 0,
+      name: "Speed-Dial '9'",
+      cap: "Rural father presses '9' on his keypad phone. Vani answers in Tamil: 'Vanakkam. Tell me what happened.'",
+    },
+    {
+      t: 8,
+      name: 'Gemini Intent',
+      cap: 'Gemini classifies speech in <1s: Scenario A = Bank OTP Scam (Kavach) vs Scenario B = Broken Water Pipe (Urimai).',
+    },
+    {
+      t: 18,
+      name: 'Urimai Handoff',
+      cap: "AI tells Appa: 'I drafted an official complaint to the Municipal Water Board and sent it to your son.'",
+    },
+    {
+      t: 28,
+      name: 'Family Hub Kit',
+      cap: "Son gets a live alert with Appa's voice recording, bilingual English + Tamil petition, and Photo Prompt.",
+    },
+    {
+      t: 38,
+      name: 'Photo + 5 Signs',
+      cap: 'Son uploads a photo of the broken pipe. Urimai embeds it into a PDF with a 5-resident signature table.',
+    },
+    {
+      t: 48,
+      name: 'Remote Bypass',
+      cap: 'In another city? Switch to Digital-First CM Helpline (Mudhalvarin Mugavari) or send a Local Proxy WhatsApp link!',
+    },
   ];
 
   const ease = (x) => (x < 0 ? 0 : x > 1 ? 1 : 1 - Math.pow(1 - x, 3));
   const seg = (t, a, b) => ease((t - a) / (b - a));
   const lerp = (a, b, p) => a + (b - a) * p;
 
-  function createVideoExplainer({ canvas, caption, fill, timeEl, playBtn, bigBtn, track, chaptersEl, recBtn, fsBtn, player }) {
+  function createVideoExplainer({
+    canvas,
+    caption,
+    fill,
+    timeEl,
+    playBtn,
+    bigBtn,
+    track,
+    chaptersEl,
+    recBtn,
+    fsBtn,
+    player,
+  }) {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     let t = 0;
@@ -51,7 +87,10 @@
         .join('');
     }
 
-    const rr = (x, y, w, h, r) => { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); };
+    const rr = (x, y, w, h, r) => {
+      ctx.beginPath();
+      ctx.roundRect(x, y, w, h, r);
+    };
     const text = (s, x, y, size = 20, color = C.ink, weight = 600, align = 'left', mono = false) => {
       ctx.font = `${weight} ${size}px ${mono ? 'ui-monospace, Consolas, monospace' : 'system-ui, sans-serif'}`;
       ctx.fillStyle = color;
@@ -68,7 +107,14 @@
 
     function drawBus(time) {
       const idx = chapterIndexAt(time);
-      const active = [[0, 2], [0, 1, 2, 3], [1, 3, 4], [3, 4, 6], [3, 4, 5], [3, 4, 7]][Math.max(0, idx)];
+      const active = [
+        [0, 2],
+        [0, 1, 2, 3],
+        [1, 3, 4],
+        [3, 4, 6],
+        [3, 4, 5],
+        [3, 4, 7],
+      ][Math.max(0, idx)];
       const y = 48;
       const x0 = 150;
       const step = (W - 220) / (AGENTS.length - 1);
@@ -93,7 +139,10 @@
         const on = active.includes(i);
         const cx = x0 + step * i;
         ctx.fillStyle = on ? C.cyan : '#162036';
-        if (on) { ctx.shadowColor = C.cyan; ctx.shadowBlur = 18; }
+        if (on) {
+          ctx.shadowColor = C.cyan;
+          ctx.shadowBlur = 18;
+        }
         ctx.beginPath();
         ctx.arc(cx, y, on ? 10 : 7, 0, Math.PI * 2);
         ctx.fill();
@@ -146,7 +195,12 @@
           const kx = 175 + (idx % 3) * 68;
           const ky = 390 + Math.floor(idx / 3) * 62;
           rr(kx, ky, 54, 46, 10);
-          const pulse9 = k === '9' && playing ? `rgba(34,211,238,${0.75 + 0.25 * Math.sin(time * 8)})` : (k === '9' ? C.cyan : '#1e293b');
+          const pulse9 =
+            k === '9' && playing
+              ? `rgba(34,211,238,${0.75 + 0.25 * Math.sin(time * 8)})`
+              : k === '9'
+                ? C.cyan
+                : '#1e293b';
           ctx.fillStyle = pulse9;
           ctx.fill();
           text(k, kx + 27, ky + 30, 20, k === '9' ? '#04111d' : C.ink, 800, 'center');
@@ -234,7 +288,7 @@
         ctx.strokeStyle = C.cyan;
         ctx.stroke();
         text('🚨 FAMILY REQUEST: URIMAI DRAFT READY', 265, 245, 16, C.amber, 800, 'left', true);
-        text('Audio: [ ▶ Play recording of father\'s voice ]', 265, 300, 20, C.lime, 600);
+        text("Audio: [ ▶ Play recording of father's voice ]", 265, 300, 20, C.lime, 600);
         rr(265, 330, 750, 135, 16);
         ctx.fillStyle = '#0f172a';
         ctx.fill();
@@ -287,7 +341,7 @@
         text('SOLUTION 1 · DIGITAL-FIRST BYPASS', 145, 295, 14, C.cyan, 700, 'left', true);
         text('CM Helpline & CPGRAMS', 145, 345, 26, C.ink, 800);
         text('1-click copy formatted text for', 145, 395, 18, C.muted, 500);
-        text("TN Mudhalvarin Mugavari / Namma Chennai.", 145, 425, 18, C.muted, 500);
+        text('TN Mudhalvarin Mugavari / Namma Chennai.', 145, 425, 18, C.muted, 500);
         text('Submit digitally from anywhere in 30s!', 145, 475, 18, C.lime, 700);
 
         rr(670, 250, 500, 320, 22);
@@ -313,10 +367,14 @@
 
     let rafId = null;
 
-    const ICON_PLAY = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4l14 8-14 8V4z"/></svg>';
-    const ICON_PAUSE = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>';
-    const ICON_DL = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>';
-    const ICON_STOP = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h14v14H5z"/></svg>';
+    const ICON_PLAY =
+      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4l14 8-14 8V4z"/></svg>';
+    const ICON_PAUSE =
+      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>';
+    const ICON_DL =
+      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>';
+    const ICON_STOP =
+      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h14v14H5z"/></svg>';
 
     function setPlaying(v) {
       playing = Boolean(v);
@@ -338,7 +396,11 @@
         rafId = requestAnimationFrame(tick);
       } else {
         window.ChatSafeSound?.stopAll?.();
-        try { window.speechSynthesis?.cancel(); } catch { /* ignore */ }
+        try {
+          window.speechSynthesis?.cancel();
+        } catch {
+          /* ignore */
+        }
         draw(t);
       }
     }

@@ -78,8 +78,12 @@
         const H = 0.55;
         const D = 0.3;
         const p = [
-          [W, u * H, v * D], [-W, u * H, v * D], [u * W, H, v * D],
-          [u * W, -H, v * D], [u * W, v * H, D], [u * W, v * H, -D],
+          [W, u * H, v * D],
+          [-W, u * H, v * D],
+          [u * W, H, v * D],
+          [u * W, -H, v * D],
+          [u * W, v * H, D],
+          [u * W, v * H, -D],
         ][face];
         pts.push([p[0], p[1] + 0.35, p[2]]);
       }
@@ -126,7 +130,14 @@
    * identity with the section. Only "attack" stays red, because danger should
    * read the same whatever the palette.
    */
-  const ROLE = { globe: '--accent', attack: null, shield: '--accent2', lock: '--accent4', ring: '--accent3', eye: '--accent' };
+  const ROLE = {
+    globe: '--accent',
+    attack: null,
+    shield: '--accent2',
+    lock: '--accent4',
+    ring: '--accent3',
+    eye: '--accent',
+  };
   const DANGER = [239, 68, 68];
   const probe = document.createElement('span');
 
@@ -148,7 +159,6 @@
 
   const smooth = (t) => t * t * (3 - 2 * t);
 
-
   /**
    * Flowing light ribbons — streams of glowing particles tracing curved paths,
    * read here as network data in motion. Each section bends and recolours them:
@@ -163,8 +173,7 @@
     const x = t;
     const spread = 0.26 + r * 0.035;
     let y =
-      Math.sin(t * 2.6 + time * 0.35 + r * 0.9) * spread +
-      Math.sin(t * 5.1 - time * 0.22 + r * 2.1) * spread * 0.4;
+      Math.sin(t * 2.6 + time * 0.35 + r * 0.9) * spread + Math.sin(t * 5.1 - time * 0.22 + r * 2.1) * spread * 0.4;
 
     if (mode === 'attack') {
       // Shattered: the stream breaks into jagged, jittering fragments.
@@ -277,7 +286,7 @@
       const sx = Math.sin(rx);
       // Place the object slightly upward and toward the right margin so text remains unobstructed.
       const ox = w > 1180 ? w * 0.78 : w > 900 ? w * 0.74 : w / 2;
-      const oy = w > 900 ? h * 0.30 : h * 0.34;
+      const oy = w > 900 ? h * 0.3 : h * 0.34;
       const scale = Math.min(w, h) * (w > 900 ? 0.25 : 0.28);
       const persp = 3.4;
       const alphaBase = dark ? 0.27 : 0.25;
