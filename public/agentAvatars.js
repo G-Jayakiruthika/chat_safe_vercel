@@ -181,28 +181,60 @@
     `).join('');
 
     const canvases = [...container.querySelectorAll('canvas[data-agent-canvas]')];
+    const specById = new Map(AGENTS.map((a) => [a.id, a]));
+    const items = canvases.map((canvas) => ({
+      canvas,
+      ctx: canvas.getContext('2d'),
+      id: canvas.dataset.agentCanvas,
+      spec: specById.get(canvas.dataset.agentCanvas),
+      visible: typeof IntersectionObserver !== 'function',
+    }));
     const moods = {};
-    canvases.forEach((c) => {
-      const id = c.dataset.agentCanvas;
-      const card = c.closest('.agent-card');
-      card.addEventListener('pointerenter', () => { moods[id] = 'talk'; });
-      card.addEventListener('pointerleave', () => { moods[id] = 'idle'; });
-      card.addEventListener('click', () => { moods[id] = 'cheer'; setTimeout(() => { moods[id] = 'idle'; }, 1200); });
+
+    items.forEach((item) => {
+      const card = item.canvas.closest('.agent-card');
+      if (!card) return;
+      card.addEventListener('pointerenter', () => { moods[item.id] = 'talk'; });
+      card.addEventListener('pointerleave', () => { moods[item.id] = 'idle'; });
+      card.addEventListener('click', () => {
+        moods[item.id] = 'cheer';
+        setTimeout(() => { moods[item.id] = 'idle'; }, 1200);
+      });
     });
+
+    if (typeof IntersectionObserver === 'function') {
+      const byCanvas = new Map(items.map((item) => [item.canvas, item]));
+      const io = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          const item = byCanvas.get(entry.target);
+          if (item) item.visible = entry.isIntersecting;
+        }
+      });
+      for (const item of items) io.observe(item.canvas);
+    }
+
+    const readMotionState = () => Boolean(
+      document.body?.classList.contains('no-motion') || document.body?.classList.contains('minimal'),
+    );
+    let stillCached = readMotionState();
+    if (typeof MutationObserver === 'function' && document.body) {
+      new MutationObserver(() => {
+        stillCached = readMotionState();
+      }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    }
 
     const loop = (now) => {
       const t = now / 1000;
-      const still = document.body.classList.contains('no-motion') || document.body.classList.contains('minimal');
-      for (const c of canvases) {
-        if (!c.isConnected || c.offsetParent === null) continue;
-        const r = c.getBoundingClientRect();
-        if (r.bottom < 0 || r.top > window.innerHeight) continue;
-        const spec = AGENTS.find((a) => a.id === c.dataset.agentCanvas);
-        if (spec) drawBot(c.getContext('2d'), c.width, c.height, spec, still ? 0.5 : t, moods[spec.id] || 'idle');
+      for (const item of items) {
+        if (!item.visible || !item.spec || !item.canvas.isConnected) continue;
+        drawBot(item.ctx, item.canvas.width, item.canvas.height, item.spec, stillCached ? 0.5 : t, moods[item.id] || 'idle');
       }
       requestAnimationFrame(loop);
     };
-    requestAnimationFrame(loop);
+
+    const startLoop = () => requestAnimationFrame(loop);
+    if (typeof requestIdleCallback === 'function') requestIdleCallback(startLoop, { timeout: 120 });
+    else setTimeout(startLoop, 0);
   }
 
   window.ChatSafeAgents = { AGENTS, mountAgentGrid };

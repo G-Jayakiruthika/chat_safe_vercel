@@ -118,3 +118,27 @@ test('morph.js shifts particle sphere upward and caps particle opacity <= 0.35 b
   assert.match(js, /const oy = w > 900 \? h \* 0\.30 : h \* 0\.34;/);
   assert.match(js, /Math\.min\(0\.35,/);
 });
+
+test('LCP optimization: deferred theme.js, immediate p.hint/.reveal visibility, and zero per-frame forced reflows in avatars', () => {
+  const appHtml = fs.readFileSync(path.join(ROOT, 'public', 'app.html'), 'utf8');
+  const indexHtml = fs.readFileSync(path.join(ROOT, 'public', 'index.html'), 'utf8');
+  const stylesCss = fs.readFileSync(path.join(ROOT, 'public', 'styles.css'), 'utf8');
+  const agentAvatarsJs = fs.readFileSync(path.join(ROOT, 'public', 'agentAvatars.js'), 'utf8');
+  const avatarJs = fs.readFileSync(path.join(ROOT, 'public', 'avatar.js'), 'utf8');
+
+  assert.match(appHtml, /<html lang="en" data-theme="dark" data-palette="mandarin">/);
+  assert.match(appHtml, /<script src="theme\.js" defer><\/script>/);
+  assert.match(indexHtml, /<script src="theme\.js\?v=320" defer><\/script>/);
+  assert.match(appHtml, /p\.hint\s*\{[^}]*opacity:\s*1 !important;/);
+
+  assert.match(stylesCss, /\.hint\s*\{[^}]*opacity:\s*1;[^}]*transform:\s*none;/);
+  assert.match(stylesCss, /\.reveal,\s*\.hero\.reveal,\s*\.tabs-stack\.reveal\s*\{\s*opacity:\s*1;\s*transform:\s*none;\s*\}/);
+
+  const loopMatch = agentAvatarsJs.match(/const loop = \(now\) => \{[\s\S]*?\n\s*\};/);
+  assert.ok(loopMatch, 'Expected loop definition in agentAvatars.js');
+  assert.doesNotMatch(loopMatch[0], /getBoundingClientRect|offsetParent/);
+
+  const pointerMatch = avatarJs.match(/function onPointerMove\(e\) \{[\s\S]*?\n\s*\}/);
+  assert.ok(pointerMatch, 'Expected onPointerMove definition in avatar.js');
+  assert.doesNotMatch(pointerMatch[0], /getBoundingClientRect/);
+});

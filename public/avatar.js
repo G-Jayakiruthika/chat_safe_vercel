@@ -33,6 +33,34 @@
   });
   const MOOD_EXPRESSION = { idle: 'calm', safe: 'happy', civic: 'civic', suspicious: 'squint', high: 'angry', critical: 'furious' };
 
+  let cachedVpW = typeof window !== 'undefined' ? window.innerWidth : 1280;
+  let cachedVpH = typeof window !== 'undefined' ? window.innerHeight : 720;
+  let bodyNoMotion = false;
+  if (typeof window !== 'undefined') {
+    window.addEventListener('resize', () => {
+      cachedVpW = window.innerWidth;
+      cachedVpH = window.innerHeight;
+    }, { passive: true });
+  }
+  function syncBodyMotion() {
+    bodyNoMotion = Boolean(typeof document !== 'undefined' && document.body?.classList.contains('no-motion'));
+  }
+  if (typeof document !== 'undefined') {
+    if (document.body) {
+      syncBodyMotion();
+      if (typeof MutationObserver === 'function') {
+        new MutationObserver(syncBodyMotion).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+      }
+    } else {
+      document.addEventListener('DOMContentLoaded', () => {
+        syncBodyMotion();
+        if (typeof MutationObserver === 'function' && document.body) {
+          new MutationObserver(syncBodyMotion).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+        }
+      }, { once: true });
+    }
+  }
+
   function normalize([x, y, z]) {
     const l = Math.hypot(x, y, z);
     return [x / l, y / l, z / l];
@@ -108,8 +136,15 @@
     const reduced = Boolean(opts.reducedMotion);
     const mini = Boolean(opts.mini);
 
-    let w = 0;
-    let h = 0;
+    let w = canvas.width || (mini ? 64 : 340);
+    let h = canvas.height || (mini ? 46 : 340);
+    let pendingW = w;
+    let pendingH = h;
+    let needsBufferSync = true;
+    let rectLeft = 0;
+    let rectTop = 0;
+    let boundsDirty = true;
+    let boundsRaf = 0;
     let state = 'idle';
     let mood = MOOD_COLORS[opts.mood] ? opts.mood : 'idle';
     let color = MOOD_COLORS[mood];
@@ -131,21 +166,37 @@
     let zoomTarget = 1;
     let last = performance.now();
 
-    function resize() {
+    function syncBuffer() {
+      if (!needsBufferSync || pendingW <= 0 || pendingH <= 0) return;
+      needsBufferSync = false;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const rect = canvas.getBoundingClientRect();
-      w = rect.width;
-      h = rect.height;
+      w = pendingW;
+      h = pendingH;
       canvas.width = Math.max(1, Math.round(w * dpr));
       canvas.height = Math.max(1, Math.round(h * dpr));
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
-    function onPointerMove(e) {
+    function refreshBounds() {
+      boundsRaf = 0;
+      if (!boundsDirty || !canvas.isConnected) return;
+      boundsDirty = false;
       const rect = canvas.getBoundingClientRect();
+      rectLeft = rect.left;
+      rectTop = rect.top;
+    }
+
+    function scheduleBoundsRefresh() {
+      boundsDirty = true;
+      if (!boundsRaf) boundsRaf = requestAnimationFrame(refreshBounds);
+    }
+
+    function onPointerMove(e) {
+      const cx = rectLeft + w / 2;
+      const cy = rectTop + h / 2;
       pointer = {
-        x: Math.max(-1, Math.min(1, (e.clientX - (rect.left + rect.width / 2)) / (window.innerWidth / 2))),
-        y: Math.max(-1, Math.min(1, (e.clientY - (rect.top + rect.height / 2)) / (window.innerHeight / 2))),
+        x: Math.max(-1, Math.min(1, (e.clientX - cx) / (cachedVpW / 2 || 1))),
+        y: Math.max(-1, Math.min(1, (e.clientY - cy) / (cachedVpH / 2 || 1))),
       };
       if (drag) {
         const dx = e.clientX - drag.x;
@@ -369,10 +420,12 @@
     function drawFrame(now) {
       requestAnimationFrame(drawFrame);
       if (!visible) return;
+      syncBuffer();
+      if (w <= 0 || h <= 0) return;
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
       const time = now / 1000;
-      const still = reduced || document.body.classList.contains('no-motion');
+      const still = reduced || bodyNoMotion;
       const speed = still ? 0.1 : 1;
 
       color = mix(color, MOOD_COLORS[mood], Math.min(1, dt * 4));
@@ -462,10 +515,22 @@
       drawFace(cx + fx * R * 0.55 * fs, cy + fy * R * 0.55 * fs, R * 1.15, R * 0.7, time);
     }
 
-    resize();
-    new ResizeObserver(resize).observe(canvas);
-    window.addEventListener('pointermove', onPointerMove, { passive: true });
+    if (typeof ResizeObserver === 'function') {
+      new ResizeObserver((entries) => {
+        const box = entries[0]?.contentRect;
+        if (box && box.width > 0 && box.height > 0) {
+          pendingW = box.width;
+          pendingH = box.height;
+          needsBufferSync = true;
+        }
+        if (!mini) scheduleBoundsRefresh();
+      }).observe(canvas);
+    }
     if (!mini) {
+      window.addEventListener('pointermove', onPointerMove, { passive: true });
+      window.addEventListener('scroll', scheduleBoundsRefresh, { passive: true });
+      window.addEventListener('resize', scheduleBoundsRefresh, { passive: true });
+      canvas.addEventListener('pointerenter', scheduleBoundsRefresh, { passive: true });
       canvas.addEventListener('pointerdown', onPointerDown);
       window.addEventListener('pointerup', onPointerUp);
       canvas.addEventListener('wheel', (e) => {
@@ -493,10 +558,15 @@
         }
       });
     }
-    new IntersectionObserver(([entry]) => {
-      visible = entry.isIntersecting;
-    }).observe(canvas);
-    requestAnimationFrame(drawFrame);
+    if (typeof IntersectionObserver === 'function') {
+      new IntersectionObserver(([entry]) => {
+        visible = entry.isIntersecting;
+      }).observe(canvas);
+    }
+    setTimeout(() => {
+      if (!mini) scheduleBoundsRefresh();
+      requestAnimationFrame(drawFrame);
+    }, 0);
 
     return {
       setState(s) { state = s; },

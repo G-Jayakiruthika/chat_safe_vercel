@@ -194,25 +194,50 @@
 
   let tipEl = null;
   let tipTimer = null;
+  let tipObserver = null;
+  let tipSize = { w: 160, h: 32 };
+  let lastTipRect = null;
+  let lastVpW = typeof window !== 'undefined' ? window.innerWidth : 1280;
+
+  function positionTip(rect, vpW) {
+    if (!tipEl || !rect) return;
+    const tw = tipSize.w;
+    const th = tipSize.h;
+    const x = Math.max(8, Math.min(vpW - tw - 8, rect.left + rect.width / 2 - tw / 2));
+    const y = rect.top - th - 10 < 8 ? rect.bottom + 10 : rect.top - th - 10;
+    tipEl.style.left = `${x}px`;
+    tipEl.style.top = `${y}px`;
+  }
+
   function showTip(target) {
     if (S.notes === 'off') return;
     const text = target.dataset.tip;
     if (!text) return;
+    // Batch DOM reads before DOM mutations to avoid forced synchronous reflow
+    const r = target.getBoundingClientRect();
+    lastVpW = window.innerWidth;
+    lastTipRect = { left: r.left, width: r.width, top: r.top, bottom: r.bottom };
+
     if (!tipEl) {
       tipEl = document.createElement('div');
       tipEl.id = 'sf-tip';
       tipEl.setAttribute('role', 'tooltip');
+      if (typeof ResizeObserver === 'function') {
+        tipObserver = new ResizeObserver((entries) => {
+          const box = entries[0]?.contentRect;
+          if (!box || box.width <= 0) return;
+          tipSize = { w: box.width, h: box.height };
+          if (tipEl?.classList.contains('show') && lastTipRect) {
+            positionTip(lastTipRect, lastVpW);
+          }
+        });
+        tipObserver.observe(tipEl);
+      }
     }
     if (!tipEl.isConnected) document.body.appendChild(tipEl);
     tipEl.textContent = text;
+    positionTip(lastTipRect, lastVpW);
     tipEl.classList.add('show');
-    const r = target.getBoundingClientRect();
-    const tw = tipEl.offsetWidth;
-    const th = tipEl.offsetHeight;
-    const x = Math.max(8, Math.min(window.innerWidth - tw - 8, r.left + r.width / 2 - tw / 2));
-    const y = r.top - th - 10 < 8 ? r.bottom + 10 : r.top - th - 10;
-    tipEl.style.left = `${x}px`;
-    tipEl.style.top = `${y}px`;
   }
   const hideTip = () => { clearTimeout(tipTimer); tipEl?.classList.remove('show'); };
 

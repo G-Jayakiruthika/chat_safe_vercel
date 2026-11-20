@@ -410,7 +410,7 @@ button:disabled { opacity: .6; cursor: progress; }
   width: 8px; height: 8px; border-radius: 50%; flex: none;
   background: currentColor; box-shadow: 0 0 8px currentColor;
 }
-.hint { margin: -.4rem 0 0; font: 600 .72rem/1 ui-monospace, Consolas, monospace; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.hint { margin: -.4rem 0 0; font: 600 .72rem/1 ui-monospace, Consolas, monospace; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); opacity: 1; transform: none; content-visibility: visible; }
 .avatar { touch-action: none; border-radius: 50%; }
 .avatar:active { cursor: grabbing; }
 
@@ -662,11 +662,11 @@ html.has-cursor .byok-toggle-vis {
   pointer-events: auto !important;
 }
 
-/* ---------- Scroll reveal ---------- */
-.reveal { opacity: 0; transform: translateY(26px); }
+/* ---------- Scroll reveal (immediate visibility for zero LCP delay) ---------- */
+.reveal, .hero.reveal, .tabs-stack.reveal { opacity: 1; transform: none; }
 .reveal.seen {
   opacity: 1; transform: none;
-  transition: opacity .7s cubic-bezier(.2,.8,.2,1) var(--d, 0ms), transform .7s cubic-bezier(.2,.8,.2,1) var(--d, 0ms);
+  transition: opacity .35s cubic-bezier(.2,.8,.2,1) var(--d, 0ms), transform .35s cubic-bezier(.2,.8,.2,1) var(--d, 0ms);
 }
 
 /* ---------- Card & Button Stability (No hitbox drift) ---------- */
