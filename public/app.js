@@ -349,7 +349,7 @@
   /* =========================================================================
    * PHASE 2: VERCEL SERVERLESS GEMINI PROXY (/api/gemini) & DETERMINISTIC FALLBACK
    * ========================================================================= */
-  const PROXY_TIMEOUT_MS = 9_500;
+  const PROXY_TIMEOUT_MS = 10_500;
   const CANONICAL_BUS_AGENTS = ['vani', 'gemini', 'kavach', 'urimai', 'netra', 'setu'];
 
   /**
@@ -914,7 +914,7 @@
    * @param {string} userText Citizen message, SMS, or voice transcript.
    * @param {Object} [options] Request routing options.
    * @param {string} [options.mode='chat'] Interaction trigger mode (`chat`, `voice`, `quick_chip`, `speed_dial_9`, `auto_demo`, `scanner`).
-   * @param {number} [options.timeoutMs=9500] Request abort timeout in milliseconds.
+   * @param {number} [options.timeoutMs=10500] Request abort timeout in milliseconds.
    * @returns {Promise<Object|null>} Normalized proxy response payload, or `null` to trigger local fallback.
    */
   async function callGeminiProxy(userText, { mode = 'chat', timeoutMs = PROXY_TIMEOUT_MS } = {}) {

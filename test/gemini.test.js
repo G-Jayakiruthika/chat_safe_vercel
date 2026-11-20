@@ -120,11 +120,11 @@ test('POST /api/gemini logs exact upstream error safely and returns 503 diagnost
 
     assert.equal(resTimeout.statusCode, 503);
     assert.deepEqual(resTimeout.body, {
-      error: 'Live AI proxy error',
+      error: 'Upstream Gemini request timed out',
       fallback: true,
       upstreamStatus: 504,
-      upstreamMessage: 'Upstream request timed out.',
     });
+    assert.ok(loggedErrors.includes('Gemini request timed out'));
   } finally {
     console.error = origConsoleError;
   }
@@ -167,6 +167,17 @@ test('api/gemini.js contains zero legacy model references and returns 200 on fen
   assert.equal(plainRes.body.intent, 'CIVIC');
   assert.equal(plainRes.body.text, 'Please report the broken water pipe on the municipal portal.');
   assert.equal(plainRes.body.model, 'gemini-3.8-flash');
+
+  const truncatedRes = createMockRes();
+  await makeHandler('{"intent":"SCAM","confidence_score":94,"active_agents":["vani","gemini","kavach"],"summary":"Fake KYC link detected.","action_draft":"Report on 1930","checklist":["Do not cli')(
+    { method: 'POST', body: { prompt: 'Click KYC link now' } },
+    truncatedRes,
+  );
+  assert.equal(truncatedRes.statusCode, 200);
+  assert.equal(truncatedRes.body.intent, 'SCAM');
+  assert.equal(truncatedRes.body.confidence_score, 94);
+  assert.equal(truncatedRes.body.summary, 'Fake KYC link detected.');
+  assert.equal(truncatedRes.body.action_draft, 'Report on 1930');
 });
 
 test('POST /api/gemini trims & encodes API key, sends clean gemini-3.8-flash payload, and normalizes SCAM & CIVIC responses', async () => {
@@ -220,11 +231,12 @@ test('POST /api/gemini trims & encodes API key, sends clean gemini-3.8-flash pay
     'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=live%2Bsecret%2Fvalue',
   );
   const sentBody = JSON.parse(calls[0].init.body);
-  assert.deepEqual(Object.keys(sentBody).sort(), ['contents', 'systemInstruction']);
+  assert.deepEqual(Object.keys(sentBody).sort(), ['contents', 'generationConfig', 'systemInstruction']);
   assert.deepEqual(sentBody.contents, [
     { role: 'user', parts: [{ text: 'My CBI officer is calling me for digital arrest' }] },
   ]);
-  assert.equal(sentBody.generationConfig, undefined);
+  assert.deepEqual(sentBody.generationConfig, { maxOutputTokens: 350, temperature: 0.1 });
+  assert.ok(sentBody.systemInstruction.parts[0].text.length < 400);
   assert.deepEqual(Object.keys(scamRes.body).sort(), [
     'active_agents',
     'action_draft',
