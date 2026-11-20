@@ -2,31 +2,17 @@
 
 # Chat_Safe × Urimai — Vercel Evaluation Build (Serverless Gemini Proxy + Zero-Config Fallback)
 
-> **Vercel Serverless Gemini Flash Proxy** (`api/gemini.js`) · **Static PWA Output** (`public/`) · **23 Indian Languages** (English + all 22 Eighth Schedule languages) · **Zero Heavy Dependencies** (`package.json` `"type": "module"`).
+> **Vercel Serverless Gemini Flash Proxy** (`api/gemini.js`) · **Static PWA Output** (`public/`) · **23 Indian Languages** (English + all 22 Eighth Schedule languages) · **Zero External Runtime Dependencies** (`package.json` `"type": "module"`).
 
 - **Vercel Evaluation URL**: `https://chat-safe-vercel.vercel.app` (Live Workspace: `https://chat-safe-vercel.vercel.app/app.html`)
 - **Primary Repository**: `https://github.com/G-Jayakiruthika/chat_safe_vercel`
 - **Untouched Static Backup**: `https://github.com/G-Jayakiruthika/chat_safe_1`
 
-**Chat_Safe × Urimai** is an edge-resilient cyber-defense and civic-justice platform engineered for Bharat. With a typed message, voice transcript, quick-prompt chip, or feature-phone **Speed-Dial `9`** handoff, it protects citizens from cyber fraud (**Kavach**) and transforms spoken village breakdowns into bilingual legal petitions, geo-tagged A4 PDFs, and remote CM Helpline filings (**Urimai**).
+**Chat_Safe × Urimai** is an edge-resilient cyber-defense and civic-justice platform built for Bharat. From typed chat, voice transcripts, quick-prompt chips, or a feature-phone **Speed-Dial `9`** IVR handoff, it protects citizens against cyber fraud (**Kavach**) and transforms spoken village breakdowns into bilingual legal petitions, geo-tagged A4 PDFs, and remote CM Helpline filings (**Urimai**).
 
 ---
 
-## 1. Zero-Friction Judge Evaluation (< 30 Seconds)
-
-No API key prompt or blocking modal interrupts startup—open `/app.html` and evaluate immediately:
-
-1. **Open `app.html`** (local or `https://chat-safe-vercel.vercel.app/app.html`):
-   - Boots directly into the live workspace with zero blocking modals.
-   - Every prompt—chat input, Web Speech mic, quick-prompt chips, keypad **Speed-Dial `9`** (click or press `9`), AI Scanner, and Guided Auto-Demo—dispatches `POST /api/gemini` with an `AbortController` timeout (`9.5 s`).
-   - If `/api/gemini` returns `503` (missing `GEMINI_API_KEY`), times out, or runs offline, `analyzeIntent()` transparently routes to the deterministic **Local Fallback Simulator** with zero uncaught console errors.
-2. **Click `▶ Start Auto-Demo`**:
-   - **Phase 1 (Kavach Cyber Fraud Defense)**: Simulates Speed-Dial `9` with `"My CBI officer is calling me for digital arrest"`, lights up the **Agent Bus** (`Vani IVR` → `Gemini Router` → `Kavach` → `Netra PII` → `Setu O2O`), displays the structured Gemini JSON payload, and renders the **Red Scam Card** with a copyable **1930 Cybercrime Complaint** and checklist.
-   - **Phase 2 (Urimai Civic Petition & PDF)**: Switches to `"Panchayat water pipe broke"`, lights up `Vani IVR` → `Gemini Router` → `Urimai` → `Setu O2O`, resolves GPS/ward coordinates, and renders the **Blue Civic Card** with an exportable **Bilingual A4 PDF Preview** (`📄 Export Bilingual PDF`) and Family Hub / CM Helpline routing.
-
----
-
-## 2. Vercel Serverless Architecture
+## 1. Architecture Summary
 
 ```text
 +------------------------------------------------------------------------------+
@@ -37,20 +23,20 @@ No API key prompt or blocking modal interrupts startup—open `/app.html` and ev
                                        v
 +------------------------------------------------------------------------------+
 |  STATIC PWA SHELL (public/app.html · public/app.js · public/sw.js)           |
-|  * Non-blocking startup (zero BYOK gate on load)                             |
-|  * AbortController-guarded POST /api/gemini orchestration (analyzeIntent)    |
+|  * Non-blocking startup (deferred theme.js & avatars, instant hero/hint paint)|
+|  * AbortController-guarded POST /api/gemini orchestration (10.5s client cap) |
 |  * 6-Node Agent Bus: Vani IVR · Gemini Router · Kavach · Urimai · Netra · Setu|
 +--------------------------------------+---------------------------------------+
                                        |
                +-----------------------+-----------------------+
-               | Online & /api/gemini 200 OK                   | 503 / Timeout / Offline
+               | Online & /api/gemini 200 OK                   | 503 / 504 / Offline
                v                                               v
 +---------------------------------------+     +--------------------------------+
 | VERCEL SERVERLESS PROXY (api/gemini.js)|    | DETERMINISTIC LOCAL SIMULATOR  |
 | * Server-side process.env.GEMINI_API_KEY|   | (classifyLocalFallback +       |
-| * Calls Gemini Flash REST API          |     |  public/core.js)               |
-| * Strict JSON schema + XML sandboxing |     | * All 8 Kavach scam types      |
-| * Clean 405 / 400 / 503 (no secrets)  |     | * All 5 Urimai civic categories|
+| * Direct gemini-3.8-flash POST (9s cap)|    |  public/core.js)               |
+| * thinkingBudget: 0 + auto-retry on 400|    | * All 8 Kavach scam vectors    |
+| * Key redaction + partial JSON recovery|    | * All 5 Urimai civic categories|
 +-------------------+-------------------+     +---------------+----------------+
                     |                                         |
                     +--------------------+--------------------+
@@ -63,76 +49,71 @@ No API key prompt or blocking modal interrupts startup—open `/app.html` and ev
              +-------------------------------------------------------+
 ```
 
+### Key Modules
+- [`api/gemini.js`](api/gemini.js) — Stateless Vercel Serverless Function (`maxDuration: 30` in `vercel.json`) validating `process.env.GEMINI_API_KEY`, calling `gemini-3.8-flash:generateContent` with `thinkingBudget: 0` (and automatic retry without `thinkingConfig` if rejected with HTTP `400`), recovering truncated JSON, redacting keys from errors, and enforcing a `9000ms` `AbortController` timeout.
+- [`public/app.js`](public/app.js) — Client orchestrator routing prompts through `/api/gemini` with automatic fallback to `window.ChatSafeFallback`, updating the 3D Kavach avatar, Google Maps / Safe Browsing widgets, Family Hub, and Scanner UI.
+- [`public/core.js`](public/core.js) — Deterministic offline engine powering scam analysis, SEBI `@valid` UPI checks, Netra PII redaction, Urimai kit generation, Autopilot batch scanning, and Kamala Paati decoy replies.
+- [`public/i18n.js`](public/i18n.js) — Localization catalog for 23 Indian languages (`English` + 22 Eighth Schedule languages) with RTL/LTR direction metadata and Web Speech BCP-47 tags.
+- [`public/pdf.js`](public/pdf.js) — Unicode-safe bilingual A4 petition PDF generator with photo embedding and a 5-resident signature block.
+- [`public/avatar.js`](public/avatar.js) & [`public/agentAvatars.js`](public/agentAvatars.js) — Canvas 2D 3D-projected guardian and 8-agent squad visuals with `ResizeObserver`/`IntersectionObserver` caching to avoid forced synchronous reflows.
+
 ---
 
-## 3. `/api/gemini` Serverless Contract (`api/gemini.js`)
+## 2. Core Workflows: Kavach & Urimai
 
-- **Endpoint**: `POST /api/gemini`
-- **Upstream Model**: `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent` (with automatic retry on `gemini-3.8-flash:generateContent`)
-- **Request JSON**:
-  ```json
-  {
-    "prompt": "My CBI officer is calling me for digital arrest",
-    "language": "ta",
-    "mode": "chat"
-  }
-  ```
-- **200 OK Structured Response**:
+### Kavach (Cyber Scam Defense)
+1. **Intent Classification & 3-Tier Scoring**: Evaluates text/voice transcripts across all **8 fraud vectors** (`digital_arrest`, `kyc_otp`, `fake_investment`, `courier_parcel`, `electricity_bill`, `task_job`, `reward_bill`, `family_voice`) plus `sextortion_loan` blackmail, assigning `SAFE` (`0–25`), `MODERATE` (`26–65`), or `CRITICAL` (`66–100`) tiers.
+2. **Safe Browsing & Pay-Check**: Scans extracted URLs against Google Safe Browsing v4 (or local phishing domain heuristics) and verifies broker UPI handles against SEBI `@valid` rules.
+3. **Golden-Hour Escalation**: Generates a ready-to-file **1930 Cybercrime Portal** draft, triggers a Family SOS alert on critical scams, and offers **Kamala Paati** decoy responses for scam-baiting practice.
+
+### Urimai (Civic Grievance & Legal Petitions)
+1. **Button-Phone Speed-Dial `9`**: Elders press `9` on the keypad simulator (or dial via IVR) and describe village issues across **5 municipal categories** (`water_pipe`, `damaged_road`, `street_light`, `sanitation`, `municipal_petition`).
+2. **GPS Ward Resolution & Bilingual Drafting**: Acquires browser GPS / Google Maps ward coordinates and produces a formal English legal petition paired with a regional-script draft.
+3. **O2O + Digital-First Execution**:
+   - **Local O2O PDF**: Attaches a street photo and downloads a print-ready bilingual A4 petition with a 5-resident signature table.
+   - **Digital-First CM Helpline Bypass**: One-click character-bounded copy/paste into State CM Helpline portals (`Mudhalvarin Mugavari`, `CPGRAMS`, etc.).
+   - **Local Proxy WhatsApp Handoff**: Sends a [`proxy.html`](public/proxy.html) upload link to a trusted neighbor or e-Seva operator when family members live away.
+
+---
+
+## 3. Multilingual Support & Local Fallback Resilience
+
+- **23 Indian Languages**: Full support for English and all 22 Eighth Schedule languages (`as`, `bn`, `brx`, `doi`, `gu`, `hi`, `kn`, `ks`, `kok`, `mai`, `ml`, `mni`, `mr`, `ne`, `or`, `pa`, `sa`, `sat`, `sd`, `ta`, `te`, `ur`), automatic RTL (`ks`, `sd`, `ur`) and LTR layout synchronization, and localized `SpeechRecognition` / `speechSynthesis` inside error boundaries.
+- **Zero-Throw Local Fallback**: Whenever `GEMINI_API_KEY` is absent (`503`), upstream times out (`504`), or the user is offline (`navigator.onLine === false`), `analyzeIntent()` transparently delegates to `runMockFallbackEngine()` (`classifyLocalFallback` + `public/core.js`) so users and evaluators never encounter a blocked or broken UI.
+
+---
+
+## 4. Serverless Contract (`POST /api/gemini`)
+
+- **Request**: `{ "prompt": "...", "language": "ta", "mode": "chat" }` (`prompt` required, trimmed and capped at 1500 chars; non-`POST` returns `405`, invalid JSON/missing prompt returns `400`).
+- **Success (`200 OK`)**:
   ```json
   {
     "intent": "SCAM",
     "confidence_score": 96,
-    "active_agents": ["vani", "gemini", "kavach", "netra"],
+    "active_agents": ["vani", "gemini", "kavach", "netra", "setu"],
     "summary": "Digital arrest impersonation fraud detected.",
     "action_draft": "NATIONAL CYBER CRIME REPORTING PORTAL (1930)...",
-    "checklist": [
-      "Hang up immediately — real police never arrest on video calls.",
-      "Report on Helpline 1930 or https://cybercrime.gov.in."
-    ]
+    "checklist": ["Hang up immediately.", "Report at 1930 or cybercrime.gov.in."],
+    "text": "...",
+    "model": "gemini-3.8-flash"
   }
   ```
-- **Error Handling**:
-  - `405`: Non-`POST` methods (`Allow: POST`).
-  - `400`: Invalid JSON, non-object payload, or missing/empty `prompt`.
-  - `503`: Missing server API key, upstream error, or timeout — returns `{ "error": "...", "fallback": true }` cleanly without exposing secret names or stack traces.
+- **Fallback Diagnostics (`503`)**: Returns `{ "error": "...", "fallback": true, ... }` with `stage: "missing_key"` or `upstreamStatus`/`upstreamBody`, redacting all credentials.
 
 ---
 
-## 4. Local Fallback Coverage (Zero-Config Deterministic Classifier)
-
-When `/api/gemini` is unavailable or offline, `public/app.js` (`window.ChatSafeFallback.classify`) deterministically classifies:
-
-- **Kavach Cyber Scams (`intent: "SCAM"`) — All 8 Fraud Vectors + Blackmail**:
-  1. `digital_arrest` (CBI / NCB / ED / police video arrest)
-  2. `kyc_otp` (KYC expiry, bank/SIM block, OTP/PIN/APK screen-share)
-  3. `fake_investment` (SEBI VIP stock tips, guaranteed daily returns)
-  4. `courier_parcel` (FedEx/DHL/India Post customs drugs or tracking-fee trap)
-  5. `electricity_bill` (midnight power-cut threat / unpaid DISCOM scam)
-  6. `task_job` (YouTube likes / prepaid WFH tasks)
-  7. `reward_bill` (KBC / lottery / lucky draw processing fee)
-  8. `family_voice` (AI voice cloning / new-number emergency transfer)
-  - Plus `sextortion_loan` blackmail and safe-message guardrails (`0–25` risk tier).
-- **Urimai Civic Breakdowns (`intent: "CIVIC"`)**:
-  1. `water_pipe` (broken water pipes, leaks, drinking water failure)
-  2. `damaged_road` (potholes, damaged streets, culverts)
-  3. `street_light` (non-working streetlights, lamp posts, fallen wires)
-  4. `sanitation` (sewage/drainage overflow, garbage collection)
-  5. `municipal_petition` (Gram Panchayat, municipality, ward grievances)
-
----
-
-## 5. Deployment & Local Verification
+## 5. Deployment & Verification
 
 ### Vercel Setup
-1. Import `G-Jayakiruthika/chat_safe_vercel` into Vercel (`vercel.json` sets `"outputDirectory": "public"` and security headers).
-2. Add `GEMINI_API_KEY` in **Vercel Project Settings → Environment Variables** (Production, Preview, and Development).
-3. Deploy — `/api/gemini` runs server-side automatically, while offline/unconfigured environments use the built-in local fallback.
+1. Import `G-Jayakiruthika/chat_safe_vercel` into Vercel (`vercel.json` configures `outputDirectory: "public"`, `api/gemini.js` `maxDuration: 30`, and strict security headers).
+2. Add `GEMINI_API_KEY` under **Vercel Project Settings → Environment Variables**.
 
-### Local Verification Commands
+### Local Verification
 ```bash
 node --check api/gemini.js
 node --check public/app.js
 npm test
 ```
 
-All tests run with Node.js built-in `node --test` (`>= 20`) and zero third-party runtime dependencies.
+`npm test` runs Node's built-in test runner (`node --test test/*.test.js tests/*.test.js`) with zero external dependencies, covering scam/civic classification, prompt/input validation, `api/gemini.js` error/timeout/retry handling, UI responsive rules, and local fallback resilience.

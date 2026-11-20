@@ -12,7 +12,6 @@
   let languages = [{ code: 'en', name: 'English', native: 'English', speech: 'en-IN', greeting: 'Hello! Tell me what happened.' }];
   let lang = 'ta';
   let replyLang = 'ta';
-  let agentTurn = 0;
   let decoyTurn = 0;
   let lastResult = null;
   let activeUrimaiKit = null;
@@ -165,19 +164,6 @@
    * ========================================================================= */
   const CONSENT_STORAGE_KEY = 'chatsafe.edgeConsentAccepted';
   const CONSENT_TS_KEY = 'chatsafe.consentAcceptedAt';
-
-  /**
-   * Checks whether the user has already accepted the Edge Privacy Governance policy.
-   *
-   * @returns {boolean} True when consent timestamp or session flag is stored.
-   */
-  function hasEdgeConsent() {
-    try {
-      return Boolean(localStorage.getItem(CONSENT_TS_KEY)) || sessionStorage.getItem(CONSENT_STORAGE_KEY) === '1';
-    } catch {
-      return false;
-    }
-  }
 
   /**
    * Toggles `inert` and `aria-hidden` across background landmarks while a modal gate is active.
@@ -980,6 +966,69 @@
   }
 
   /**
+   * Builds a normalized Urimai civic fallback verdict payload from a kit or draft.
+   *
+   * @param {Object} params Civic payload components.
+   * @returns {Object} Structured CIVIC fallback verdict compatible with `/api/gemini`.
+   */
+  function buildCivicFallbackPayload({ summary, draft, checklist, confidenceScore, department, vectors, kit, base }) {
+    return {
+      _source: 'local-fallback',
+      intent: 'CIVIC',
+      confidence_score: confidenceScore,
+      active_agents: ['vani', 'gemini', 'urimai', 'setu'],
+      summary,
+      action_draft: draft,
+      checklist,
+      risk_score: 0,
+      threat_vectors: vectors,
+      action_payload: {
+        summary,
+        department_or_agency: department,
+        draft_text: draft,
+        regional_draft_text: kit?.regionalLetter || '',
+        next_steps: checklist,
+      },
+      details: summary,
+      action: checklist[0] || '',
+      urimaiKit: kit,
+      _baseAnalysis: base,
+    };
+  }
+
+  /**
+   * Builds a normalized Kavach scam/moderate/safe fallback verdict payload.
+   *
+   * @param {Object} params Scam payload components.
+   * @returns {Object} Structured SCAM fallback verdict compatible with `/api/gemini`.
+   */
+  function buildScamFallbackPayload({ tier, agents, summary, draft, checklist, vectors, scamType, department, details, baseAnalysis }) {
+    return {
+      _source: 'local-fallback',
+      intent: 'SCAM',
+      ui_intent: tier.intent,
+      confidence_score: tier.score,
+      active_agents: agents,
+      summary,
+      action_draft: draft,
+      checklist,
+      risk_score: tier.score,
+      threat_vectors: vectors,
+      ...(scamType ? { scam_type: scamType } : {}),
+      action_payload: {
+        summary,
+        department_or_agency: department,
+        draft_text: draft,
+        regional_draft_text: '',
+        next_steps: checklist,
+      },
+      details,
+      action: checklist[0] || '',
+      _baseAnalysis: baseAnalysis,
+    };
+  }
+
+  /**
    * Deterministic local & demo rule engine when `/api/gemini` returns 503, times out, or is offline.
    * Synchronizes SAFE (0-25), MODERATE (26-65), CRITICAL SCAM (66-100), and CIVIC paths across
    * all 8 scam types and 5 civic breakdowns.
@@ -1003,29 +1052,18 @@
           department: deterministic.department,
         }).catch(() => null);
         const finalDraft = kit?.englishLetter || deterministic.action_draft;
+        const department = kit?.department || deterministic.department;
         if (kit && !kit.department) kit.department = deterministic.department;
-        return {
-          _source: 'local-fallback',
-          intent: 'CIVIC',
-          confidence_score: deterministic.confidence_score,
-          active_agents: deterministic.active_agents,
+        return buildCivicFallbackPayload({
           summary: deterministic.summary,
-          action_draft: finalDraft,
+          draft: finalDraft,
           checklist: deterministic.checklist,
-          risk_score: 0,
-          threat_vectors: deterministic.threat_vectors,
-          action_payload: {
-            summary: deterministic.summary,
-            department_or_agency: kit?.department || deterministic.department,
-            draft_text: finalDraft,
-            regional_draft_text: kit?.regionalLetter || '',
-            next_steps: deterministic.checklist,
-          },
-          details: deterministic.summary,
-          action: deterministic.checklist[0] || '',
-          urimaiKit: kit,
-          _baseAnalysis: base,
-        };
+          confidenceScore: deterministic.confidence_score,
+          department,
+          vectors: deterministic.threat_vectors,
+          kit,
+          base,
+        });
       }
 
       const tier = deterministic.tier || getThreatTier(deterministic.confidence_score);
@@ -1037,28 +1075,17 @@
         ? (deterministic.action_draft || base?.complaint || '')
         : '';
 
-      return {
-        _source: 'local-fallback',
-        intent: 'SCAM',
-        ui_intent: tier.intent,
-        confidence_score: tier.score,
-        active_agents: deterministic.active_agents,
+      return buildScamFallbackPayload({
+        tier,
+        agents: deterministic.active_agents,
         summary: deterministic.summary,
-        action_draft: finalDraft,
+        draft: finalDraft,
         checklist: deterministic.checklist,
-        risk_score: tier.score,
-        threat_vectors: mergedFlags,
-        scam_type: deterministic.scam_type,
-        action_payload: {
-          summary: deterministic.summary,
-          department_or_agency: deterministic.department,
-          draft_text: finalDraft,
-          regional_draft_text: '',
-          next_steps: deterministic.checklist,
-        },
+        vectors: mergedFlags,
+        scamType: deterministic.scam_type,
+        department: deterministic.department,
         details: deterministic.summary,
-        action: deterministic.checklist[0] || '',
-        _baseAnalysis: {
+        baseAnalysis: {
           ...(base || {}),
           intent: tier.intent,
           score: tier.score,
@@ -1070,7 +1097,7 @@
           complaint: finalDraft,
           categoryIds: mergedCategories,
         },
-      };
+      });
     }
 
     // Fallback to core.js token rules for general/multilingual queries not matched above
@@ -1083,28 +1110,16 @@
         'Attach street photo and export bilingual A4 PDF in Family Hub.',
         'Collect 5 resident signatures or submit via State CM Helpline.',
       ];
-      return {
-        _source: 'local-fallback',
-        intent: 'CIVIC',
-        confidence_score: 90,
-        active_agents: ['vani', 'gemini', 'urimai', 'setu'],
+      return buildCivicFallbackPayload({
         summary,
-        action_draft: draft,
+        draft,
         checklist,
-        risk_score: 0,
-        threat_vectors: [`Department: ${dept}`, 'Eligible for O2O Petition + CM Helpline'],
-        action_payload: {
-          summary,
-          department_or_agency: dept,
-          draft_text: draft,
-          regional_draft_text: kit?.regionalLetter || '',
-          next_steps: checklist,
-        },
-        details: summary,
-        action: checklist[0],
-        urimaiKit: kit,
-        _baseAnalysis: base,
-      };
+        confidenceScore: 90,
+        department: dept,
+        vectors: [`Department: ${dept}`, 'Eligible for O2O Petition + CM Helpline'],
+        kit,
+        base,
+      });
     }
 
     const ruleScore = Math.max(0, Math.min(100, Math.round(Number(base?.score) || 0)));
@@ -1127,28 +1142,17 @@
       tier.score,
     );
 
-    return {
-      _source: 'local-fallback',
-      intent: 'SCAM',
-      ui_intent: tier.intent,
-      confidence_score: tier.score,
-      active_agents: agents,
+    return buildScamFallbackPayload({
+      tier,
+      agents,
       summary,
-      action_draft: draft,
+      draft,
       checklist,
-      risk_score: tier.score,
-      threat_vectors: vectors,
-      action_payload: {
-        summary,
-        department_or_agency: tier.tier === 'critical' ? 'National Cybercrime Helpline (1930) / I4C' : 'Kavach Local Shield',
-        draft_text: draft,
-        regional_draft_text: '',
-        next_steps: checklist,
-      },
+      vectors,
+      department: tier.tier === 'critical' ? 'National Cybercrime Helpline (1930) / I4C' : 'Kavach Local Shield',
       details: tier.tier === 'safe' ? tier.verdict : (base?.explanation || summary),
-      action: checklist[0],
-      _baseAnalysis: base,
-    };
+      baseAnalysis: base,
+    });
   }
 
   /**
@@ -1426,6 +1430,43 @@
     el.classList.add('show');
     clearTimeout(toast.timer);
     toast.timer = setTimeout(() => el.classList.remove('show'), 3400);
+  }
+
+  /**
+   * Copies text to the browser clipboard inside a safe try/catch boundary and displays a toast.
+   *
+   * @param {string} text Text string to copy.
+   * @param {string} successMsg Toast message shown after copying.
+   * @param {string} [contextLabel='Clipboard'] Log context on failure.
+   * @returns {Promise<boolean>} True if clipboard write succeeded, false otherwise.
+   */
+  async function copyTextToClipboard(text, successMsg, contextLabel = 'Clipboard') {
+    try {
+      await navigator.clipboard?.writeText(String(text || ''));
+      toast(successMsg);
+      return true;
+    } catch (err) {
+      console.warn(`[Chat_Safe][${contextLabel}] Copy failed:`, err?.message || err);
+      toast('Unable to copy text right now.');
+      return false;
+    }
+  }
+
+  /**
+   * Merges routed Gemini or fallback fields into a Urimai civic petition kit object.
+   *
+   * @param {Object|null} kit Target Urimai petition kit.
+   * @param {Object} routed Routed proxy or fallback verdict.
+   * @param {Object} [ap={}] Optional `action_payload` section from `routed`.
+   * @returns {Object|null} Hydrated Urimai kit object.
+   */
+  function hydrateUrimaiKitFromVerdict(kit, routed, ap = {}) {
+    if (!kit) return null;
+    if (ap.department_or_agency) kit.department = ap.department_or_agency;
+    if (routed?.summary || ap.summary) kit.summary = routed.summary || ap.summary;
+    if (routed?.action_draft || ap.draft_text) kit.englishLetter = routed.action_draft || ap.draft_text;
+    if (ap.regional_draft_text) kit.regionalLetter = ap.regional_draft_text;
+    return kit;
   }
 
   /**
@@ -1743,119 +1784,90 @@
   });
 
   /**
-   * Renders the hero intent verdict banner card (Urimai Civic vs. Kavach Scam/Moderate/Safe).
+   * Renders the Urimai civic petition hero card content and binds its action buttons.
    *
-   * @param {Object} verdict Routed AI or rule-engine verdict payload.
-   * @param {string} rawText Original citizen prompt or pasted text.
-   * @param {string} [geoAddress=''] Optional resolved GPS/Maps street address.
+   * @param {HTMLElement} card Target `#heroDynamicCard` container.
+   * @param {Object} ctx Normalized hero card rendering context.
    * @returns {void}
    */
-  function renderHeroDynamicCard(verdict, rawText, geoAddress = '') {
-    const card = $('heroDynamicCard');
-    if (!card || !verdict) return;
+  function renderHeroCivicCardContent(card, ctx) {
+    const {
+      verdict, rawText, geoAddress, dir, score, ap,
+      vectors, summaryText, actionDraft, sourceBadge,
+      agentPillsHtml, checklistHtml, geminiJsonPreview,
+    } = ctx;
+    const wardText = geoAddress || 'Acquiring live GPS ward coordinates…';
+    const draftPreview = actionDraft || verdict.urimaiKit?.englishLetter || '';
+    const regPreview = ap.regional_draft_text || verdict.urimaiKit?.regionalLetter || '';
+    const kitObj = verdict.urimaiKit || activeUrimaiKit;
+    const kitIdLabel = kitObj?.kitId || 'URM-CIVIC';
 
-    const dir = activeDir();
-    card.setAttribute('dir', dir);
-    const rawIntent = String(verdict.intent || 'SCAM').toUpperCase();
-    const score = Math.max(0, Math.min(100, Math.round(Number(verdict.confidence_score ?? verdict.risk_score) || 0)));
-    const isCivic = rawIntent === 'CIVIC';
-    const contractIntent = isCivic ? 'CIVIC' : 'SCAM';
-    const ap = verdict.action_payload || {};
-    const vectors = Array.isArray(verdict.threat_vectors) ? verdict.threat_vectors : [];
-    const activeAgents = normalizeBusAgents(verdict.active_agents, contractIntent, score);
-    const checklist = Array.isArray(verdict.checklist) && verdict.checklist.length
-      ? verdict.checklist
-      : (Array.isArray(ap.next_steps) ? ap.next_steps : []);
-    const summaryText = isCivic
-      ? (verdict.summary || ap.summary || rawText)
-      : (verdict.summary || ap.summary || verdict.details || getThreatTier(score).verdict);
-    const actionDraft = verdict.action_draft !== undefined
-      ? String(verdict.action_draft || '')
-      : String(ap.draft_text || '');
-
-    const sourceBadge = verdict._source === 'vercel-proxy'
-      ? 'Live Vercel Gemini Proxy'
-      : verdict._offlineFallback
-        ? 'Offline Local Simulator'
-        : 'Local AI Simulator (Auto-Fallback)';
-
-    const geminiJsonPreview = JSON.stringify({
-      intent: contractIntent,
-      confidence_score: score,
-      active_agents: activeAgents,
-      summary: summaryText,
-      action_draft: actionDraft,
-      checklist,
-      engine_source: sourceBadge,
-    }, null, 2);
-
-    const agentPillsHtml = activeAgents.length
-      ? `<div class="hdc-agents" aria-label="Active AI agents">${activeAgents.map((id) => `<span class="hdc-agent-chip">${escapeHtml(AGENT_BUS_DISPLAY[id] || id)}</span>`).join('')}</div>`
-      : '';
-    const checklistHtml = checklist.length
-      ? `<div class="hdc-checklist-wrap"><p class="small" style="margin:0;font-weight:700">Action Checklist</p><ol class="hdc-checklist" dir="${dir}">${checklist.map((step) => `<li>${escapeHtml(step)}</li>`).join('')}</ol></div>`
-      : '';
-
-    if (isCivic) {
-      const wardText = geoAddress || 'Acquiring live GPS ward coordinates…';
-      const draftPreview = actionDraft || verdict.urimaiKit?.englishLetter || '';
-      const regPreview = ap.regional_draft_text || verdict.urimaiKit?.regionalLetter || '';
-      const kitObj = verdict.urimaiKit || activeUrimaiKit;
-      const kitIdLabel = kitObj?.kitId || 'URM-CIVIC';
-      card.className = 'hero-dynamic-card civic';
-      card.hidden = false;
-      card.innerHTML = `
-        <div class="hdc-head">
-          <span class="pill blue">URIMAI CIVIC ENGINE · ${escapeHtml(ap.department_or_agency || kitObj?.department || 'Municipal Grievance')}</span>
-          <span class="small muted">${escapeHtml(sourceBadge)} · Confidence ${score}%</span>
+    card.className = 'hero-dynamic-card civic';
+    card.hidden = false;
+    card.innerHTML = `
+      <div class="hdc-head">
+        <span class="pill blue">URIMAI CIVIC ENGINE · ${escapeHtml(ap.department_or_agency || kitObj?.department || 'Municipal Grievance')}</span>
+        <span class="small muted">${escapeHtml(sourceBadge)} · Confidence ${score}%</span>
+      </div>
+      ${agentPillsHtml}
+      <p style="margin:0;font-weight:700" dir="${dir}">${escapeHtml(summaryText)}</p>
+      <p class="small" style="margin:0"><strong>Live Ward / Coordinates:</strong> <span id="hdcGeoLabel">${escapeHtml(wardText)}</span></p>
+      ${vectors.length ? `<div class="hdc-vectors">${vectors.map((v) => `<span class="hdc-vector-chip">${escapeHtml(v)}</span>`).join('')}</div>` : ''}
+      ${checklistHtml}
+      <details class="hdc-json" open>
+        <summary>Gemini Structured JSON Response</summary>
+        <pre dir="ltr">${escapeHtml(geminiJsonPreview)}</pre>
+      </details>
+      <div class="hdc-pdf-preview">
+        <div class="hdc-pdf-preview-head">
+          <span>📄 Exportable Bilingual A4 PDF Preview (${escapeHtml(kitIdLabel)})</span>
+          <span class="pill blue">O2O + 5-Resident Signatures</span>
         </div>
-        ${agentPillsHtml}
-        <p style="margin:0;font-weight:700" dir="${dir}">${escapeHtml(summaryText)}</p>
-        <p class="small" style="margin:0"><strong>Live Ward / Coordinates:</strong> <span id="hdcGeoLabel">${escapeHtml(wardText)}</span></p>
-        ${vectors.length ? `<div class="hdc-vectors">${vectors.map((v) => `<span class="hdc-vector-chip">${escapeHtml(v)}</span>`).join('')}</div>` : ''}
-        ${checklistHtml}
-        <details class="hdc-json" open>
-          <summary>Gemini Structured JSON Response</summary>
-          <pre dir="ltr">${escapeHtml(geminiJsonPreview)}</pre>
-        </details>
-        <div class="hdc-pdf-preview">
-          <div class="hdc-pdf-preview-head">
-            <span>📄 Exportable Bilingual A4 PDF Preview (${escapeHtml(kitIdLabel)})</span>
-            <span class="pill blue">O2O + 5-Resident Signatures</span>
-          </div>
-          <p class="small muted" style="margin:0"><strong>Geo-Tagged Petition:</strong> ${escapeHtml(wardText)} · Official English + ${escapeHtml(kitObj?.langName || 'Regional')} script ready.</p>
-          ${draftPreview ? `<pre class="hdc-draft" dir="ltr">${escapeHtml(draftPreview)}</pre>` : ''}
-          ${regPreview ? `<pre class="hdc-draft" dir="${dir}">${escapeHtml(regPreview)}</pre>` : ''}
-        </div>
-        <div class="actions" style="margin:0">
-          <button type="button" id="hdcDownloadPdfBtn" class="primary sm">📄 Export Bilingual PDF</button>
-          <button type="button" id="hdcOpenFamilyBtn" class="secondary sm">Open Family Hub &amp; 5-Sign PDF</button>
-          <button type="button" id="hdcOpenScannerBtn" class="secondary sm">View Full Civic Draft</button>
-        </div>
-      `;
-      $('hdcDownloadPdfBtn')?.addEventListener('click', async () => {
-        const targetKit = kitObj || activeUrimaiKit;
-        if (!targetKit || !window.ChatSafePDF?.generateUrimaiPdf) {
-          toast('Open Family Hub to export PDF.');
-          return;
-        }
-        try {
-          toast('Generating Unicode bilingual A4 PDF…');
-          await window.ChatSafePDF.generateUrimaiPdf(targetKit, activePhotoDataUrl);
-          toast('📄 Bilingual Urimai PDF exported!');
-        } catch (err) {
-          console.warn('[Chat_Safe][PDF] Direct card PDF export failed:', err?.message || err);
-          toast('Unable to export PDF right now.');
-        }
-      });
-      $('hdcOpenFamilyBtn')?.addEventListener('click', () => activateTab($('tab-family')));
-      $('hdcOpenScannerBtn')?.addEventListener('click', () => {
-        $('message').value = rawText;
-        activateTab($('tab-scanner'));
-      });
-      return;
-    }
+        <p class="small muted" style="margin:0"><strong>Geo-Tagged Petition:</strong> ${escapeHtml(wardText)} · Official English + ${escapeHtml(kitObj?.langName || 'Regional')} script ready.</p>
+        ${draftPreview ? `<pre class="hdc-draft" dir="ltr">${escapeHtml(draftPreview)}</pre>` : ''}
+        ${regPreview ? `<pre class="hdc-draft" dir="${dir}">${escapeHtml(regPreview)}</pre>` : ''}
+      </div>
+      <div class="actions" style="margin:0">
+        <button type="button" id="hdcDownloadPdfBtn" class="primary sm">📄 Export Bilingual PDF</button>
+        <button type="button" id="hdcOpenFamilyBtn" class="secondary sm">Open Family Hub &amp; 5-Sign PDF</button>
+        <button type="button" id="hdcOpenScannerBtn" class="secondary sm">View Full Civic Draft</button>
+      </div>
+    `;
 
+    $('hdcDownloadPdfBtn')?.addEventListener('click', async () => {
+      const targetKit = kitObj || activeUrimaiKit;
+      if (!targetKit || !window.ChatSafePDF?.generateUrimaiPdf) {
+        toast('Open Family Hub to export PDF.');
+        return;
+      }
+      try {
+        toast('Generating Unicode bilingual A4 PDF…');
+        await window.ChatSafePDF.generateUrimaiPdf(targetKit, activePhotoDataUrl);
+        toast('📄 Bilingual Urimai PDF exported!');
+      } catch (err) {
+        console.warn('[Chat_Safe][PDF] Direct card PDF export failed:', err?.message || err);
+        toast('Unable to export PDF right now.');
+      }
+    });
+    $('hdcOpenFamilyBtn')?.addEventListener('click', () => activateTab($('tab-family')));
+    $('hdcOpenScannerBtn')?.addEventListener('click', () => {
+      $('message').value = rawText;
+      activateTab($('tab-scanner'));
+    });
+  }
+
+  /**
+   * Renders the Kavach scam/moderate/safe hero card content and binds its action buttons.
+   *
+   * @param {HTMLElement} card Target `#heroDynamicCard` container.
+   * @param {Object} ctx Normalized hero card rendering context.
+   * @returns {void}
+   */
+  function renderHeroScamCardContent(card, ctx) {
+    const {
+      rawText, dir, score, vectors, summaryText, actionDraft,
+      sourceBadge, agentPillsHtml, checklistHtml, geminiJsonPreview,
+    } = ctx;
     const tier = getThreatTier(score);
     const isCritical = tier.tier === 'critical';
     const isSafe = tier.tier === 'safe';
@@ -1864,6 +1876,7 @@
     const draft = isCritical
       ? (actionDraft || `NATIONAL CYBER CRIME HELPLINE (1930 | https://cybercrime.gov.in)\nSuspected Scam (${tier.score}/100): ${rawText}`)
       : '';
+
     card.className = `hero-dynamic-card ${tier.cardClass}`;
     card.hidden = false;
     card.innerHTML = `
@@ -1889,19 +1902,80 @@
         <button type="button" id="hdcFullScanBtn" class="secondary sm">Open in AI Scanner</button>
       </div>
     `;
-    $('hdcCopy1930Btn')?.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard?.writeText(draft);
-        toast('1930 Cybercrime complaint copied!');
-      } catch (err) {
-        console.warn('[Chat_Safe][Clipboard] Copy 1930 complaint failed:', err?.message || err);
-      }
-    });
+
+    $('hdcCopy1930Btn')?.addEventListener('click', () => copyTextToClipboard(draft, '1930 Cybercrime complaint copied!', 'Clipboard'));
     $('hdcFullScanBtn')?.addEventListener('click', () => {
       $('message').value = rawText;
       activateTab($('tab-scanner'));
       runSmartScan(rawText, { mode: 'scanner' });
     });
+  }
+
+  /**
+   * Renders the hero intent verdict banner card (Urimai Civic vs. Kavach Scam/Moderate/Safe).
+   *
+   * @param {Object} verdict Routed AI or rule-engine verdict payload.
+   * @param {string} rawText Original citizen prompt or pasted text.
+   * @param {string} [geoAddress=''] Optional resolved GPS/Maps street address.
+   * @returns {void}
+   */
+  function renderHeroDynamicCard(verdict, rawText, geoAddress = '') {
+    const card = $('heroDynamicCard');
+    if (!card || !verdict) return;
+
+    const dir = activeDir();
+    card.setAttribute('dir', dir);
+    const isCivic = String(verdict.intent || 'SCAM').toUpperCase() === 'CIVIC';
+    const score = Math.max(0, Math.min(100, Math.round(Number(verdict.confidence_score ?? verdict.risk_score) || 0)));
+    const contractIntent = isCivic ? 'CIVIC' : 'SCAM';
+    const ap = verdict.action_payload || {};
+    const vectors = Array.isArray(verdict.threat_vectors) ? verdict.threat_vectors : [];
+    const activeAgents = normalizeBusAgents(verdict.active_agents, contractIntent, score);
+    const checklist = Array.isArray(verdict.checklist) && verdict.checklist.length
+      ? verdict.checklist
+      : (Array.isArray(ap.next_steps) ? ap.next_steps : []);
+    const summaryText = isCivic
+      ? (verdict.summary || ap.summary || rawText)
+      : (verdict.summary || ap.summary || verdict.details || getThreatTier(score).verdict);
+    const actionDraft = verdict.action_draft !== undefined
+      ? String(verdict.action_draft || '')
+      : String(ap.draft_text || '');
+    const sourceBadge = verdict._source === 'vercel-proxy'
+      ? 'Live Vercel Gemini Proxy'
+      : verdict._offlineFallback
+        ? 'Offline Local Simulator'
+        : 'Local AI Simulator (Auto-Fallback)';
+
+    const ctx = {
+      verdict,
+      rawText,
+      geoAddress,
+      dir,
+      score,
+      ap,
+      vectors,
+      summaryText,
+      actionDraft,
+      sourceBadge,
+      agentPillsHtml: activeAgents.length
+        ? `<div class="hdc-agents" aria-label="Active AI agents">${activeAgents.map((id) => `<span class="hdc-agent-chip">${escapeHtml(AGENT_BUS_DISPLAY[id] || id)}</span>`).join('')}</div>`
+        : '',
+      checklistHtml: checklist.length
+        ? `<div class="hdc-checklist-wrap"><p class="small" style="margin:0;font-weight:700">Action Checklist</p><ol class="hdc-checklist" dir="${dir}">${checklist.map((step) => `<li>${escapeHtml(step)}</li>`).join('')}</ol></div>`
+        : '',
+      geminiJsonPreview: JSON.stringify({
+        intent: contractIntent,
+        confidence_score: score,
+        active_agents: activeAgents,
+        summary: summaryText,
+        action_draft: actionDraft,
+        checklist,
+        engine_source: sourceBadge,
+      }, null, 2),
+    };
+
+    if (isCivic) renderHeroCivicCardContent(card, ctx);
+    else renderHeroScamCardContent(card, ctx);
   }
 
   /**
@@ -1943,10 +2017,7 @@
         if (!kit) {
           throw new Error('Unable to generate Urimai kit');
         }
-        if (routed.action_draft || ap.draft_text) kit.englishLetter = routed.action_draft || ap.draft_text;
-        if (ap.regional_draft_text) kit.regionalLetter = ap.regional_draft_text;
-        if (ap.department_or_agency) kit.department = ap.department_or_agency;
-        if (routed.summary || ap.summary) kit.summary = routed.summary || ap.summary;
+        hydrateUrimaiKitFromVerdict(kit, routed, ap);
         routed.urimaiKit = kit;
         routed.active_agents = activeAgents;
 
@@ -2346,6 +2417,237 @@
   });
 
   /**
+   * Resets AI Scanner result cards and status indicators prior to a fresh scan.
+   *
+   * @returns {void}
+   */
+  function resetScannerPanels() {
+    $('scanBox').classList.add('scanning');
+    $('xrayStatus').textContent = 'Analyzing with Gemini Intent Router…';
+    $('result').hidden = true;
+    $('urimaiScanResult').hidden = true;
+    if ($('heroDynamicCard')) $('heroDynamicCard').hidden = true;
+    if ($('redFlags')) $('redFlags').innerHTML = '';
+    if ($('nextSteps')) $('nextSteps').innerHTML = '';
+    if ($('complaint')) $('complaint').value = '';
+    if ($('complaintBlock')) $('complaintBlock').hidden = true;
+    if ($('upiBlock')) $('upiBlock').hidden = true;
+    if ($('upiList')) $('upiList').innerHTML = '';
+  }
+
+  /**
+   * Enriches the base scanner result object with routed Gemini or fallback classification data.
+   *
+   * @param {Object} routed Routed proxy or fallback verdict.
+   * @param {Object} res Mutable base rule-engine result object.
+   * @param {string} clean Sanitized input text.
+   * @returns {Promise<Object>} Enriched scan result object.
+   */
+  async function enrichScanVerdict(routed, res, clean) {
+    const ap = routed.action_payload || {};
+    const vectors = Array.isArray(routed.threat_vectors) ? routed.threat_vectors : [];
+    const confScore = Math.max(0, Math.min(100, Math.round(Number(routed.confidence_score ?? routed.risk_score) || 0)));
+
+    if (routed.intent === 'CIVIC') {
+      const kit = routed.urimaiKit || res.urimaiKit || await API.call('urimai', { text: clean, lang, location: 'Ward 12, Coimbatore' });
+      hydrateUrimaiKitFromVerdict(kit, routed, ap);
+      res.intent = 'CIVIC';
+      res.level = 'civic';
+      res.score = 0;
+      res.urimaiKit = kit;
+      return res;
+    }
+
+    const tier = getThreatTier(confScore);
+    const origBaseSafe = !res.level || res.level === 'safe';
+    res.intent = tier.intent;
+    res.score = tier.score;
+    res.level = tier.level;
+    const checklistSteps = Array.isArray(routed.checklist) && routed.checklist.length
+      ? routed.checklist
+      : (ap.next_steps || []);
+
+    if (tier.tier === 'safe') {
+      res.verdict = tier.verdict;
+      res.scamType = tier.scamType;
+      res.redFlags = [];
+      res.complaint = '';
+      res.nextSteps = checklistSteps.length ? checklistSteps : ['No common scam pattern found. Never share OTPs or PINs with strangers.'];
+      res.explanation = tier.verdict;
+    } else if (tier.tier === 'moderate') {
+      res.verdict = routed.summary || ap.summary || (!origBaseSafe && res.verdict ? res.verdict : tier.verdict);
+      res.scamType = vectors[0] || res.scamType || tier.scamType;
+      res.redFlags = vectors.length ? vectors : (res.redFlags?.length ? res.redFlags : ['Unverified request or suspicious link — verify independently.']);
+      res.complaint = '';
+      res.nextSteps = checklistSteps.length ? checklistSteps : (!origBaseSafe && res.nextSteps?.length ? res.nextSteps : ['Verify sender through an official app or website before taking action.']);
+      res.explanation = routed.summary || ap.summary || routed.details || (!origBaseSafe && res.explanation ? res.explanation : tier.verdict);
+    } else {
+      res.verdict = routed.summary || ap.summary || (!origBaseSafe && res.verdict ? res.verdict : tier.verdict);
+      res.scamType = routed.scam_type || vectors[0] || res.scamType || tier.scamType;
+      res.redFlags = vectors.length ? [...new Set([...vectors, ...(res.redFlags || [])])] : (res.redFlags || ['High-Risk Cyber Fraud Pattern']);
+      res.nextSteps = checklistSteps.length ? [...new Set([...checklistSteps, ...(res.nextSteps || [])])] : (res.nextSteps || []);
+      res.complaint = routed.action_draft || ap.draft_text || res.complaint || `NATIONAL CYBER CRIME REPORTING PORTAL (https://cybercrime.gov.in | Helpline 1930)\nSuspected Scam (${res.score}/100): ${routed.details || clean}\nRecommended Action: ${routed.action || 'Freeze bank/UPI and dial 1930 immediately.'}`;
+      res.explanation = routed.summary || ap.summary || routed.details || (!origBaseSafe && res.explanation ? res.explanation : res.verdict);
+    }
+    return res;
+  }
+
+  /**
+   * Escalates a scanner result to critical score `100` when Safe Browsing flags malicious URLs.
+   *
+   * @param {Object} res Mutable scan result object.
+   * @param {Array<{url: string, threatType?: string}>} flaggedUrls Matched blacklist entries.
+   * @param {string} clean Sanitized citizen message.
+   * @returns {void}
+   */
+  function applyMaliciousUrlOverride(res, flaggedUrls, clean) {
+    if (!flaggedUrls.length) return;
+    res.intent = 'SCAM';
+    res.score = 100;
+    res.risk_score = 100;
+    res.level = 'critical';
+    res.scamType = 'Malicious / Phishing URL Detected';
+    res.verdict = `CRITICAL THREAT: Malicious URL Blocked (${flaggedUrls[0].url})`;
+    if (!res.complaint) {
+      res.complaint = `NATIONAL CYBER CRIME REPORTING PORTAL (https://cybercrime.gov.in | Helpline 1930)\nMalicious Link Detected (${flaggedUrls.map((m) => m.url).join(', ')}): ${clean}`;
+    }
+  }
+
+  /**
+   * Updates the Safe Browsing status widget and prepends flagged URL entries into `flags`.
+   *
+   * @param {string[]} detectedUrls Extracted URLs from the message.
+   * @param {Array<{url: string, threatType?: string}>} flaggedUrls Flagged URL matches.
+   * @param {Object|null} sbResult Safe Browsing verdict payload.
+   * @param {string[]} flags Mutable red-flag list.
+   * @param {HTMLElement|null} sbWidget Widget container element.
+   * @param {HTMLElement|null} sbStatus Status text element.
+   * @returns {void}
+   */
+  function renderScannerSafeBrowsingStatus(detectedUrls, flaggedUrls, sbResult, flags, sbWidget, sbStatus) {
+    if (!detectedUrls.length || !sbWidget || !sbStatus) return;
+    sbWidget.classList.remove('hidden', 'danger', 'safe');
+    if (flaggedUrls.length) {
+      sbWidget.classList.add('danger');
+      const desc = flaggedUrls.map((m) => `${m.url} [${m.threatType}]`).join(', ');
+      sbStatus.textContent = `🚨 THREAT MATCHED (${sbResult.source}): ${desc}`;
+      flags.unshift(`Malicious URL flagged by Safe Browsing: ${desc}`);
+    } else {
+      sbWidget.classList.add('safe');
+      sbStatus.textContent = `✅ Checked ${detectedUrls.length} URL(s) via ${sbResult?.source || 'Safe Browsing'} — no blacklist hits.`;
+    }
+  }
+
+  /**
+   * Renders the Urimai civic branch of the AI Scanner with GPS ward resolution.
+   *
+   * @param {Object} params Civic render context.
+   * @returns {Promise<void>} Resolves once location lookup and petition DOM updates complete.
+   */
+  async function renderUrimaiScanResult({ res, routed, activeAgents, clean, mapsBadge, detectedAddrEl, degraded, offlineFallbackMsg, isVercelProxy }) {
+    pulseBus(activeAgents);
+    switchIntentPalette('CIVIC', 0);
+    setMood(degraded ? 'suspicious' : 'civic');
+    Sound.play('civic');
+    $('xrayStatus').textContent = degraded
+      ? offlineFallbackMsg
+      : `Civic Grievance routed to Urimai Engine (${res.engine})`;
+    $('urimaiScanResult').hidden = false;
+    mapsBadge?.classList.remove('hidden');
+    if (detectedAddrEl) detectedAddrEl.textContent = 'Acquiring precise location...';
+
+    const geo = await getGoogleMapsLocation();
+    const streetAddress = geo.address;
+    res.urimaiKit.location = streetAddress;
+    if (isVercelProxy && routed.details) res.urimaiKit.summary = routed.details;
+
+    if (detectedAddrEl) detectedAddrEl.textContent = streetAddress;
+    if ($('geoStatus')) $('geoStatus').textContent = `Google Maps Location: ${streetAddress}`;
+    $('usDept').textContent = res.urimaiKit.department;
+    $('usSummary').textContent = `${res.urimaiKit.summary} — ${streetAddress}`;
+    $('usEngLetter').textContent = res.urimaiKit.englishLetter.replace(/Ward 12[^,\n]*/i, streetAddress);
+    $('usRegTitle').textContent = `${res.urimaiKit.langName} (${res.urimaiKit.langNative}) Draft`;
+    $('usRegLetter').textContent = res.urimaiKit.regionalLetter;
+    activeUrimaiKit = res.urimaiKit;
+    renderHeroDynamicCard({ ...routed, active_agents: activeAgents }, clean, streetAddress);
+  }
+
+  /**
+   * Renders the Kavach scam/moderate/safe branch of the AI Scanner.
+   *
+   * @param {Object} params Scam render context.
+   * @returns {void}
+   */
+  function renderKavachScanResult({ res, routed, activeAgents, clean, detectedUrls, flaggedUrls, sbResult, sbWidget, sbStatus, degraded, offlineFallbackMsg }) {
+    const finalTier = getThreatTier(res.score);
+    res.score = finalTier.score;
+    res.level = finalTier.level;
+    res.intent = finalTier.intent;
+    if (finalTier.tier === 'safe') {
+      res.verdict = finalTier.verdict;
+      res.scamType = finalTier.scamType;
+    }
+    const finalAgents = normalizeBusAgents(activeAgents, 'SCAM', finalTier.score);
+    pulseBus(finalAgents);
+    switchIntentPalette(finalTier.intent, finalTier.score);
+    setMood(flaggedUrls.length ? 'critical' : degraded ? 'suspicious' : finalTier.mood);
+    Sound.play(finalTier.tier === 'critical' ? 'alert' : 'safe');
+    $('xrayStatus').textContent = degraded ? offlineFallbackMsg : '';
+    renderHeroDynamicCard({
+      ...routed,
+      intent: 'SCAM',
+      confidence_score: finalTier.score,
+      active_agents: finalAgents,
+      summary: res.verdict,
+      action_draft: finalTier.tier === 'critical' ? (res.complaint || '') : '',
+      checklist: res.nextSteps || [],
+      threat_vectors: finalTier.tier === 'safe' ? [] : (res.redFlags || routed?.threat_vectors || []),
+      action_payload: {
+        summary: res.verdict,
+        department_or_agency: finalTier.tier === 'critical' ? 'National Cybercrime Helpline (1930)' : 'Kavach Local Shield',
+        draft_text: finalTier.tier === 'critical' ? (res.complaint || '') : '',
+        next_steps: res.nextSteps || [],
+      },
+    }, clean);
+
+    $('result').className = `result lvl-${finalTier.level}`;
+    $('result').hidden = false;
+    $('gauge').className = `gauge lvl-${finalTier.level}`;
+    $('gauge').setAttribute('aria-valuenow', String(finalTier.score));
+    $('gauge').style.setProperty('--pct', finalTier.score);
+    $('scoreText').textContent = finalTier.score;
+    $('levelText').className = `level lvl-${finalTier.level}`;
+    $('levelText').textContent = `${finalTier.badgeLabel} (${finalTier.score}/100)`;
+    $('verdict').textContent = res.verdict;
+    $('scamType').textContent = res.scamType;
+    $('explanation').textContent = res.explanation || res.details || '';
+
+    const flags = [...(res.redFlags || [])];
+    renderScannerSafeBrowsingStatus(detectedUrls, flaggedUrls, sbResult, flags, sbWidget, sbStatus);
+    $('redFlags').innerHTML = flags.map((f) => `<li>${escapeHtml(f)}</li>`).join('');
+    $('nextSteps').innerHTML = (res.nextSteps || []).map((s) => `<li>${escapeHtml(s)}</li>`).join('');
+
+    if (res.upiChecks?.length) {
+      $('upiBlock').hidden = false;
+      $('upiList').innerHTML = res.upiChecks.map((u) =>
+        `<li class="${u.verdict === 'validated' ? 'good' : 'bad'}"><code>${escapeHtml(u.upi)}</code> — ${escapeHtml(u.reason)}</li>`,
+      ).join('');
+    } else {
+      $('upiBlock').hidden = true;
+    }
+
+    if (res.complaint) {
+      $('complaintBlock').hidden = false;
+      $('complaint').value = res.complaint;
+      $('familyAlert').href = `https://wa.me/?text=${encodeURIComponent(`🚨 Scam Warning (${res.scamType}): ${res.verdict}\n${clean.slice(0, 180)}`)}`;
+    } else {
+      $('complaintBlock').hidden = true;
+    }
+    $('engine').textContent = `Engine: ${res.engine}`;
+    for (const id of res.categoryIds || []) unlockCategory(id);
+  }
+
+  /**
    * Executes the unified Kavach × Urimai Multi-Agent scan flow: Safe Browsing link check,
    * Vercel `/api/gemini` Intent Routing with automatic local fallback, Google Maps GPS lookup,
    * and DOM updates.
@@ -2358,17 +2660,7 @@
   async function runSmartScan(text, { mode = 'scanner' } = {}) {
     const clean = text.trim();
     if (!clean) return;
-    $('scanBox').classList.add('scanning');
-    $('xrayStatus').textContent = 'Analyzing with Gemini Intent Router…';
-    $('result').hidden = true;
-    $('urimaiScanResult').hidden = true;
-    if ($('heroDynamicCard')) $('heroDynamicCard').hidden = true;
-    if ($('redFlags')) $('redFlags').innerHTML = '';
-    if ($('nextSteps')) $('nextSteps').innerHTML = '';
-    if ($('complaint')) $('complaint').value = '';
-    if ($('complaintBlock')) $('complaintBlock').hidden = true;
-    if ($('upiBlock')) $('upiBlock').hidden = true;
-    if ($('upiList')) $('upiList').innerHTML = '';
+    resetScannerPanels();
     pulseBus(['vani', 'gemini']);
     Sound.play('scan');
 
@@ -2393,79 +2685,20 @@
       const routed = await analyzeIntent(clean, { mode });
       const isVercelProxy = routed?._source === 'vercel-proxy';
       const aiOffline = Boolean(routed?._offlineFallback);
-      const res = {
-        ...(routed._baseAnalysis || await API.call('analyze', { text: clean, lang, location: 'Ward 12, Coimbatore' })),
-      };
-
-      const ap = routed.action_payload || {};
-      const vectors = Array.isArray(routed.threat_vectors) ? routed.threat_vectors : [];
+      const baseAnalysis = routed._baseAnalysis || await API.call('analyze', { text: clean, lang, location: 'Ward 12, Coimbatore' });
+      const res = await enrichScanVerdict(routed, { ...baseAnalysis }, clean);
       const confScore = Math.max(0, Math.min(100, Math.round(Number(routed.confidence_score ?? routed.risk_score) || 0)));
       const activeAgents = normalizeBusAgents(routed.active_agents, routed.intent === 'CIVIC' ? 'CIVIC' : 'SCAM', confScore);
-
-      if (routed.intent === 'CIVIC') {
-        const kit = routed.urimaiKit || res.urimaiKit || await API.call('urimai', { text: clean, lang, location: 'Ward 12, Coimbatore' });
-        if (ap.department_or_agency) kit.department = ap.department_or_agency;
-        if (routed.summary || ap.summary) kit.summary = routed.summary || ap.summary;
-        if (routed.action_draft || ap.draft_text) kit.englishLetter = routed.action_draft || ap.draft_text;
-        if (ap.regional_draft_text) kit.regionalLetter = ap.regional_draft_text;
-        res.intent = 'CIVIC';
-        res.level = 'civic';
-        res.score = 0;
-        res.urimaiKit = kit;
-      } else {
-        const tier = getThreatTier(confScore);
-        const origBaseSafe = !res.level || res.level === 'safe';
-        res.intent = tier.intent;
-        res.score = tier.score;
-        res.level = tier.level;
-        const checklistSteps = Array.isArray(routed.checklist) && routed.checklist.length
-          ? routed.checklist
-          : (ap.next_steps || []);
-        if (tier.tier === 'safe') {
-          res.verdict = tier.verdict;
-          res.scamType = tier.scamType;
-          res.redFlags = [];
-          res.complaint = '';
-          res.nextSteps = checklistSteps.length ? checklistSteps : ['No common scam pattern found. Never share OTPs or PINs with strangers.'];
-          res.explanation = tier.verdict;
-        } else if (tier.tier === 'moderate') {
-          res.verdict = routed.summary || ap.summary || (!origBaseSafe && res.verdict ? res.verdict : tier.verdict);
-          res.scamType = vectors[0] || res.scamType || tier.scamType;
-          res.redFlags = vectors.length ? vectors : (res.redFlags?.length ? res.redFlags : ['Unverified request or suspicious link — verify independently.']);
-          res.complaint = '';
-          res.nextSteps = checklistSteps.length ? checklistSteps : (!origBaseSafe && res.nextSteps?.length ? res.nextSteps : ['Verify sender through an official app or website before taking action.']);
-          res.explanation = routed.summary || ap.summary || routed.details || (!origBaseSafe && res.explanation ? res.explanation : tier.verdict);
-        } else {
-          res.verdict = routed.summary || ap.summary || (!origBaseSafe && res.verdict ? res.verdict : tier.verdict);
-          res.scamType = routed.scam_type || vectors[0] || res.scamType || tier.scamType;
-          res.redFlags = vectors.length ? [...new Set([...vectors, ...(res.redFlags || [])])] : (res.redFlags || ['High-Risk Cyber Fraud Pattern']);
-          res.nextSteps = checklistSteps.length ? [...new Set([...checklistSteps, ...(res.nextSteps || [])])] : (res.nextSteps || []);
-          res.complaint = routed.action_draft || ap.draft_text || res.complaint || `NATIONAL CYBER CRIME REPORTING PORTAL (https://cybercrime.gov.in | Helpline 1930)\nSuspected Scam (${res.score}/100): ${routed.details || clean}\nRecommended Action: ${routed.action || 'Freeze bank/UPI and dial 1930 immediately.'}`;
-          res.explanation = routed.summary || ap.summary || routed.details || (!origBaseSafe && res.explanation ? res.explanation : res.verdict);
-        }
-      }
       res.engine = isVercelProxy
         ? 'Live: Vercel Gemini Proxy (/api/gemini)'
         : 'Local AI Simulator (Auto-Fallback)';
 
       // 3) Override Risk Score to 100 & Force Deep Crimson Red if Safe Browsing flags a malicious URL
       const flaggedUrls = sbResult && !sbResult.safe && sbResult.matches?.length ? sbResult.matches : [];
-      if (flaggedUrls.length > 0) {
-        res.intent = 'SCAM';
-        res.score = 100;
-        res.risk_score = 100;
-        res.level = 'critical';
-        res.scamType = 'Malicious / Phishing URL Detected';
-        res.verdict = `CRITICAL THREAT: Malicious URL Blocked (${flaggedUrls[0].url})`;
-        if (!res.complaint) {
-          res.complaint = `NATIONAL CYBER CRIME REPORTING PORTAL (https://cybercrime.gov.in | Helpline 1930)\nMalicious Link Detected (${flaggedUrls.map((m) => m.url).join(', ')}): ${clean}`;
-        }
-      }
+      applyMaliciousUrlOverride(res, flaggedUrls, clean);
 
       lastResult = res;
       $('scanBox').classList.remove('scanning');
-
-      // Record scan history
       scanHistory.unshift({
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         mode: res.intent === 'CIVIC' ? 'CIVIC' : res.level.toUpperCase(),
@@ -2475,114 +2708,12 @@
 
       const offlineFallbackMsg = 'Offline mode — running local rule engine. Please verify manually.';
       const degraded = Boolean(aiOffline);
-
-      // Branch A: URIMAI CIVIC (Blue Theme + Await Google Maps Geolocation + PDF Location Injection)
       if (res.intent === 'CIVIC' && res.urimaiKit) {
-        pulseBus(activeAgents);
-        switchIntentPalette('CIVIC', 0);
-        setMood(degraded ? 'suspicious' : 'civic');
-        Sound.play('civic');
-        $('xrayStatus').textContent = degraded
-          ? offlineFallbackMsg
-          : `Civic Grievance routed to Urimai Engine (${res.engine})`;
-        $('urimaiScanResult').hidden = false;
-        mapsBadge?.classList.remove('hidden');
-        if (detectedAddrEl) detectedAddrEl.textContent = 'Acquiring precise location...';
-
-        const geo = await getGoogleMapsLocation();
-        const streetAddress = geo.address;
-        res.urimaiKit.location = streetAddress;
-        if (isVercelProxy && routed.details) res.urimaiKit.summary = routed.details;
-
-        if (detectedAddrEl) detectedAddrEl.textContent = streetAddress;
-        if ($('geoStatus')) $('geoStatus').textContent = `Google Maps Location: ${streetAddress}`;
-        $('usDept').textContent = res.urimaiKit.department;
-        $('usSummary').textContent = `${res.urimaiKit.summary} — ${streetAddress}`;
-        $('usEngLetter').textContent = res.urimaiKit.englishLetter.replace(/Ward 12[^,\n]*/i, streetAddress);
-        $('usRegTitle').textContent = `${res.urimaiKit.langName} (${res.urimaiKit.langNative}) Draft`;
-        $('usRegLetter').textContent = res.urimaiKit.regionalLetter;
-        activeUrimaiKit = res.urimaiKit;
-        renderHeroDynamicCard({ ...routed, active_agents: activeAgents }, clean, streetAddress);
+        await renderUrimaiScanResult({ res, routed, activeAgents, clean, mapsBadge, detectedAddrEl, degraded, offlineFallbackMsg, isVercelProxy });
         return;
       }
 
-      // Branch B: KAVACH SCAM / MODERATE / SAFE (Synchronized Tier Verdict, Gauge, Colors & Hero Banner)
-      const finalTier = getThreatTier(res.score);
-      res.score = finalTier.score;
-      res.level = finalTier.level;
-      res.intent = finalTier.intent;
-      if (finalTier.tier === 'safe') {
-        res.verdict = finalTier.verdict;
-        res.scamType = finalTier.scamType;
-      }
-      const finalAgents = normalizeBusAgents(activeAgents, 'SCAM', finalTier.score);
-      pulseBus(finalAgents);
-      switchIntentPalette(finalTier.intent, finalTier.score);
-      setMood(flaggedUrls.length ? 'critical' : degraded ? 'suspicious' : finalTier.mood);
-      Sound.play(finalTier.tier === 'critical' ? 'alert' : 'safe');
-      $('xrayStatus').textContent = degraded ? offlineFallbackMsg : '';
-      renderHeroDynamicCard({
-        ...routed,
-        intent: 'SCAM',
-        confidence_score: finalTier.score,
-        active_agents: finalAgents,
-        summary: res.verdict,
-        action_draft: finalTier.tier === 'critical' ? (res.complaint || '') : '',
-        checklist: res.nextSteps || [],
-        threat_vectors: finalTier.tier === 'safe' ? [] : (res.redFlags || routed?.threat_vectors || []),
-        action_payload: {
-          summary: res.verdict,
-          department_or_agency: finalTier.tier === 'critical' ? 'National Cybercrime Helpline (1930)' : 'Kavach Local Shield',
-          draft_text: finalTier.tier === 'critical' ? (res.complaint || '') : '',
-          next_steps: res.nextSteps || [],
-        },
-      }, clean);
-      $('result').className = `result lvl-${finalTier.level}`;
-      $('result').hidden = false;
-      $('gauge').className = `gauge lvl-${finalTier.level}`;
-      $('gauge').setAttribute('aria-valuenow', String(finalTier.score));
-      $('gauge').style.setProperty('--pct', finalTier.score);
-      $('scoreText').textContent = finalTier.score;
-      $('levelText').className = `level lvl-${finalTier.level}`;
-      $('levelText').textContent = `${finalTier.badgeLabel} (${finalTier.score}/100)`;
-      $('verdict').textContent = res.verdict;
-      $('scamType').textContent = res.scamType;
-      $('explanation').textContent = res.explanation || res.details || '';
-
-      const flags = [...(res.redFlags || [])];
-      if (detectedUrls.length && sbWidget && sbStatus) {
-        sbWidget.classList.remove('hidden', 'danger', 'safe');
-        if (flaggedUrls.length) {
-          sbWidget.classList.add('danger');
-          const desc = flaggedUrls.map((m) => `${m.url} [${m.threatType}]`).join(', ');
-          sbStatus.textContent = `🚨 THREAT MATCHED (${sbResult.source}): ${desc}`;
-          flags.unshift(`Malicious URL flagged by Safe Browsing: ${desc}`);
-        } else {
-          sbWidget.classList.add('safe');
-          sbStatus.textContent = `✅ Checked ${detectedUrls.length} URL(s) via ${sbResult?.source || 'Safe Browsing'} — no blacklist hits.`;
-        }
-      }
-      $('redFlags').innerHTML = flags.map((f) => `<li>${escapeHtml(f)}</li>`).join('');
-      $('nextSteps').innerHTML = (res.nextSteps || []).map((s) => `<li>${escapeHtml(s)}</li>`).join('');
-
-      if (res.upiChecks?.length) {
-        $('upiBlock').hidden = false;
-        $('upiList').innerHTML = res.upiChecks.map((u) =>
-          `<li class="${u.verdict === 'validated' ? 'good' : 'bad'}"><code>${escapeHtml(u.upi)}</code> — ${escapeHtml(u.reason)}</li>`
-        ).join('');
-      } else {
-        $('upiBlock').hidden = true;
-      }
-
-      if (res.complaint) {
-        $('complaintBlock').hidden = false;
-        $('complaint').value = res.complaint;
-        $('familyAlert').href = `https://wa.me/?text=${encodeURIComponent(`🚨 Scam Warning (${res.scamType}): ${res.verdict}\n${clean.slice(0, 180)}`)}`;
-      } else {
-        $('complaintBlock').hidden = true;
-      }
-      $('engine').textContent = `Engine: ${res.engine}`;
-      for (const id of res.categoryIds || []) unlockCategory(id);
+      renderKavachScanResult({ res, routed, activeAgents, clean, detectedUrls, flaggedUrls, sbResult, sbWidget, sbStatus, degraded, offlineFallbackMsg });
     } catch (err) {
       console.warn('[Chat_Safe][SmartScan] Scan pipeline failed, switching to offline notice:', err?.message || err);
       $('scanBox').classList.remove('scanning');
@@ -2618,14 +2749,7 @@
   $('readAloud').addEventListener('click', () => {
     if (lastResult) speak(`${lastResult.verdict}. ${(lastResult.nextSteps || [])[0] || ''}`, lastResult.lang);
   });
-  $('copyComplaint').addEventListener('click', async () => {
-    try {
-      await navigator.clipboard?.writeText($('complaint').value);
-      toast('1930 Cybercrime complaint copied!');
-    } catch (err) {
-      console.warn('[Chat_Safe][Clipboard] Copy complaint failed:', err?.message || err);
-    }
-  });
+  $('copyComplaint').addEventListener('click', () => copyTextToClipboard($('complaint').value, '1930 Cybercrime complaint copied!', 'Clipboard'));
   $('sendToFamilyBtn').addEventListener('click', () => {
     if (!activeUrimaiKit) return;
     dispatchUrimaiKitToFamily(activeUrimaiKit);
@@ -2730,22 +2854,8 @@
   }
 
   $('portalStateSelect').addEventListener('change', (e) => updatePortalUI(e.target.value));
-  $('copyPortalTextBtn').addEventListener('click', async () => {
-    try {
-      await navigator.clipboard?.writeText($('portalCopyArea').value);
-      toast('📋 CM Helpline portal text copied! Paste on the govt portal.');
-    } catch (err) {
-      console.warn('[Chat_Safe][Clipboard] Copy portal text failed:', err?.message || err);
-    }
-  });
-  $('copyProxyLinkBtn').addEventListener('click', async () => {
-    try {
-      await navigator.clipboard?.writeText($('proxyLinkInput').value);
-      toast('📋 Local Proxy WhatsApp link copied!');
-    } catch (err) {
-      console.warn('[Chat_Safe][Clipboard] Copy proxy link failed:', err?.message || err);
-    }
-  });
+  $('copyPortalTextBtn').addEventListener('click', () => copyTextToClipboard($('portalCopyArea').value, '📋 CM Helpline portal text copied! Paste on the govt portal.', 'Clipboard'));
+  $('copyProxyLinkBtn').addEventListener('click', () => copyTextToClipboard($('proxyLinkInput').value, '📋 Local Proxy WhatsApp link copied!', 'Clipboard'));
 
   // Pathway buttons (Local O2O vs Solution 1 Digital Bypass vs Solution 2 Local Proxy)
   /**
