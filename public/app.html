@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://maps.googleapis.com https://safebrowsing.googleapis.com; connect-src 'self' https://maps.googleapis.com https://safebrowsing.googleapis.com; img-src 'self' data: blob:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://maps.googleapis.com https://safebrowsing.googleapis.com; connect-src 'self' https://maps.googleapis.com https://safebrowsing.googleapis.com; img-src 'self' data: blob:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self';">
   <meta name="description" content="Chat_Safe × Urimai — Stop cyber scams (Kavach) and generate automated local legal &amp; civic petitions (Urimai) from button phones in 23 Indian languages. Manage your family's village issues and rural scam threats remotely from any smartphone or laptop.">
   <meta name="theme-color" content="#070b14">
   <title>Chat_Safe × Urimai — Stop Scams &amp; Automate Local Legal Petitions</title>
@@ -15,8 +15,8 @@
   <link rel="preload" href="icon.svg" as="image">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="styles.css?v=323">
-  <link rel="stylesheet" href="palettes.css?v=323">
+  <link rel="stylesheet" href="styles.css?v=325">
+  <link rel="stylesheet" href="palettes.css?v=325">
   <script src="theme.js" defer></script>
 </head>
 <body data-default-palette="mandarin">
@@ -274,7 +274,7 @@
             <button type="button" class="feed-tab" data-feed="video">Video Reels</button>
           </div>
           <div class="feed-actions">
-            <button type="button" id="toggleRedaction" class="chip sm" aria-pressed="true" data-tip="Toggle Gemini PII Auto-Redaction">Gemini [REDACTED] On</button>
+            <button type="button" id="toggleRedaction" class="chip sm" aria-pressed="true" data-tip="Toggle Gemini PII Auto-Redaction">🛡️ PII Masking On</button>
             <button type="button" id="openPublisherBtn" class="button primary sm">+ Post Alert Video</button>
           </div>
         </div>
@@ -836,12 +836,13 @@
   <script src="scamtypes.js" defer></script>
   <script src="api.js" defer></script>
   <script src="history.js" defer></script>
-  <script src="avatar.js?v=323" defer></script>
+  <script src="avatar.js?v=325" defer></script>
   <script src="agentAvatars.js" defer></script>
   <script src="videoReels.js" defer></script>
   <script src="pdf.js" defer></script>
   <script src="fx.js" defer></script>
-  <script src="app.js?v=324" defer></script>
-  <script src="cursor.js" defer></script>
+  <script src="fallbackEngine.js?v=325" defer></script>
+  <script src="app.js?v=325" defer></script>
+  <script src="cursor.js?v=325" defer></script>
 </body>
 </html>

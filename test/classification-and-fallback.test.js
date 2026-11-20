@@ -68,27 +68,45 @@ function loadFallbackRuntime({ online = true, fetchImpl } = {}) {
     URL,
     Blob,
     AbortController,
-    fetch: fetchImpl || (async () => ({
-      ok: false,
-      status: 503,
-      headers: { get: () => 'application/json' },
-      json: async () => ({ error: 'unavailable', fallback: true }),
-    })),
+    fetch:
+      fetchImpl ||
+      (async () => ({
+        ok: false,
+        status: 503,
+        headers: { get: () => 'application/json' },
+        json: async () => ({ error: 'unavailable', fallback: true }),
+      })),
     navigator: { onLine: online, clipboard: { writeText: async () => {} } },
     location: { search: '', hash: '', href: 'https://chat-safe-vercel.vercel.app/app.html' },
     localStorage: {
       _data: new Map(),
-      getItem(k) { return this._data.get(k) ?? null; },
-      setItem(k, v) { this._data.set(k, String(v)); },
-      removeItem(k) { this._data.delete(k); },
-      clear() { this._data.clear(); },
+      getItem(k) {
+        return this._data.get(k) ?? null;
+      },
+      setItem(k, v) {
+        this._data.set(k, String(v));
+      },
+      removeItem(k) {
+        this._data.delete(k);
+      },
+      clear() {
+        this._data.clear();
+      },
     },
     sessionStorage: {
       _data: new Map(),
-      getItem(k) { return this._data.get(k) ?? null; },
-      setItem(k, v) { this._data.set(k, String(v)); },
-      removeItem(k) { this._data.delete(k); },
-      clear() { this._data.clear(); },
+      getItem(k) {
+        return this._data.get(k) ?? null;
+      },
+      setItem(k, v) {
+        this._data.set(k, String(v));
+      },
+      removeItem(k) {
+        this._data.delete(k);
+      },
+      clear() {
+        this._data.clear();
+      },
     },
     matchMedia: () => ({ matches: true }),
     addEventListener() {},
@@ -118,14 +136,23 @@ function loadFallbackRuntime({ online = true, fetchImpl } = {}) {
   sandbox.window.ChatSafeSound = { muted: false, play() {}, playDtmf() {}, toggle: () => false, stopAll() {} };
   sandbox.window.createKavach = () => ({
     mood: 'idle',
-    setMood(m) { this.mood = m; },
+    setMood(m) {
+      this.mood = m;
+    },
     setState() {},
     setDark() {},
     resetView() {},
     pulse() {},
   });
   sandbox.window.createBackground = () => ({ setColor() {} });
-  sandbox.window.createHistory = () => ({ currentId: 'c1', add() {}, search: () => [], startNew() {}, clear() {}, exportJson: () => '[]' });
+  sandbox.window.createHistory = () => ({
+    currentId: 'c1',
+    add() {},
+    search: () => [],
+    startNew() {},
+    clear() {},
+    exportJson: () => '[]',
+  });
   sandbox.window.KAVACH_MOOD_COLORS = {
     idle: [34, 211, 238],
     safe: [16, 185, 129],
@@ -135,7 +162,7 @@ function loadFallbackRuntime({ online = true, fetchImpl } = {}) {
   };
 
   const context = vm.createContext(sandbox);
-  for (const file of ['i18n.js', 'core.js', 'scamtypes.js']) {
+  for (const file of ['i18n.js', 'core.js', 'scamtypes.js', 'fallbackEngine.js']) {
     vm.runInContext(fs.readFileSync(path.join(ROOT, 'public', file), 'utf8'), context);
   }
   const engine = context.window.ChatSafeCore.createEngine({ logger: { error() {} } });
@@ -184,11 +211,15 @@ test('Classification covers multilingual scam vs civic disambiguation and sextor
   assert.ok(blackmailScam.active_agents.includes('kavach'));
 
   // Electricity disconnection threat must route as SCAM, while dark street light pole routes as CIVIC
-  const powerScam = classify('Your TNEB electricity bill is unpaid. Power will be disconnected tonight unless you call 9876543210.');
+  const powerScam = classify(
+    'Your TNEB electricity bill is unpaid. Power will be disconnected tonight unless you call 9876543210.',
+  );
   assert.equal(powerScam?.intent, 'SCAM');
   assert.ok(powerScam.confidence_score >= 85);
 
-  const streetLightCivic = classify('The street light near Ward 4 temple is not working and the street is completely dark.');
+  const streetLightCivic = classify(
+    'The street light near Ward 4 temple is not working and the street is completely dark.',
+  );
   assert.equal(streetLightCivic?.intent, 'CIVIC');
   assert.equal(streetLightCivic?.civic_type, 'street_light');
 });
@@ -198,7 +229,8 @@ test('Prompt & input handling: trims prompt, caps length at 1500 chars, rejects 
   const handler = createGeminiHandler({
     env: { GEMINI_API_KEY: '  secret+key/123  ' },
     fetchImpl: async (url, init) => {
-      assert.ok(url.includes('key=secret%2Bkey%2F123'));
+      assert.ok(!url.includes('key='));
+      assert.equal(init.headers['x-goog-api-key'], 'secret+key/123');
       const payload = JSON.parse(init.body);
       capturedPrompt = payload.contents[0].parts[0].text;
       return {
@@ -206,20 +238,24 @@ test('Prompt & input handling: trims prompt, caps length at 1500 chars, rejects 
         status: 200,
         async json() {
           return {
-            candidates: [{
-              content: {
-                parts: [{
-                  text: JSON.stringify({
-                    intent: 'SCAM',
-                    confidence_score: 88,
-                    active_agents: ['kavach'],
-                    summary: 'Long phishing prompt classified.',
-                    action_draft: 'Call 1930.',
-                    checklist: ['Block sender'],
-                  }),
-                }],
+            candidates: [
+              {
+                content: {
+                  parts: [
+                    {
+                      text: JSON.stringify({
+                        intent: 'SCAM',
+                        confidence_score: 88,
+                        active_agents: ['kavach'],
+                        summary: 'Long phishing prompt classified.',
+                        action_draft: 'Call 1930.',
+                        checklist: ['Block sender'],
+                      }),
+                    },
+                  ],
+                },
               },
-            }],
+            ],
           };
         },
       };
@@ -243,7 +279,10 @@ test('Prompt & input handling: trims prompt, caps length at 1500 chars, rejects 
 
 test('Fallback resilience: missing key, 400 thinkingBudget retry, upstream error sanitization, timeout, and offline mode', async () => {
   const missingRes = createMockRes();
-  await createGeminiHandler({ env: { GEMINI_API_KEY: '  ' } })({ method: 'POST', body: { prompt: 'Test' } }, missingRes);
+  await createGeminiHandler({ env: { GEMINI_API_KEY: '  ' } })(
+    { method: 'POST', body: { prompt: 'Test' } },
+    missingRes,
+  );
   assert.equal(missingRes.statusCode, 503);
   assert.deepEqual(missingRes.body, { error: 'Missing GEMINI_API_KEY', fallback: true, stage: 'missing_key' });
 
@@ -255,7 +294,9 @@ test('Fallback resilience: missing key, 400 thinkingBudget retry, upstream error
     const errRes = createMockRes();
     await createGeminiHandler({
       env: { GEMINI_API_KEY: 'top-secret-xyz' },
-      fetchImpl: async () => { throw new Error('ECONNRESET on ?key=top-secret-xyz'); },
+      fetchImpl: async () => {
+        throw new Error('ECONNRESET on ?key=top-secret-xyz');
+      },
     })({ method: 'POST', body: { prompt: 'Test network failure' } }, errRes);
 
     assert.equal(errRes.statusCode, 503);
@@ -271,7 +312,10 @@ test('Fallback resilience: missing key, 400 thinkingBudget retry, upstream error
   let fetchCalled = false;
   const offlineFallback = loadFallbackRuntime({
     online: false,
-    fetchImpl: async () => { fetchCalled = true; throw new Error('offline'); },
+    fetchImpl: async () => {
+      fetchCalled = true;
+      throw new Error('offline');
+    },
   });
   const offlineCivic = await offlineFallback.analyzeIntent('Drainage sewage overflow in Ward 12', { mode: 'voice' });
   assert.equal(fetchCalled, false);
@@ -289,7 +333,10 @@ test('Fallback resilience: missing key, 400 thinkingBudget retry, upstream error
       json: async () => ({ error: 'Upstream Gemini request timed out', fallback: true, upstreamStatus: 504 }),
     }),
   });
-  const degradedScam = await degradedFallback.analyzeIntent('FedEx parcel seized with drugs, pay ₹5000 customs fee now', { mode: 'chat' });
+  const degradedScam = await degradedFallback.analyzeIntent(
+    'FedEx parcel seized with drugs, pay ₹5000 customs fee now',
+    { mode: 'chat' },
+  );
   assert.equal(degradedScam._proxyFallback, true);
   assert.equal(degradedScam.intent, 'SCAM');
   assert.ok(degradedScam.confidence_score >= 90);

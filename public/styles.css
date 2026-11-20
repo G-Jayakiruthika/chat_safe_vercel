@@ -224,7 +224,8 @@ textarea {
 .typing span:nth-child(3) { animation-delay: .4s; }
 
 /* ---------- Tabs & panels ---------- */
-.tabs-stack { display: grid; gap: .55rem; margin: 0 0 1rem; margin-top: 0 !important; padding-top: 8px !important; }
+.tabs-stack { display: grid; gap: .65rem; margin: 1.5rem 0 1.5rem; padding: 0; }
+@media (max-width: 767px) { .tabs-stack { margin: 1rem 0 1.1rem; gap: .5rem; } }
 .tabs { display: grid; gap: .55rem; margin: 0; align-items: stretch; }
 .tabs-primary { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .tabs-tools { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -253,6 +254,7 @@ textarea, input, select {
   transition: border-color .2s, box-shadow .2s;
 }
 textarea:focus, input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent); outline: none; }
+textarea:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 select { width: auto; min-height: 42px; max-width: 12rem; }
 .help, .muted { color: var(--muted); }
 .small { font-size: .85rem; }
@@ -1157,7 +1159,13 @@ body.notes-off #sf-tip { display: none !important; }
   box-shadow: var(--shadow); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem;
 }
-.cookie-banner p { margin: 0; font-size: .88rem; flex: 1; min-width: 240px; }
+.cookie-banner p { margin: 0; font-size: .88rem; flex: 1 1 320px; min-width: min(100%, 240px); }
+.cookie-banner > :not(p) { flex: 0 1 auto; display: flex; flex-wrap: wrap; gap: .5rem; }
+@media (max-width: 767px) {
+  .cookie-banner { flex-direction: column; align-items: stretch; }
+  .cookie-banner p { flex-basis: auto; }
+  .cookie-banner > :not(p) > * { flex: 1 1 auto; }
+}
 
 /* ============================================================================
    Zero-Data-Retention & Edge Privacy Consent Modal (Non-Dismissible Security Gate)

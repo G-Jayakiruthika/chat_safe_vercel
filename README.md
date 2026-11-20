@@ -2,9 +2,11 @@
 
 # Chat_Safe × Urimai — Vercel Evaluation Build (Serverless Gemini Proxy + Zero-Config Fallback)
 
-> **Vercel Serverless Gemini Flash Proxy** (`api/gemini.js`) · **Static PWA Output** (`public/`) · **23 Indian Languages** (English + all 22 Eighth Schedule languages) · **Zero External Runtime Dependencies** (`package.json` `"type": "module"`).
+> **Vercel Serverless Gemini Flash Proxy** (`api/gemini.js`) · **Static PWA Output** (`public/`) · **23 Indian Languages** (English + all 22 Eighth Schedule languages) · **Zero External Runtime Dependencies** (dev-only ESLint + Prettier).
 
-- **Vercel Evaluation URL**: `https://chat-safe-vercel.vercel.app` (Live Workspace: `https://chat-safe-vercel.vercel.app/app.html`)
+[![CI](https://github.com/G-Jayakiruthika/chat_safe_vercel/actions/workflows/ci.yml/badge.svg)](https://github.com/G-Jayakiruthika/chat_safe_vercel/actions/workflows/ci.yml)
+
+- **Vercel Evaluation URL**: `https://chatsafevercel.vercel.app` (Live Workspace: `https://chatsafevercel.vercel.app/app.html`)
 - **Primary Repository**: `https://github.com/G-Jayakiruthika/chat_safe_vercel`
 - **Untouched Static Backup**: `https://github.com/G-Jayakiruthika/chat_safe_1`
 
@@ -24,7 +26,7 @@
 +------------------------------------------------------------------------------+
 |  STATIC PWA SHELL (public/app.html · public/app.js · public/sw.js)           |
 |  * Non-blocking startup (deferred theme.js & avatars, instant hero/hint paint)|
-|  * AbortController-guarded POST /api/gemini orchestration (10.5s client cap) |
+|  * AbortController-guarded POST /api/gemini orchestration (18.5s client cap) |
 |  * 6-Node Agent Bus: Vani IVR · Gemini Router · Kavach · Urimai · Netra · Setu|
 +--------------------------------------+---------------------------------------+
                                        |
@@ -33,9 +35,9 @@
                v                                               v
 +---------------------------------------+     +--------------------------------+
 | VERCEL SERVERLESS PROXY (api/gemini.js)|    | DETERMINISTIC LOCAL SIMULATOR  |
-| * Server-side process.env.GEMINI_API_KEY|   | (classifyLocalFallback +       |
-| * Direct gemini-3.8-flash POST (9s cap)|    |  public/core.js)               |
-| * thinkingBudget: 0 + auto-retry on 400|    | * All 8 Kavach scam vectors    |
+| * Server-side process.env.GEMINI_API_KEY|   | (fallbackEngine.js +           |
+| * gemini-3.8-flash (9s) → 3.5-flash-lite|    |  public/core.js)               |
+| * thinkingLevel minimal + JSON mode    |    | * All 8 Kavach scam vectors    |
 | * Key redaction + partial JSON recovery|    | * All 5 Urimai civic categories|
 +-------------------+-------------------+     +---------------+----------------+
                     |                                         |
@@ -50,7 +52,8 @@
 ```
 
 ### Key Modules
-- [`api/gemini.js`](api/gemini.js) — Stateless Vercel Serverless Function (`maxDuration: 30` in `vercel.json`) validating `process.env.GEMINI_API_KEY`, calling `gemini-3.8-flash:generateContent` with `thinkingBudget: 0` (and automatic retry without `thinkingConfig` if rejected with HTTP `400`), recovering truncated JSON, redacting keys from errors, and enforcing a `9000ms` `AbortController` timeout.
+- [`api/gemini.js`](api/gemini.js) — Stateless Vercel Serverless Function (`maxDuration: 30` in `vercel.json`) validating `process.env.GEMINI_API_KEY`, calling `gemini-3.8-flash:generateContent` with `thinkingLevel: "minimal"` and JSON output (automatic retry without `thinkingConfig` if rejected with HTTP `400`). If the primary model times out (9s) or is overloaded, it retries once on the faster `gemini-3.5-flash-lite` (8s). The API key travels in the `x-goog-api-key` header, never in a URL. Also includes a per-IP rate limit (20/min → `429`), truncated-JSON recovery and key redaction in logs.
+- [`public/fallbackEngine.js`](public/fallbackEngine.js) — Pure, DOM-free offline classifier (threat tiers, agent bus normalisation, 9 scam + 5 civic rule sets, 1930 and petition draft builders), exposed as `window.ChatSafeEngine` and unit-tested directly.
 - [`public/app.js`](public/app.js) — Client orchestrator routing prompts through `/api/gemini` with automatic fallback to `window.ChatSafeFallback`, updating the 3D Kavach avatar, Google Maps / Safe Browsing widgets, Family Hub, and Scanner UI.
 - [`public/core.js`](public/core.js) — Deterministic offline engine powering scam analysis, SEBI `@valid` UPI checks, Netra PII redaction, Urimai kit generation, Autopilot batch scanning, and Kamala Paati decoy replies.
 - [`public/i18n.js`](public/i18n.js) — Localization catalog for 23 Indian languages (`English` + 22 Eighth Schedule languages) with RTL/LTR direction metadata and Web Speech BCP-47 tags.
@@ -108,12 +111,30 @@
 ### Vercel Setup
 1. Import `G-Jayakiruthika/chat_safe_vercel` into Vercel (`vercel.json` configures `outputDirectory: "public"`, `api/gemini.js` `maxDuration: 30`, and strict security headers).
 2. Add `GEMINI_API_KEY` under **Vercel Project Settings → Environment Variables**.
+3. Optional: override models with `GEMINI_MODEL` (default `gemini-3.8-flash`) and `GEMINI_BACKUP_MODEL` (default `gemini-3.5-flash-lite`).
 
 ### Local Verification
 ```bash
-node --check api/gemini.js
-node --check public/app.js
-npm test
+npm ci              # installs dev tools only (ESLint, Prettier)
+npm run lint        # ESLint 9 flat config, zero warnings
+npm test            # Node built-in test runner, 35 tests
+npm run coverage    # tests + line/branch coverage report
+npm run format:check
 ```
 
-`npm test` runs Node's built-in test runner (`node --test test/*.test.js tests/*.test.js`) with zero external dependencies, covering scam/civic classification, prompt/input validation, `api/gemini.js` error/timeout/retry handling, UI responsive rules, and local fallback resilience.
+GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs lint and coverage on every push and pull request.
+
+| Test file | What it covers |
+|---|---|
+| `test/gemini.test.js` | API contract, key redaction, JSON recovery, thinking-config retry |
+| `test/api-resilience.test.js` | Backup-model failover on timeout / 429 / 5xx / empty output, env model overrides, 405, rate limiting (429 + `Retry-After`) |
+| `test/fallback-engine.test.js` | Threat-tier boundaries, agent bus rules, scam / civic / safe classification, draft builders |
+| `test/classification-and-fallback.test.js` | End-to-end classification through `app.js` with the proxy online, failing, timing out and offline |
+| `test/fallback.test.js` | UI fallback flow and agent bus rendering |
+| `test/landing.test.js` | Landing page structure, phone mockup proportions, cache-busting, LCP rules |
+
+API coverage: ~96% of lines.
+
+### Security
+
+See [`SECURITY.md`](SECURITY.md). Highlights: strict CSP (`script-src 'self'`), HSTS, `X-Frame-Options: DENY`, header-based API key, per-IP rate limiting, prompt length caps, and `escapeHtml()` on every dynamic string.

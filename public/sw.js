@@ -4,12 +4,12 @@
  * Service worker: makes Chat_Safe installable (needed for the Android "Share → Chat_Safe"
  * target) and keeps the app shell available offline. API calls are never cached.
  */
-const CACHE = 'chatsafe-vercel-v5.6';
+const CACHE = 'chatsafe-vercel-v5.7';
 const SHELL = [
   './', 'index.html', 'app.html', 'demo.html', 'proxy.html', 'connect.html', 'account.html', 'privacy.html',
   'styles.css', 'landing.css', 'palettes.css',
   'theme.js', 'i18n.js', 'api.js', 'history.js', 'sound.js', 'fx.js', 'avatar.js', 'agentAvatars.js',
-  'videoExplainer.js', 'videoReels.js', 'pdf.js', 'app.js', 'demo.js', 'proxy.js',
+  'videoExplainer.js', 'videoReels.js', 'pdf.js', 'fallbackEngine.js', 'app.js', 'demo.js', 'proxy.js',
   'morph.js', 'landing.js', 'icons.js', 'cursor.js', 'connect.js', 'account.js', 'scamtypes.js', 'core.js', 'icon.svg', 'manifest.webmanifest',
 ];
 

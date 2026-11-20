@@ -42,21 +42,6 @@
     });
   }
 
-  function magnets() {
-    for (const b of document.querySelectorAll('.btn, .button.primary, .type-card, .ch-card, .agent-card')) {
-      b.addEventListener('pointermove', (e) => {
-        const r = b.getBoundingClientRect();
-        const x = (e.clientX - r.left) / r.width - 0.5;
-        const y = (e.clientY - r.top) / r.height - 0.5;
-        b.style.setProperty('--mx', `${x * 8}px`);
-        b.style.setProperty('--my', `${y * 6}px`);
-      });
-      b.addEventListener('pointerleave', () => {
-        b.style.setProperty('--mx', '0px');
-        b.style.setProperty('--my', '0px');
-      });
-    }
-  }
 
   let ring, dot, cv, ctx;
   let tx = window.innerWidth / 2;

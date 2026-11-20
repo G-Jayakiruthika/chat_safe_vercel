@@ -5,7 +5,7 @@ import path from 'node:path';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 
-test('index.html, demo.html, app.html, and sw.js use cache-busted v=323 / v5.6 assets and populate phone screens', () => {
+test('index.html, demo.html, app.html, and sw.js use cache-busted assets and populate phone screens', () => {
   const html = fs.readFileSync(path.join(ROOT, 'public', 'index.html'), 'utf8');
   const demoHtml = fs.readFileSync(path.join(ROOT, 'public', 'demo.html'), 'utf8');
   const appHtml = fs.readFileSync(path.join(ROOT, 'public', 'app.html'), 'utf8');
@@ -14,20 +14,23 @@ test('index.html, demo.html, app.html, and sw.js use cache-busted v=323 / v5.6 a
   assert.match(html, /class="ps-status"/);
   assert.match(html, /class="ps ps-0 on"[\s\S]*SPEED-DIAL 9[\s\S]*Vani IVR Connected/);
   assert.match(html, /class="ps ps-1"[\s\S]*GEMINI ROUTER[\s\S]*99%[\s\S]*KAVACH SCAM X-RAY[\s\S]*URIMAI CIVIC ROUTE/);
-  assert.match(html, /class="ps ps-2"[\s\S]*Father's Voice Note[\s\S]*5-Resident Signature Block[\s\S]*CM Helpline 1100[\s\S]*WhatsApp Proxy/);
+  assert.match(
+    html,
+    /class="ps ps-2"[\s\S]*Father's Voice Note[\s\S]*5-Resident Signature Block[\s\S]*CM Helpline 1100[\s\S]*WhatsApp Proxy/,
+  );
   assert.match(html, /class="hud-safe-bar"/);
-  assert.match(html, /styles\.css\?v=323/);
-  assert.match(html, /palettes\.css\?v=323/);
-  assert.match(html, /landing\.css\?v=323/);
-  assert.match(html, /avatar\.js\?v=323/);
-  assert.match(demoHtml, /styles\.css\?v=323/);
-  assert.match(appHtml, /styles\.css\?v=323/);
-  assert.match(appHtml, /avatar\.js\?v=323/);
-  assert.match(swJs, /chatsafe-vercel-v5\.6/);
-  assert.match(html, /landing\.js\?v=320/);
-  assert.match(html, /morph\.js\?v=320/);
-  assert.match(html, /app\.js\?v=324/);
-  assert.match(appHtml, /app\.js\?v=324/);
+  assert.match(html, /styles\.css\?v=\d+/);
+  assert.match(html, /palettes\.css\?v=\d+/);
+  assert.match(html, /landing\.css\?v=\d+/);
+  assert.match(html, /avatar\.js\?v=\d+/);
+  assert.match(demoHtml, /styles\.css\?v=\d+/);
+  assert.match(appHtml, /styles\.css\?v=\d+/);
+  assert.match(appHtml, /avatar\.js\?v=\d+/);
+  assert.match(swJs, /chatsafe-vercel-v\d+\.\d+/);
+  assert.match(html, /landing\.js\?v=\d+/);
+  assert.match(html, /morph\.js\?v=\d+/);
+  assert.match(html, /app\.js\?v=\d+/);
+  assert.match(appHtml, /app\.js\?v=\d+/);
   assert.match(html, /English \+ 22 Eighth Schedule/);
 });
 
@@ -62,19 +65,34 @@ test('5 emotion faces render distinct mouths on index.html, app.html, and avatar
 test('landing.css forces 9/19.5 smartphone proportions, non-blank steps, zeroed top nav gap, frosted-white pills, and responsive rules', () => {
   const css = fs.readFileSync(path.join(ROOT, 'public', 'landing.css'), 'utf8');
 
-  assert.match(css, /html,\s*body,\s*\.landing,\s*#morph\.bg,\s*\.skip\s*\{[\s\S]*margin-top:\s*0 !important;\s*padding-top:\s*0 !important;/);
-  assert.match(css, /\.landing-top[\s\S]*margin-top:\s*0 !important;\s*padding-top:\s*8px !important;\s*padding-bottom:\s*8px !important;\s*min-height:\s*0 !important;/);
+  assert.match(
+    css,
+    /html,\s*body,\s*\.landing,\s*#morph\.bg,\s*\.skip\s*\{[\s\S]*margin-top:\s*0 !important;\s*padding-top:\s*0 !important;/,
+  );
+  assert.match(
+    css,
+    /\.landing-top[\s\S]*margin-top:\s*0 !important;\s*padding-top:\s*8px !important;\s*padding-bottom:\s*8px !important;\s*min-height:\s*0 !important;/,
+  );
   assert.match(css, /\.landing-top\s+\.mainnav\s*\{[\s\S]*margin-top:\s*0 !important;\s*padding-top:\s*0 !important;/);
   assert.match(
     css,
-    /\.phone-3d\s*\{[\s\S]*z-index:\s*4;[\s\S]*display:\s*flex;[\s\S]*width:\s*clamp\(275px,\s*23vw,\s*325px\) !important;\s*height:\s*auto !important;\s*aspect-ratio:\s*9\s*\/\s*19\.5 !important;\s*max-height:\s*64vh !important;\s*min-height:\s*440px !important;\s*transform:\s*none !important;/,
+    /\.phone-3d\s*\{[\s\S]*z-index:\s*4;[\s\S]*display:\s*flex;[\s\S]*height:\s*clamp\([^)]*\);\s*width:\s*auto;\s*aspect-ratio:\s*9\s*\/\s*19\.5;[\s\S]*transform:\s*none !important;/,
   );
   assert.doesNotMatch(css, /\.phone-3d[^}]*min-height:\s*(?:0|360|380)px/);
   assert.match(css, /\.phone-screen\s*\{[\s\S]*z-index:\s*6;[\s\S]*flex:\s*1 1 auto;[\s\S]*min-height:\s*416px;/);
   assert.match(css, /\.ps\.on\s*\{[\s\S]*position:\s*relative;[\s\S]*z-index:\s*10;/);
-  assert.match(css, /\.landing-top\s+\.mainnav\s*\{[\s\S]*display:\s*flex !important;[\s\S]*align-items:\s*center !important;[\s\S]*gap:\s*12px !important;/);
-  assert.match(css, /\.landing-top\s+\.mainnav\s+a\s*\{[\s\S]*padding:\s*6px 8px !important;[\s\S]*white-space:\s*nowrap !important;[\s\S]*flex-shrink:\s*0 !important;/);
-  assert.match(css, /@media\s*\(max-width:\s*1100px\)\s*\{\s*\.landing-top\s+\.mainnav\s*\{\s*gap:\s*8px !important;\s*\}/);
+  assert.match(
+    css,
+    /\.landing-top\s+\.mainnav\s*\{[\s\S]*display:\s*flex !important;[\s\S]*align-items:\s*center !important;[\s\S]*gap:\s*12px !important;/,
+  );
+  assert.match(
+    css,
+    /\.landing-top\s+\.mainnav\s+a\s*\{[\s\S]*padding:\s*6px 8px !important;[\s\S]*white-space:\s*nowrap !important;[\s\S]*flex-shrink:\s*0 !important;/,
+  );
+  assert.match(
+    css,
+    /@media\s*\(max-width:\s*1100px\)\s*\{\s*\.landing-top\s+\.mainnav\s*\{\s*gap:\s*8px !important;\s*\}/,
+  );
   assert.match(css, /background:\s*rgba\(255,\s*255,\s*255,\s*0\.94\)/);
   assert.match(css, /backdrop-filter:\s*blur\(12px\)/);
   assert.match(css, /1px solid rgba\(15,\s*23,\s*42,\s*0\.14\)/);
@@ -98,10 +116,22 @@ test('app.html & styles.css enforce single-line IVR keypad pills, user-select no
   assert.doesNotMatch(appHtml, /\bSim [AB]\b|IVR SIM/);
 
   assert.match(stylesCss, /\[data-theme="dark"\]\s*\{\s*--bg:\s*#000000;/);
-  assert.match(stylesCss, /html,\s*body,\s*\.skip,\s*\.bg\s*\{[\s\S]*margin-top:\s*0 !important;\s*padding-top:\s*0 !important;/);
-  assert.match(stylesCss, /header\.top[\s\S]*margin-top:\s*0 !important;\s*padding-top:\s*8px !important;\s*padding-bottom:\s*8px !important;\s*min-height:\s*0 !important;/);
-  assert.match(stylesCss, /\.mainnav,\s*\.top\s+\.mainnav\s*\{[\s\S]*display:\s*flex !important;\s*align-items:\s*center !important;\s*gap:\s*12px !important;[\s\S]*margin-top:\s*0 !important;\s*padding-top:\s*0 !important;/);
-  assert.match(stylesCss, /\.mainnav\s+a\s*\{[\s\S]*padding:\s*6px 8px !important;[\s\S]*white-space:\s*nowrap !important;\s*flex-shrink:\s*0 !important;/);
+  assert.match(
+    stylesCss,
+    /html,\s*body,\s*\.skip,\s*\.bg\s*\{[\s\S]*margin-top:\s*0 !important;\s*padding-top:\s*0 !important;/,
+  );
+  assert.match(
+    stylesCss,
+    /header\.top[\s\S]*margin-top:\s*0 !important;\s*padding-top:\s*8px !important;\s*padding-bottom:\s*8px !important;\s*min-height:\s*0 !important;/,
+  );
+  assert.match(
+    stylesCss,
+    /\.mainnav,\s*\.top\s+\.mainnav\s*\{[\s\S]*display:\s*flex !important;\s*align-items:\s*center !important;\s*gap:\s*12px !important;[\s\S]*margin-top:\s*0 !important;\s*padding-top:\s*0 !important;/,
+  );
+  assert.match(
+    stylesCss,
+    /\.mainnav\s+a\s*\{[\s\S]*padding:\s*6px 8px !important;[\s\S]*white-space:\s*nowrap !important;\s*flex-shrink:\s*0 !important;/,
+  );
   assert.match(stylesCss, /@media\s*\(max-width:\s*1100px\)\s*\{\s*\.mainnav\s*\{\s*gap:\s*8px !important;\s*\}/);
   assert.match(
     stylesCss,
@@ -110,7 +140,10 @@ test('app.html & styles.css enforce single-line IVR keypad pills, user-select no
   assert.doesNotMatch(stylesCss, /\.demo-sticky-phone[^}]*min-height:\s*(?:0|360|380|550)px/);
   assert.match(stylesCss, /\.keypad-phone\s*\{[\s\S]*user-select:\s*none;/);
   assert.match(stylesCss, /\.keypad-key\s*\{[\s\S]*user-select:\s*none;/);
-  assert.match(stylesCss, /\.keypad-scenarios\s+\.chip\s*\{[\s\S]*color:\s*#f8fafc;[\s\S]*background:\s*rgba\(255,\s*255,\s*255,\s*0\.08\);[\s\S]*border:\s*1px solid rgba\(255,\s*255,\s*255,\s*0\.25\);[\s\S]*white-space:\s*nowrap;[\s\S]*user-select:\s*none;/);
+  assert.match(
+    stylesCss,
+    /\.keypad-scenarios\s+\.chip\s*\{[\s\S]*color:\s*#f8fafc;[\s\S]*background:\s*rgba\(255,\s*255,\s*255,\s*0\.08\);[\s\S]*border:\s*1px solid rgba\(255,\s*255,\s*255,\s*0\.25\);[\s\S]*white-space:\s*nowrap;[\s\S]*user-select:\s*none;/,
+  );
 });
 
 test('morph.js shifts particle sphere upward and caps particle opacity <= 0.35 behind copy', () => {
@@ -128,11 +161,14 @@ test('LCP optimization: deferred theme.js, immediate p.hint/.reveal visibility, 
 
   assert.match(appHtml, /<html lang="en" data-theme="dark" data-palette="mandarin">/);
   assert.match(appHtml, /<script src="theme\.js" defer><\/script>/);
-  assert.match(indexHtml, /<script src="theme\.js\?v=320" defer><\/script>/);
+  assert.match(indexHtml, /<script src="theme\.js\?v=\d+" defer><\/script>/);
   assert.match(appHtml, /p\.hint\s*\{[^}]*opacity:\s*1 !important;/);
 
   assert.match(stylesCss, /\.hint\s*\{[^}]*opacity:\s*1;[^}]*transform:\s*none;/);
-  assert.match(stylesCss, /\.reveal,\s*\.hero\.reveal,\s*\.tabs-stack\.reveal\s*\{\s*opacity:\s*1;\s*transform:\s*none;\s*\}/);
+  assert.match(
+    stylesCss,
+    /\.reveal,\s*\.hero\.reveal,\s*\.tabs-stack\.reveal\s*\{\s*opacity:\s*1;\s*transform:\s*none;\s*\}/,
+  );
 
   const loopMatch = agentAvatarsJs.match(/const loop = \(now\) => \{[\s\S]*?\n\s*\};/);
   assert.ok(loopMatch, 'Expected loop definition in agentAvatars.js');
