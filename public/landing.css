@@ -168,7 +168,8 @@ html, body, .landing, #morph.bg, .skip { margin-top: 0 !important; padding-top: 
 .phone-3d {
   position: relative; z-index: 4; display: flex; flex-direction: column;
   align-self: center; justify-self: center; box-sizing: border-box; overflow: hidden;
-  width: clamp(275px, 23vw, 325px) !important; height: auto !important; aspect-ratio: 9 / 19.5 !important; max-height: 64vh !important; min-height: 440px !important;
+  /* Size by height and let width follow a real 9:19.5 phone, so the mockup never looks squashed. */
+  height: clamp(480px, 74vh, 640px); width: auto; aspect-ratio: 9 / 19.5; max-width: 92vw;
   transform: none !important;
   border-radius: 36px; padding: 10px;
   background: linear-gradient(160deg, #1e293b, #0b1220); border: 1px solid rgba(148, 163, 184, 0.34);
@@ -476,6 +477,7 @@ html, body, .landing, #morph.bg, .skip { margin-top: 0 !important; padding-top: 
   .phone-3d {
     grid-column: 1 / -1;
     margin-inline: auto; margin-bottom: .35rem;
+    height: clamp(440px, 62vh, 540px);
   }
   .demo-stage-visual .chip-a,
   .demo-stage-visual .chip-b,
@@ -501,3 +503,16 @@ html, body, .landing, #morph.bg, .skip { margin-top: 0 !important; padding-top: 
 .boot-pct { font: 800 clamp(1.8rem, 4vw, 2.6rem)/1 ui-monospace, Consolas, monospace; color: var(--accent); letter-spacing: .04em; }
 .boot-label { font: 700 .78rem ui-monospace, Consolas, monospace; letter-spacing: .22em; color: var(--muted); text-transform: uppercase; }
 .boot .boot-bar span { animation: none; transition: width .12s linear; }
+
+.stats-source { margin: 1rem 0 0; font-size: .78rem; opacity: .8; }
+.stats-source a { color: inherit; text-decoration: underline; }
+
+/* Mobile: give the main menu its own full-width, swipeable row instead of a 46px sliver. */
+@media (max-width: 767px) {
+  .landing-top { flex-wrap: wrap; row-gap: .35rem; }
+  .landing-top .mainnav {
+    order: 3; flex: 1 1 100% !important; width: 100%; justify-content: flex-start !important;
+    overflow-x: auto; scrollbar-width: none; padding-bottom: 2px;
+  }
+  .landing-top .mainnav::-webkit-scrollbar { display: none; }
+}

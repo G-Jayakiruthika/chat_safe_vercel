@@ -1,7 +1,11 @@
-const GEMINI_MODEL = 'gemini-3.8-flash';
-const GEMINI_GENERATE_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
-const REQUEST_TIMEOUT_MS = 9_000;
+const PRIMARY_MODEL = 'gemini-3.8-flash';
+const BACKUP_MODEL = 'gemini-3.5-flash-lite';
+const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+const PRIMARY_TIMEOUT_MS = 9_000;
+const BACKUP_TIMEOUT_MS = 8_000;
 const MAX_PROMPT_CHARS = 1500;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_REQUESTS = 20;
 const CANONICAL_AGENTS = new Set(['vani', 'gemini', 'kavach', 'urimai', 'netra', 'setu']);
 
 const SYSTEM_INSTRUCTION = [
@@ -19,7 +23,9 @@ const SYSTEM_INSTRUCTION = [
  */
 function normalizeAgents(rawAgents, intent, confidenceScore) {
   const mapToken = (val) => {
-    const token = String(val || '').toLowerCase().trim();
+    const token = String(val || '')
+      .toLowerCase()
+      .trim();
     if (!token) return null;
     if (CANONICAL_AGENTS.has(token)) return token;
     for (const id of CANONICAL_AGENTS) {
@@ -28,9 +34,7 @@ function normalizeAgents(rawAgents, intent, confidenceScore) {
     return null;
   };
 
-  const mapped = Array.isArray(rawAgents)
-    ? [...new Set(rawAgents.map(mapToken).filter(Boolean))]
-    : [];
+  const mapped = Array.isArray(rawAgents) ? [...new Set(rawAgents.map(mapToken).filter(Boolean))] : [];
 
   if (intent === 'CIVIC') {
     const allowed = new Set(['vani', 'gemini', 'urimai', 'setu']);
@@ -56,7 +60,9 @@ function tryParseJsonObject(candidate) {
     if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
       return parsed;
     }
-  } catch { /* fall through */ }
+  } catch {
+    /* fall through */
+  }
   return null;
 }
 
@@ -99,7 +105,7 @@ function recoverPartialJson(jsonFragment) {
 
   return {
     intent: recoveredIntent === 'CIVIC' ? 'CIVIC' : 'SCAM',
-    confidence_score: scoreMatch ? Number(scoreMatch[1]) : (recoveredIntent === 'CIVIC' ? 90 : 50),
+    confidence_score: scoreMatch ? Number(scoreMatch[1]) : recoveredIntent === 'CIVIC' ? 90 : 50,
     active_agents: readJsonArray('active_agents'),
     summary: recoveredSummary,
     action_draft: readJsonString('action_draft'),
@@ -118,7 +124,10 @@ function parseGeneratedOutput(rawText) {
   const direct = tryParseJsonObject(trimmed);
   if (direct) return direct;
 
-  const unfenced = trimmed.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  const unfenced = trimmed
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/i, '')
+    .trim();
   const parsedFence = tryParseJsonObject(unfenced);
   if (parsedFence) return parsedFence;
 
@@ -133,7 +142,8 @@ function parseGeneratedOutput(rawText) {
     if (recovered) return recovered;
   }
 
-  const isCivicText = /\b(civic|water\s*pipe|pothole|broken\s*road|street\s*light|panchayat|municipality|petition)\b/i.test(trimmed);
+  const isCivicText =
+    /\b(civic|water\s*pipe|pothole|broken\s*road|street\s*light|panchayat|municipality|petition)\b/i.test(trimmed);
   return {
     intent: isCivicText ? 'CIVIC' : 'SCAM',
     confidence_score: 50,
@@ -154,15 +164,20 @@ function parseGeneratedOutput(rawText) {
  * @returns {{intent: 'SCAM'|'CIVIC', confidence_score: number, active_agents: string[], summary: string, action_draft: string, checklist: string[], text: string, model?: string}}
  */
 function normalizeProxyPayload(parsed, cleanPrompt, rawText = '', modelName = '') {
-  const rawIntent = String(parsed?.intent || '').toUpperCase().trim();
+  const rawIntent = String(parsed?.intent || '')
+    .toUpperCase()
+    .trim();
   const intent = rawIntent === 'CIVIC' ? 'CIVIC' : 'SCAM';
   const rawScore = Number(parsed?.confidence_score);
   const confidenceScore = Number.isFinite(rawScore)
     ? Math.max(0, Math.min(100, Math.round(rawScore)))
-    : (intent === 'CIVIC' ? 92 : 50);
+    : intent === 'CIVIC'
+      ? 92
+      : 50;
 
-  const summary = String(parsed?.summary || '').trim()
-    || (intent === 'CIVIC'
+  const summary =
+    String(parsed?.summary || '').trim() ||
+    (intent === 'CIVIC'
       ? `Civic grievance classified for Urimai action: ${cleanPrompt.slice(0, 120)}`
       : confidenceScore <= 25
         ? 'Looks safe. No common cyber scam pattern detected.'
@@ -170,15 +185,18 @@ function normalizeProxyPayload(parsed, cleanPrompt, rawText = '', modelName = ''
 
   const actionDraft = String(parsed?.action_draft || '').trim();
   const rawChecklist = Array.isArray(parsed?.checklist)
-    ? parsed.checklist.map((item) => String(item || '').trim()).filter(Boolean).slice(0, 6)
+    ? parsed.checklist
+        .map((item) => String(item || '').trim())
+        .filter(Boolean)
+        .slice(0, 6)
     : [];
   const checklist = rawChecklist.length
     ? rawChecklist
     : intent === 'CIVIC'
       ? [
-        'Verify detected municipal ward / GPS coordinates.',
-        'Export the bilingual Urimai PDF or submit via State CM Helpline.',
-      ]
+          'Verify detected municipal ward / GPS coordinates.',
+          'Export the bilingual Urimai PDF or submit via State CM Helpline.',
+        ]
       : confidenceScore <= 25
         ? ['Continue practicing safe digital hygiene and never share OTPs.']
         : ['Do not transfer money or share OTP/PIN.', 'Report immediately at 1930 or cybercrime.gov.in.'];
@@ -264,18 +282,27 @@ function parseRequestBody(rawBody) {
   return {
     ok: true,
     cleanPrompt: prompt.trim().slice(0, MAX_PROMPT_CHARS),
-    cleanLang: String(language || 'en').trim().slice(0, 32) || 'en',
-    cleanMode: String(mode || 'auto').trim().slice(0, 32) || 'auto',
+    cleanLang:
+      String(language || 'en')
+        .trim()
+        .slice(0, 32) || 'en',
+    cleanMode:
+      String(mode || 'auto')
+        .trim()
+        .slice(0, 32) || 'auto',
   };
 }
 
 /**
  * Builds the serialized JSON payload for Gemini `:generateContent`.
  *
+ * Gemini 3 models use `thinkingLevel` instead of the legacy `thinkingBudget`.
+ * `minimal` keeps routing latency low; JSON mode removes markdown fences.
+ *
  * @param {string} cleanPrompt Sanitized user prompt text.
  * @param {string} cleanLang Preferred language code.
  * @param {string} cleanMode Interaction mode token.
- * @param {boolean} withThinkingConfig Whether to include `thinkingConfig: { thinkingBudget: 0 }`.
+ * @param {boolean} withThinkingConfig Whether to include `thinkingConfig: { thinkingLevel: 'minimal' }`.
  * @returns {string} JSON-encoded Gemini API request body.
  */
 function buildGenerateRequestBody(cleanPrompt, cleanLang, cleanMode, withThinkingConfig) {
@@ -283,12 +310,15 @@ function buildGenerateRequestBody(cleanPrompt, cleanLang, cleanMode, withThinkin
     systemInstruction: {
       parts: [{ text: `${SYSTEM_INSTRUCTION} Lang: ${cleanLang}. Mode: ${cleanMode}.` }],
     },
-    contents: [{
-      role: 'user',
-      parts: [{ text: cleanPrompt }],
-    }],
+    contents: [
+      {
+        role: 'user',
+        parts: [{ text: cleanPrompt }],
+      },
+    ],
     generationConfig: {
-      ...(withThinkingConfig ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
+      ...(withThinkingConfig ? { thinkingConfig: { thinkingLevel: 'minimal' } } : {}),
+      responseMimeType: 'application/json',
       maxOutputTokens: 600,
       temperature: 0.3,
     },
@@ -302,38 +332,112 @@ function buildGenerateRequestBody(cleanPrompt, cleanLang, cleanMode, withThinkin
  * @returns {string} Concatenated candidate text, or empty string if absent.
  */
 function extractCandidateText(upstreamJson) {
-  return upstreamJson?.candidates?.[0]?.content?.parts
-    ?.map((part) => (typeof part?.text === 'string' ? part.text : ''))
-    .join('') || '';
+  return (
+    upstreamJson?.candidates?.[0]?.content?.parts
+      ?.map((part) => (typeof part?.text === 'string' ? part.text : ''))
+      .join('') || ''
+  );
 }
 
 /**
- * Logs a sanitized upstream failure and sends a uniform HTTP 503 fallback payload.
+ * Returns the client IP used for best-effort rate limiting.
  *
- * @param {any} res HTTP response object.
- * @param {number} status Upstream HTTP status code.
- * @param {string} upstreamBody Sanitized upstream error snippet.
- * @returns {any} HTTP response return value.
+ * @param {any} req Incoming request.
+ * @returns {string} Client IP or `unknown`.
  */
-function sendUpstreamFailure(res, status, upstreamBody) {
-  console.error('Gemini upstream failure:', status, upstreamBody);
-  return res.status(503).json({
-    error: 'Live AI proxy error',
-    fallback: true,
-    upstreamStatus: status,
-    upstreamBody: upstreamBody.slice(0, 400),
-  });
+function clientIp(req) {
+  const forwarded = String(req?.headers?.['x-forwarded-for'] || '')
+    .split(',')[0]
+    .trim();
+  return forwarded || req?.socket?.remoteAddress || 'unknown';
+}
+
+/**
+ * Creates a fixed-window, in-memory rate limiter. It is per serverless instance,
+ * so it is a first line of defence against abuse, not a global quota.
+ *
+ * @param {number} limit Max requests per window.
+ * @param {number} windowMs Window length in milliseconds.
+ * @param {() => number} now Clock function (injectable for tests).
+ * @returns {(key: string) => boolean} Returns `true` when the request is allowed.
+ */
+export function createRateLimiter(limit, windowMs, now = Date.now) {
+  const hits = new Map();
+  return (key) => {
+    const t = now();
+    const entry = hits.get(key);
+    if (!entry || t - entry.start >= windowMs) {
+      hits.set(key, { start: t, count: 1 });
+      if (hits.size > 5000) hits.clear();
+      return true;
+    }
+    entry.count += 1;
+    return entry.count <= limit;
+  };
+}
+
+/**
+ * Sends one `:generateContent` request with its own timeout. If Gemini rejects the
+ * thinking config with HTTP 400, it retries once without it.
+ *
+ * @param {Function} fetchFn Fetch implementation.
+ * @param {string} model Gemini model id.
+ * @param {string} apiKey Gemini API key (sent as a header, never in the URL).
+ * @param {{cleanPrompt: string, cleanLang: string, cleanMode: string}} input Sanitized input.
+ * @param {number} timeoutMs Abort timeout for this attempt.
+ * @returns {Promise<{ok: true, response: any} | {ok: false, status: number, body: string, timedOut?: boolean}>}
+ */
+async function callModel(fetchFn, model, apiKey, input, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const send = (withThinkingConfig) =>
+    fetchFn(`${GEMINI_API_BASE}/${model}:generateContent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+      signal: controller.signal,
+      body: buildGenerateRequestBody(input.cleanPrompt, input.cleanLang, input.cleanMode, withThinkingConfig),
+    });
+
+  try {
+    let response = await send(true);
+    if (!response?.ok) {
+      let status = Number.isInteger(response?.status) ? response.status : 503;
+      let body = await readSafeBody(response, apiKey);
+      if (status === 400 && /thinking/i.test(body)) {
+        response = await send(false);
+        if (!response?.ok) {
+          status = Number.isInteger(response?.status) ? response.status : 503;
+          body = await readSafeBody(response, apiKey);
+        }
+      }
+      if (!response?.ok) return { ok: false, status, body };
+    }
+    const upstreamJson = await response.json();
+    return { ok: true, response, upstreamJson };
+  } catch (err) {
+    if (controller.signal.aborted || err?.name === 'AbortError') {
+      return { ok: false, status: 504, body: 'Upstream Gemini request timed out', timedOut: true };
+    }
+    return { ok: false, status: 503, body: sanitizeText(err?.message || 'Upstream request failed.', apiKey) };
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /**
  * Creates a Vercel-compatible serverless request handler with injectable dependencies for testing.
  *
- * @param {{fetchImpl?: typeof fetch, env?: Record<string, string|undefined>, timeoutMs?: number}} [deps] Optional dependency overrides.
- * @returns {(req: any, res: any) => Promise<void>} Serverless HTTP handler.
+ * Tries the primary model first and a faster backup model second, so a slow or
+ * overloaded primary model does not surface as a 503/504 to the citizen.
+ *
+ * @param {{fetchImpl?: Function, env?: Record<string, string>, timeoutMs?: number, backupTimeoutMs?: number, rateLimiter?: (key: string) => boolean}} [deps]
+ * @returns {(req: any, res: any) => Promise<any>} Request handler.
  */
 export function createGeminiHandler(deps = {}) {
   const fetchFn = deps.fetchImpl || globalThis.fetch;
-  const timeoutMs = Number.isFinite(deps.timeoutMs) ? deps.timeoutMs : REQUEST_TIMEOUT_MS;
+  const timeoutMs = Number.isFinite(deps.timeoutMs) ? deps.timeoutMs : PRIMARY_TIMEOUT_MS;
+  const backupTimeoutMs = Number.isFinite(deps.backupTimeoutMs) ? deps.backupTimeoutMs : BACKUP_TIMEOUT_MS;
+  const allowRequest = deps.rateLimiter || createRateLimiter(RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_MS);
 
   return async function geminiHandler(req, res) {
     res.setHeader('Cache-Control', 'no-store');
@@ -344,8 +448,13 @@ export function createGeminiHandler(deps = {}) {
       return res.status(405).json({ error: 'Method not allowed. Use POST.' });
     }
 
-    const rawKey = deps.env ? deps.env.GEMINI_API_KEY : process.env.GEMINI_API_KEY;
-    const apiKey = (typeof rawKey === 'string' ? rawKey : String(rawKey || '')).trim();
+    if (!allowRequest(clientIp(req))) {
+      res.setHeader('Retry-After', String(Math.ceil(RATE_LIMIT_WINDOW_MS / 1000)));
+      return res.status(429).json({ error: 'Too many requests. Please wait a minute.', fallback: true });
+    }
+
+    const env = deps.env || process.env;
+    const apiKey = String(env.GEMINI_API_KEY || '').trim();
     if (!apiKey) {
       return res.status(503).json({
         error: 'Missing GEMINI_API_KEY',
@@ -358,62 +467,38 @@ export function createGeminiHandler(deps = {}) {
     if (!parsedReq.ok) {
       return res.status(parsedReq.status).json({ error: parsedReq.error });
     }
-    const { cleanPrompt, cleanLang, cleanMode } = parsedReq;
 
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    const url = `${GEMINI_GENERATE_URL}?key=${encodeURIComponent(apiKey)}`;
-    const sendGenerate = (withThinkingConfig) => fetchFn(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal: controller.signal,
-      body: buildGenerateRequestBody(cleanPrompt, cleanLang, cleanMode, withThinkingConfig),
-    });
+    const primary = String(env.GEMINI_MODEL || PRIMARY_MODEL).trim();
+    const backup = String(env.GEMINI_BACKUP_MODEL || BACKUP_MODEL).trim();
+    const attempts = [[primary, timeoutMs]];
+    if (backup && backup !== primary) attempts.push([backup, backupTimeoutMs]);
 
-    try {
-      let response = await sendGenerate(true);
-      if (!response?.ok) {
-        let status = Number.isInteger(response?.status) ? response.status : 503;
-        let upstreamBody = await readSafeBody(response, apiKey);
-
-        if (status === 400 && /thinkingBudget|thinkingConfig|thinking_budget|thinking_config/i.test(upstreamBody)) {
-          response = await sendGenerate(false);
-          if (!response?.ok) {
-            status = Number.isInteger(response?.status) ? response.status : 503;
-            upstreamBody = await readSafeBody(response, apiKey);
-          }
-        }
-
-        if (!response?.ok) {
-          return sendUpstreamFailure(res, status, upstreamBody);
-        }
+    let lastFailure = { status: 503, body: 'Upstream request failed.' };
+    for (const [model, attemptTimeout] of attempts) {
+      const result = await callModel(fetchFn, model, apiKey, parsedReq, attemptTimeout);
+      if (!result.ok) {
+        lastFailure = result;
+        console.error('Gemini upstream failure:', result.status, model, result.body);
+        // Bad request / auth problems will fail the same way on the backup model.
+        if ([400, 401, 403].includes(result.status)) break;
+        continue;
       }
-
-      const upstreamJson = await response.json();
-      const rawText = extractCandidateText(upstreamJson);
+      const rawText = extractCandidateText(result.upstreamJson);
       if (!rawText.trim()) {
-        const status = Number.isInteger(response?.status) ? response.status : 502;
-        return sendUpstreamFailure(res, status, 'Empty or malformed upstream response.');
+        lastFailure = { status: 502, body: 'Empty or malformed upstream response.' };
+        console.error('Gemini upstream failure:', 502, model, lastFailure.body);
+        continue;
       }
-
       const parsed = parseGeneratedOutput(rawText);
-      return res.status(200).json(normalizeProxyPayload(parsed, cleanPrompt, rawText, GEMINI_MODEL));
-    } catch (err) {
-      if (controller.signal.aborted || err?.name === 'AbortError') {
-        console.error('Gemini request timed out');
-        console.error('Gemini upstream failure:', 504, 'Upstream Gemini request timed out');
-        return res.status(503).json({
-          error: 'Upstream Gemini request timed out',
-          fallback: true,
-          upstreamStatus: 504,
-          upstreamBody: 'Upstream Gemini request timed out',
-        });
-      }
-      const errorText = sanitizeText(err?.message || 'Upstream request failed.', apiKey);
-      return sendUpstreamFailure(res, 503, errorText);
-    } finally {
-      clearTimeout(timer);
+      return res.status(200).json(normalizeProxyPayload(parsed, parsedReq.cleanPrompt, rawText, model));
     }
+
+    return res.status(503).json({
+      error: lastFailure.timedOut ? 'Upstream Gemini request timed out' : 'Live AI proxy error',
+      fallback: true,
+      upstreamStatus: lastFailure.status,
+      upstreamBody: String(lastFailure.body || '').slice(0, 400),
+    });
   };
 }
 

@@ -3,9 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
-import { createRequire } from 'node:module';
 
-const require = createRequire(import.meta.url);
 const ROOT = path.resolve(import.meta.dirname, '..');
 
 function loadAppRuntime({ online = true, fetchImpl } = {}) {
@@ -26,9 +24,15 @@ function loadAppRuntime({ online = true, fetchImpl } = {}) {
           return classes.has(cls);
         },
       },
-      setAttribute(k, v) { attrs[k] = String(v); },
-      removeAttribute(k) { delete attrs[k]; },
-      getAttribute(k) { return attrs[k] ?? null; },
+      setAttribute(k, v) {
+        attrs[k] = String(v);
+      },
+      removeAttribute(k) {
+        delete attrs[k];
+      },
+      getAttribute(k) {
+        return attrs[k] ?? null;
+      },
     };
   });
 
@@ -47,19 +51,31 @@ function loadAppRuntime({ online = true, fetchImpl } = {}) {
       dataset: {},
       className: '',
       classList: {
-        add(...items) { items.forEach((c) => classes.add(c)); },
-        remove(...items) { items.forEach((c) => classes.delete(c)); },
+        add(...items) {
+          items.forEach((c) => classes.add(c));
+        },
+        remove(...items) {
+          items.forEach((c) => classes.delete(c));
+        },
         toggle(c, force) {
           const on = force === undefined ? !classes.has(c) : Boolean(force);
           if (on) classes.add(c);
           else classes.delete(c);
           return on;
         },
-        contains(c) { return classes.has(c); },
+        contains(c) {
+          return classes.has(c);
+        },
       },
-      setAttribute(k, v) { attrs[k] = String(v); },
-      removeAttribute(k) { delete attrs[k]; },
-      getAttribute(k) { return attrs[k] ?? null; },
+      setAttribute(k, v) {
+        attrs[k] = String(v);
+      },
+      removeAttribute(k) {
+        delete attrs[k];
+      },
+      getAttribute(k) {
+        return attrs[k] ?? null;
+      },
       addEventListener() {},
       removeEventListener() {},
       focus() {},
@@ -67,9 +83,15 @@ function loadAppRuntime({ online = true, fetchImpl } = {}) {
       appendChild() {},
       append() {},
       replaceChildren() {},
-      querySelector() { return null; },
-      querySelectorAll() { return []; },
-      closest() { return null; },
+      querySelector() {
+        return null;
+      },
+      querySelectorAll() {
+        return [];
+      },
+      closest() {
+        return null;
+      },
     };
   }
 
@@ -82,6 +104,7 @@ function loadAppRuntime({ online = true, fetchImpl } = {}) {
   const i18nCode = fs.readFileSync(path.join(ROOT, 'public', 'i18n.js'), 'utf8');
   const coreCode = fs.readFileSync(path.join(ROOT, 'public', 'core.js'), 'utf8');
   const scamTypesCode = fs.readFileSync(path.join(ROOT, 'public', 'scamtypes.js'), 'utf8');
+  const engineCode = fs.readFileSync(path.join(ROOT, 'public', 'fallbackEngine.js'), 'utf8');
   const appCode = fs.readFileSync(path.join(ROOT, 'public', 'app.js'), 'utf8');
 
   const sandbox = {
@@ -92,27 +115,45 @@ function loadAppRuntime({ online = true, fetchImpl } = {}) {
     URL,
     Blob,
     AbortController,
-    fetch: fetchImpl || (async () => ({
-      ok: false,
-      status: 503,
-      headers: { get: () => 'application/json' },
-      json: async () => ({ error: 'unavailable', fallback: true }),
-    })),
+    fetch:
+      fetchImpl ||
+      (async () => ({
+        ok: false,
+        status: 503,
+        headers: { get: () => 'application/json' },
+        json: async () => ({ error: 'unavailable', fallback: true }),
+      })),
     navigator: { onLine: online, clipboard: { writeText: async () => {} } },
     location: { search: '', hash: '', href: 'https://chat-safe-vercel.vercel.app/app.html' },
     localStorage: {
       _data: new Map(),
-      getItem(k) { return this._data.get(k) ?? null; },
-      setItem(k, v) { this._data.set(k, String(v)); },
-      removeItem(k) { this._data.delete(k); },
-      clear() { this._data.clear(); },
+      getItem(k) {
+        return this._data.get(k) ?? null;
+      },
+      setItem(k, v) {
+        this._data.set(k, String(v));
+      },
+      removeItem(k) {
+        this._data.delete(k);
+      },
+      clear() {
+        this._data.clear();
+      },
     },
     sessionStorage: {
       _data: new Map(),
-      getItem(k) { return this._data.get(k) ?? null; },
-      setItem(k, v) { this._data.set(k, String(v)); },
-      removeItem(k) { this._data.delete(k); },
-      clear() { this._data.clear(); },
+      getItem(k) {
+        return this._data.get(k) ?? null;
+      },
+      setItem(k, v) {
+        this._data.set(k, String(v));
+      },
+      removeItem(k) {
+        this._data.delete(k);
+      },
+      clear() {
+        this._data.clear();
+      },
     },
     matchMedia: () => ({ matches: true }),
     addEventListener() {},
@@ -143,12 +184,16 @@ function loadAppRuntime({ online = true, fetchImpl } = {}) {
     muted: false,
     play() {},
     playDtmf() {},
-    toggle() { return false; },
+    toggle() {
+      return false;
+    },
     stopAll() {},
   };
   sandbox.window.createKavach = () => ({
     mood: 'idle',
-    setMood(m) { this.mood = m; },
+    setMood(m) {
+      this.mood = m;
+    },
     setState() {},
     setDark() {},
     resetView() {},
@@ -158,10 +203,14 @@ function loadAppRuntime({ online = true, fetchImpl } = {}) {
   sandbox.window.createHistory = () => ({
     currentId: 'c1',
     add() {},
-    search() { return []; },
+    search() {
+      return [];
+    },
     startNew() {},
     clear() {},
-    exportJson() { return '[]'; },
+    exportJson() {
+      return '[]';
+    },
   });
   sandbox.window.KAVACH_MOOD_COLORS = {
     idle: [34, 211, 238],
@@ -175,6 +224,7 @@ function loadAppRuntime({ online = true, fetchImpl } = {}) {
   vm.runInContext(i18nCode, context);
   vm.runInContext(coreCode, context);
   vm.runInContext(scamTypesCode, context);
+  vm.runInContext(engineCode, context);
 
   const engine = context.window.ChatSafeCore.createEngine({ logger: { error() {} } });
   context.window.ChatSafeAPI = {
@@ -210,13 +260,28 @@ test('Local fallback classifier deterministically covers all 8 Kavach scam types
 
   const scamCases = [
     ['digital arrest', 'My CBI officer is calling me for digital arrest and asking ₹1,50,000 transfer'],
-    ['kyc / otp', 'Dear customer, your SBI KYC expired and account will be blocked today. Share OTP now or install update.apk'],
-    ['fake investment', 'Welcome to SEBI VIP Stock Tips group! Guaranteed returns of 8% daily, deposit ₹25,000 to rajesh.trader@ybl'],
-    ['courier / parcel', 'FedEx customs: a parcel in your name has MDMA drugs and passports seized. Press 1 immediately.'],
-    ['electricity bill', 'Urgent: your electricity bill is unpaid and TNEB power connection will be disconnected tonight at 9:30 PM. Call 9876543210.'],
+    [
+      'kyc / otp',
+      'Dear customer, your SBI KYC expired and account will be blocked today. Share OTP now or install update.apk',
+    ],
+    [
+      'fake investment',
+      'Welcome to SEBI VIP Stock Tips group! Guaranteed returns of 8% daily, deposit ₹25,000 to rajesh.trader@ybl',
+    ],
+    [
+      'courier / parcel',
+      'FedEx customs: a parcel in your name has MDMA drugs and passports seized. Press 1 immediately.',
+    ],
+    [
+      'electricity bill',
+      'Urgent: your electricity bill is unpaid and TNEB power connection will be disconnected tonight at 9:30 PM. Call 9876543210.',
+    ],
     ['task job', 'Part time work from home job! Like YouTube videos and earn ₹3000 daily after ₹500 prepaid task.'],
     ['reward bill', 'Congratulations! You won KBC lottery prize of ₹25 lakh. Pay processing fee ₹8,500 to claim.'],
-    ['family voice cloning', 'Amma this is my new number, my voice is hoarse after an accident near hospital, urgent send ₹40,000, do not tell papa.'],
+    [
+      'family voice cloning',
+      'Amma this is my new number, my voice is hoarse after an accident near hospital, urgent send ₹40,000, do not tell papa.',
+    ],
   ];
 
   for (const [label, prompt] of scamCases) {
@@ -241,7 +306,10 @@ test('Local fallback classifier deterministically covers all 5 Urimai civic cate
     ['damaged road', 'Main road near temple has deep broken potholes causing accidents'],
     ['street light', 'The street light near Ward 4 bus stop has not been working for a week'],
     ['sanitation', 'Sewage drainage overflow and garbage pile causing mosquitoes near school'],
-    ['municipal petition', 'Submitting a formal municipal petition to the gram sabha ward office for ration shop repair'],
+    [
+      'municipal petition',
+      'Submitting a formal municipal petition to the gram sabha ward office for ration shop repair',
+    ],
   ];
 
   for (const [label, prompt] of civicCases) {
@@ -257,7 +325,10 @@ test('Local fallback classifier deterministically covers all 5 Urimai civic cate
   // Quick-prompt chips & edge cases
   const chipReal = classify('Is this caller really from my bank?');
   assert.equal(chipReal.intent, 'SCAM');
-  assert.ok(chipReal.confidence_score >= 26 && chipReal.confidence_score <= 65, 'Bank verification question should be moderate warning');
+  assert.ok(
+    chipReal.confidence_score >= 26 && chipReal.confidence_score <= 65,
+    'Bank verification question should be moderate warning',
+  );
 
   const chipArrest = classify('What is a digital arrest?');
   assert.equal(chipArrest.intent, 'SCAM');
@@ -282,7 +353,7 @@ test('Local fallback classifier deterministically covers all 5 Urimai civic cate
 });
 
 test('analyzeIntent routes via POST /api/gemini and seamlessly falls back on 503, timeout, and offline', async () => {
-  let seenCalls = [];
+  const seenCalls = [];
   const liveRuntime = loadAppRuntime({
     online: true,
     fetchImpl: async (url, init) => {
@@ -303,7 +374,9 @@ test('analyzeIntent routes via POST /api/gemini and seamlessly falls back on 503
     },
   });
 
-  const liveRes = await liveRuntime.context.window.ChatSafeFallback.analyzeIntent('Panchayat water pipe broke', { mode: 'auto_demo' });
+  const liveRes = await liveRuntime.context.window.ChatSafeFallback.analyzeIntent('Panchayat water pipe broke', {
+    mode: 'auto_demo',
+  });
   assert.equal(seenCalls.length, 1);
   assert.equal(seenCalls[0].url, '/api/gemini');
   assert.equal(seenCalls[0].init.method, 'POST');
@@ -337,9 +410,13 @@ test('analyzeIntent routes via POST /api/gemini and seamlessly falls back on 503
   // Network reject / abort fallback test
   const timeoutRuntime = loadAppRuntime({
     online: true,
-    fetchImpl: async () => { throw new DOMException('Aborted', 'AbortError'); },
+    fetchImpl: async () => {
+      throw new DOMException('Aborted', 'AbortError');
+    },
   });
-  const resTimeout = await timeoutRuntime.context.window.ChatSafeFallback.analyzeIntent('Main road has deep potholes', { mode: 'chat' });
+  const resTimeout = await timeoutRuntime.context.window.ChatSafeFallback.analyzeIntent('Main road has deep potholes', {
+    mode: 'chat',
+  });
   assert.equal(resTimeout._proxyFallback, true);
   assert.equal(resTimeout.intent, 'CIVIC');
 
@@ -347,9 +424,15 @@ test('analyzeIntent routes via POST /api/gemini and seamlessly falls back on 503
   let offlineFetched = false;
   const offlineRuntime = loadAppRuntime({
     online: false,
-    fetchImpl: async () => { offlineFetched = true; throw new Error('Should not fetch'); },
+    fetchImpl: async () => {
+      offlineFetched = true;
+      throw new Error('Should not fetch');
+    },
   });
-  const resOffline = await offlineRuntime.context.window.ChatSafeFallback.analyzeIntent('FedEx customs seized parcel with drugs', { mode: 'voice' });
+  const resOffline = await offlineRuntime.context.window.ChatSafeFallback.analyzeIntent(
+    'FedEx customs seized parcel with drugs',
+    { mode: 'voice' },
+  );
   assert.equal(offlineFetched, false);
   assert.equal(resOffline._offlineFallback, true);
   assert.equal(resOffline.intent, 'SCAM');

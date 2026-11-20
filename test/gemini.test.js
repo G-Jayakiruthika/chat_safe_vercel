@@ -57,7 +57,10 @@ test('POST /api/gemini returns 503 with missing_key stage when GEMINI_API_KEY is
   for (const env of [{}, { GEMINI_API_KEY: '   \t\n  ' }]) {
     const handler = createGeminiHandler({ env });
     const res = createMockRes();
-    await handler({ method: 'POST', body: { prompt: 'My CBI officer is calling me', language: 'en', mode: 'chat' } }, res);
+    await handler(
+      { method: 'POST', body: { prompt: 'My CBI officer is calling me', language: 'en', mode: 'chat' } },
+      res,
+    );
 
     assert.equal(res.statusCode, 503);
     assert.deepEqual(res.body, {
@@ -78,16 +81,18 @@ test('POST /api/gemini logs exact upstream error safely and returns 503 diagnost
 
   try {
     const longDetail = 'A'.repeat(450);
-    const failingFetch = async (url) => {
+    const failingFetch = async (url, init) => {
       attemptedUrls.push(url);
+      assert.equal(init.headers['x-goog-api-key'], 'test-secret');
       return {
         ok: false,
         status: 403,
-        text: async () => JSON.stringify({
-          error: {
-            message: `API key test-secret&key=test-secret rejected: ${longDetail}`,
-          },
-        }),
+        text: async () =>
+          JSON.stringify({
+            error: {
+              message: `API key test-secret&key=test-secret rejected: ${longDetail}`,
+            },
+          }),
       };
     };
 
@@ -101,19 +106,26 @@ test('POST /api/gemini logs exact upstream error safely and returns 503 diagnost
     assert.equal(resErr.body.upstreamStatus, 403);
     assert.ok(resErr.body.upstreamBody.length <= 400);
     assert.match(resErr.body.upstreamBody, /API key \[REDACTED\]/);
+    // 403 is an auth error, so the backup model is not tried; the key never goes in the URL.
     assert.deepEqual(attemptedUrls, [
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=test-secret',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent',
     ]);
     assert.doesNotMatch(JSON.stringify(resErr.body), /test-secret|GEMINI_API_KEY/);
-    assert.ok(loggedErrors.some((msg) => msg.includes('Gemini upstream failure:') && msg.includes('403') && !msg.includes('test-secret')));
+    assert.ok(
+      loggedErrors.some(
+        (msg) => msg.includes('Gemini upstream failure:') && msg.includes('403') && !msg.includes('test-secret'),
+      ),
+    );
 
-    const slowFetch = (_url, opts) => new Promise((_resolve, reject) => {
-      opts.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
-    });
+    const slowFetch = (_url, opts) =>
+      new Promise((_resolve, reject) => {
+        opts.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+      });
     const handlerTimeout = createGeminiHandler({
       env: { GEMINI_API_KEY: 'test-secret' },
       fetchImpl: slowFetch,
       timeoutMs: 15,
+      backupTimeoutMs: 15,
     });
     const resTimeout = createMockRes();
     await handlerTimeout({ method: 'POST', body: { prompt: 'Slow request' } }, resTimeout);
@@ -125,8 +137,17 @@ test('POST /api/gemini logs exact upstream error safely and returns 503 diagnost
       upstreamStatus: 504,
       upstreamBody: 'Upstream Gemini request timed out',
     });
-    assert.ok(loggedErrors.includes('Gemini request timed out'));
-    assert.ok(loggedErrors.some((msg) => msg.includes('Gemini upstream failure:') && msg.includes('504')));
+    assert.ok(
+      loggedErrors.some(
+        (msg) => msg.includes('Gemini upstream failure:') && msg.includes('504') && msg.includes('gemini-3.8-flash'),
+      ),
+    );
+    assert.ok(
+      loggedErrors.some(
+        (msg) =>
+          msg.includes('Gemini upstream failure:') && msg.includes('504') && msg.includes('gemini-3.5-flash-lite'),
+      ),
+    );
   } finally {
     console.error = origConsoleError;
   }
@@ -136,24 +157,24 @@ test('api/gemini.js contains zero legacy model references and returns 200 on fen
   const source = fs.readFileSync(path.resolve(import.meta.dirname, '..', 'api', 'gemini.js'), 'utf8');
   assert.doesNotMatch(source, /gemini-2\.5-flash|gemini-1\.5-flash/i);
 
-  const makeHandler = (rawText) => createGeminiHandler({
-    env: { GEMINI_API_KEY: 'live-secret-value' },
-    fetchImpl: async () => ({
-      ok: true,
-      status: 200,
-      async json() {
-        return {
-          candidates: [{ content: { parts: [{ text: rawText }] } }],
-        };
-      },
-    }),
-  });
+  const makeHandler = (rawText) =>
+    createGeminiHandler({
+      env: { GEMINI_API_KEY: 'live-secret-value' },
+      fetchImpl: async () => ({
+        ok: true,
+        status: 200,
+        async json() {
+          return {
+            candidates: [{ content: { parts: [{ text: rawText }] } }],
+          };
+        },
+      }),
+    });
 
   const fencedRes = createMockRes();
-  await makeHandler('```json\n{"intent":"SCAM","confidence_score":93,"active_agents":["kavach"],"summary":"Phishing detected.","action_draft":"Call 1930","checklist":["Hang up"]}\n```')(
-    { method: 'POST', body: { prompt: 'Click KYC link now' } },
-    fencedRes,
-  );
+  await makeHandler(
+    '```json\n{"intent":"SCAM","confidence_score":93,"active_agents":["kavach"],"summary":"Phishing detected.","action_draft":"Call 1930","checklist":["Hang up"]}\n```',
+  )({ method: 'POST', body: { prompt: 'Click KYC link now' } }, fencedRes);
   assert.equal(fencedRes.statusCode, 200);
   assert.equal(fencedRes.body.intent, 'SCAM');
   assert.equal(fencedRes.body.confidence_score, 93);
@@ -171,10 +192,9 @@ test('api/gemini.js contains zero legacy model references and returns 200 on fen
   assert.equal(plainRes.body.model, 'gemini-3.8-flash');
 
   const truncatedRes = createMockRes();
-  await makeHandler('{"intent":"SCAM","confidence_score":94,"active_agents":["vani","gemini","kavach"],"summary":"Fake KYC link detected.","action_draft":"Report on 1930","checklist":["Do not cli')(
-    { method: 'POST', body: { prompt: 'Click KYC link now' } },
-    truncatedRes,
-  );
+  await makeHandler(
+    '{"intent":"SCAM","confidence_score":94,"active_agents":["vani","gemini","kavach"],"summary":"Fake KYC link detected.","action_draft":"Report on 1930","checklist":["Do not cli',
+  )({ method: 'POST', body: { prompt: 'Click KYC link now' } }, truncatedRes);
   assert.equal(truncatedRes.statusCode, 200);
   assert.equal(truncatedRes.body.intent, 'SCAM');
   assert.equal(truncatedRes.body.confidence_score, 94);
@@ -194,29 +214,35 @@ test('POST /api/gemini trims & encodes API key, sends clean gemini-3.8-flash pay
       status: 200,
       async json() {
         return {
-          candidates: [{
-            content: {
-              parts: [{
-                text: JSON.stringify(isCivic
-                  ? {
-                      intent: 'CIVIC',
-                      confidence_score: 94.4,
-                      active_agents: ['Vani IVR', 'Gemini Router', 'Urimai', 'Setu O2O', 'Kavach'],
-                      summary: 'Water pipe breakage flagged for Municipal Water Board action.',
-                      action_draft: 'To the Executive Officer, Municipal Water Board...',
-                      checklist: ['Snap photo of broken pipe', 'Export Urimai PDF'],
-                    }
-                  : {
-                      intent: 'SCAM',
-                      confidence_score: 96,
-                      active_agents: ['vani', 'gemini', 'kavach', 'netra', 'urimai'],
-                      summary: 'Digital arrest impersonation fraud detected.',
-                      action_draft: '1930 Cybercrime complaint draft...',
-                      checklist: ['Hang up immediately', 'Dial 1930'],
-                    }),
-              }],
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    text: JSON.stringify(
+                      isCivic
+                        ? {
+                            intent: 'CIVIC',
+                            confidence_score: 94.4,
+                            active_agents: ['Vani IVR', 'Gemini Router', 'Urimai', 'Setu O2O', 'Kavach'],
+                            summary: 'Water pipe breakage flagged for Municipal Water Board action.',
+                            action_draft: 'To the Executive Officer, Municipal Water Board...',
+                            checklist: ['Snap photo of broken pipe', 'Export Urimai PDF'],
+                          }
+                        : {
+                            intent: 'SCAM',
+                            confidence_score: 96,
+                            active_agents: ['vani', 'gemini', 'kavach', 'netra', 'urimai'],
+                            summary: 'Digital arrest impersonation fraud detected.',
+                            action_draft: '1930 Cybercrime complaint draft...',
+                            checklist: ['Hang up immediately', 'Dial 1930'],
+                          },
+                    ),
+                  },
+                ],
+              },
             },
-          }],
+          ],
         };
       },
     };
@@ -225,34 +251,36 @@ test('POST /api/gemini trims & encodes API key, sends clean gemini-3.8-flash pay
   const handler = createGeminiHandler({ env: { GEMINI_API_KEY: '  live+secret/value  ' }, fetchImpl: mockFetch });
 
   const scamRes = createMockRes();
-  await handler({ method: 'POST', body: { prompt: '  My CBI officer is calling me for digital arrest  ', language: 'ta', mode: 'auto_demo' } }, scamRes);
+  await handler(
+    {
+      method: 'POST',
+      body: { prompt: '  My CBI officer is calling me for digital arrest  ', language: 'ta', mode: 'auto_demo' },
+    },
+    scamRes,
+  );
   assert.equal(scamRes.statusCode, 200);
   assert.equal(calls.length, 1);
   assert.equal(
     calls[0].url,
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=live%2Bsecret%2Fvalue',
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent',
   );
+  assert.equal(calls[0].init.headers['x-goog-api-key'], 'live+secret/value');
   const sentBody = JSON.parse(calls[0].init.body);
   assert.deepEqual(Object.keys(sentBody).sort(), ['contents', 'generationConfig', 'systemInstruction']);
   assert.deepEqual(sentBody.contents, [
     { role: 'user', parts: [{ text: 'My CBI officer is calling me for digital arrest' }] },
   ]);
   assert.deepEqual(sentBody.generationConfig, {
-    thinkingConfig: { thinkingBudget: 0 },
+    thinkingConfig: { thinkingLevel: 'minimal' },
+    responseMimeType: 'application/json',
     maxOutputTokens: 600,
     temperature: 0.3,
   });
   assert.ok(sentBody.systemInstruction.parts[0].text.length < 400);
-  assert.deepEqual(Object.keys(scamRes.body).sort(), [
-    'active_agents',
-    'action_draft',
-    'checklist',
-    'confidence_score',
-    'intent',
-    'model',
-    'summary',
-    'text',
-  ].sort());
+  assert.deepEqual(
+    Object.keys(scamRes.body).sort(),
+    ['active_agents', 'action_draft', 'checklist', 'confidence_score', 'intent', 'model', 'summary', 'text'].sort(),
+  );
   assert.equal(scamRes.body.intent, 'SCAM');
   assert.equal(scamRes.body.confidence_score, 96);
   assert.equal(scamRes.body.model, 'gemini-3.8-flash');
@@ -261,7 +289,10 @@ test('POST /api/gemini trims & encodes API key, sends clean gemini-3.8-flash pay
   assert.ok(scamRes.body.active_agents.includes('kavach'));
 
   const civicRes = createMockRes();
-  await handler({ method: 'POST', body: { prompt: 'Panchayat water pipe broke', language: 'ta', mode: 'voice' } }, civicRes);
+  await handler(
+    { method: 'POST', body: { prompt: 'Panchayat water pipe broke', language: 'ta', mode: 'voice' } },
+    civicRes,
+  );
   assert.equal(civicRes.statusCode, 200);
   assert.equal(civicRes.body.intent, 'CIVIC');
   assert.equal(civicRes.body.confidence_score, 94);
@@ -270,7 +301,7 @@ test('POST /api/gemini trims & encodes API key, sends clean gemini-3.8-flash pay
   assert.deepEqual(civicRes.body.active_agents, ['vani', 'gemini', 'urimai', 'setu']);
 });
 
-test('POST /api/gemini retries immediately without thinkingConfig if upstream returns 400 complaining about thinkingBudget', async () => {
+test('POST /api/gemini retries immediately without thinkingConfig if upstream returns 400 complaining about thinking config', async () => {
   const bodies = [];
   const retryFetch = async (_url, init) => {
     const body = JSON.parse(init.body);
@@ -279,7 +310,8 @@ test('POST /api/gemini retries immediately without thinkingConfig if upstream re
       return {
         ok: false,
         status: 400,
-        text: async () => JSON.stringify({ error: { message: 'Unknown name "thinkingBudget" at generationConfig.thinkingConfig' } }),
+        text: async () =>
+          JSON.stringify({ error: { message: 'Unknown name "thinkingLevel" at generationConfig.thinkingConfig' } }),
       };
     }
     return {
@@ -287,20 +319,24 @@ test('POST /api/gemini retries immediately without thinkingConfig if upstream re
       status: 200,
       async json() {
         return {
-          candidates: [{
-            content: {
-              parts: [{
-                text: JSON.stringify({
-                  intent: 'SCAM',
-                  confidence_score: 92,
-                  active_agents: ['vani', 'gemini', 'kavach'],
-                  summary: 'Retry succeeded without thinkingConfig.',
-                  action_draft: 'Dial 1930.',
-                  checklist: ['Do not share OTP'],
-                }),
-              }],
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    text: JSON.stringify({
+                      intent: 'SCAM',
+                      confidence_score: 92,
+                      active_agents: ['vani', 'gemini', 'kavach'],
+                      summary: 'Retry succeeded without thinkingConfig.',
+                      action_draft: 'Dial 1930.',
+                      checklist: ['Do not share OTP'],
+                    }),
+                  },
+                ],
+              },
             },
-          }],
+          ],
         };
       },
     };
@@ -312,8 +348,17 @@ test('POST /api/gemini retries immediately without thinkingConfig if upstream re
 
   assert.equal(res.statusCode, 200);
   assert.equal(bodies.length, 2);
-  assert.deepEqual(bodies[0].generationConfig, { thinkingConfig: { thinkingBudget: 0 }, maxOutputTokens: 600, temperature: 0.3 });
-  assert.deepEqual(bodies[1].generationConfig, { maxOutputTokens: 600, temperature: 0.3 });
+  assert.deepEqual(bodies[0].generationConfig, {
+    thinkingConfig: { thinkingLevel: 'minimal' },
+    responseMimeType: 'application/json',
+    maxOutputTokens: 600,
+    temperature: 0.3,
+  });
+  assert.deepEqual(bodies[1].generationConfig, {
+    responseMimeType: 'application/json',
+    maxOutputTokens: 600,
+    temperature: 0.3,
+  });
   assert.equal(res.body.intent, 'SCAM');
   assert.equal(res.body.summary, 'Retry succeeded without thinkingConfig.');
 });

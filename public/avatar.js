@@ -152,7 +152,7 @@
     let mouth = 0;
     let mouthTarget = 0;
     let pointer = { x: 0, y: 0 };
-    let tilt = { x: 0, y: 0 };
+    const tilt = { x: 0, y: 0 };
     let spin = 0;
     let spinVel = 0;
     let drag = null;
