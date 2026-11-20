@@ -53,63 +53,86 @@ test('POST /api/gemini returns 400 on missing prompt, invalid JSON, or non-objec
   assert.equal(bufferBadRes.statusCode, 400);
 });
 
-test('POST /api/gemini returns clean 503 with fallback flag and zero secret leakage when key is missing', async () => {
-  const handler = createGeminiHandler({ env: {} });
-  const res = createMockRes();
-  await handler({ method: 'POST', body: { prompt: 'My CBI officer is calling me', language: 'en', mode: 'chat' } }, res);
+test('POST /api/gemini returns 503 with missing_key stage when GEMINI_API_KEY is missing or whitespace', async () => {
+  for (const env of [{}, { GEMINI_API_KEY: '   \t\n  ' }]) {
+    const handler = createGeminiHandler({ env });
+    const res = createMockRes();
+    await handler({ method: 'POST', body: { prompt: 'My CBI officer is calling me', language: 'en', mode: 'chat' } }, res);
 
-  assert.equal(res.statusCode, 503);
-  assert.equal(res.body.fallback, true);
-  assert.equal(res.body.statusCode, 503);
-  const serialized = JSON.stringify(res.body);
-  assert.doesNotMatch(serialized, /GEMINI_API_KEY/i);
-  assert.doesNotMatch(serialized, /Error:|at\s+\w+\s+\(/);
+    assert.equal(res.statusCode, 503);
+    assert.deepEqual(res.body, {
+      error: 'Missing GEMINI_API_KEY',
+      fallback: true,
+      stage: 'missing_key',
+    });
+  }
 });
 
-test('POST /api/gemini returns clean 503 with upstreamStatus and upstreamBody on failure and AbortController timeout', async () => {
-  const failingUrls = [];
-  const failingFetch = async (url) => {
-    failingUrls.push(url);
-    return {
-      ok: false,
-      status: 500,
-      text: async () => JSON.stringify({ error: { message: 'Model overloaded for key test-secret&key=test-secret' } }),
-    };
+test('POST /api/gemini logs exact upstream error safely and returns 503 diagnostics on failure or timeout', async () => {
+  const attemptedUrls = [];
+  const loggedErrors = [];
+  const origConsoleError = console.error;
+  console.error = (...args) => {
+    loggedErrors.push(args.map((a) => String(a)).join(' '));
   };
-  const handlerErr = createGeminiHandler({ env: { GEMINI_API_KEY: 'test-secret' }, fetchImpl: failingFetch });
-  const resErr = createMockRes();
-  await handlerErr({ method: 'POST', body: { prompt: 'Test prompt' } }, resErr);
-  assert.equal(resErr.statusCode, 503);
-  assert.equal(resErr.body.error, 'Live AI proxy error');
-  assert.equal(resErr.body.fallback, true);
-  assert.equal(resErr.body.upstreamStatus, 500);
-  assert.match(resErr.body.upstreamBody, /Model overloaded/);
-  assert.deepEqual(failingUrls, [
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=test-secret',
-    'https://generativelanguage.googleapis.com/v1beta/models?key=test-secret',
-  ]);
-  assert.doesNotMatch(JSON.stringify(resErr.body), /test-secret|GEMINI_API_KEY/);
 
-  const slowFetch = (_url, opts) => new Promise((_resolve, reject) => {
-    opts.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
-  });
-  const handlerTimeout = createGeminiHandler({
-    env: { GEMINI_API_KEY: 'test-secret' },
-    fetchImpl: slowFetch,
-    timeoutMs: 15,
-  });
-  const resTimeout = createMockRes();
-  await handlerTimeout({ method: 'POST', body: { prompt: 'Slow request' } }, resTimeout);
-  assert.equal(resTimeout.statusCode, 503);
-  assert.equal(resTimeout.body.error, 'Live AI proxy error');
-  assert.equal(resTimeout.body.fallback, true);
-  assert.equal(resTimeout.body.upstreamStatus, 504);
-  assert.match(resTimeout.body.upstreamBody, /timed out/i);
+  try {
+    const longDetail = 'A'.repeat(450);
+    const failingFetch = async (url) => {
+      attemptedUrls.push(url);
+      return {
+        ok: false,
+        status: 403,
+        text: async () => JSON.stringify({
+          error: {
+            message: `API key test-secret&key=test-secret rejected: ${longDetail}`,
+          },
+        }),
+      };
+    };
+
+    const handlerErr = createGeminiHandler({ env: { GEMINI_API_KEY: '  test-secret  ' }, fetchImpl: failingFetch });
+    const resErr = createMockRes();
+    await handlerErr({ method: 'POST', body: { prompt: 'Test prompt' } }, resErr);
+
+    assert.equal(resErr.statusCode, 503);
+    assert.equal(resErr.body.error, 'Live AI proxy error');
+    assert.equal(resErr.body.fallback, true);
+    assert.equal(resErr.body.upstreamStatus, 403);
+    assert.ok(resErr.body.upstreamMessage.length <= 400);
+    assert.match(resErr.body.upstreamMessage, /API key \[REDACTED\]/);
+    assert.deepEqual(attemptedUrls, [
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=test-secret',
+    ]);
+    assert.doesNotMatch(JSON.stringify(resErr.body), /test-secret|GEMINI_API_KEY/);
+    assert.ok(loggedErrors.some((msg) => msg.includes('Gemini API error:') && msg.includes('403') && !msg.includes('test-secret')));
+
+    const slowFetch = (_url, opts) => new Promise((_resolve, reject) => {
+      opts.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+    });
+    const handlerTimeout = createGeminiHandler({
+      env: { GEMINI_API_KEY: 'test-secret' },
+      fetchImpl: slowFetch,
+      timeoutMs: 15,
+    });
+    const resTimeout = createMockRes();
+    await handlerTimeout({ method: 'POST', body: { prompt: 'Slow request' } }, resTimeout);
+
+    assert.equal(resTimeout.statusCode, 503);
+    assert.deepEqual(resTimeout.body, {
+      error: 'Live AI proxy error',
+      fallback: true,
+      upstreamStatus: 504,
+      upstreamMessage: 'Upstream request timed out.',
+    });
+  } finally {
+    console.error = origConsoleError;
+  }
 });
 
-test('api/gemini.js contains zero references to gemini-2.5-flash and returns 200 on fenced JSON or plain text', async () => {
+test('api/gemini.js contains zero legacy model references and returns 200 on fenced JSON or plain text', async () => {
   const source = fs.readFileSync(path.resolve(import.meta.dirname, '..', 'api', 'gemini.js'), 'utf8');
-  assert.equal(source.toLowerCase().includes('gemini-2.5-flash'), false);
+  assert.doesNotMatch(source, /gemini-2\.5-flash|gemini-1\.5-flash/i);
 
   const makeHandler = (rawText) => createGeminiHandler({
     env: { GEMINI_API_KEY: 'live-secret-value' },
@@ -146,93 +169,12 @@ test('api/gemini.js contains zero references to gemini-2.5-flash and returns 200
   assert.equal(plainRes.body.model, 'gemini-3.8-flash');
 });
 
-test('POST /api/gemini excludes gemini-2.5-flash, logs primary failure without leaking key, and returns 200 on first active model', async () => {
-  const attempted = [];
-  const loggedErrors = [];
-  const origConsoleError = console.error;
-  console.error = (...args) => {
-    loggedErrors.push(args.map((a) => String(a)).join(' '));
-  };
-
-  try {
-    const discoveryFetch = async (url) => {
-      attempted.push(url);
-      if (url.includes('/models/gemini-3.8-flash:generateContent')) {
-        return { ok: false, status: 404, text: async () => 'Model not found for key=live-secret-value' };
-      }
-      if (url.includes('/v1beta/models?key=')) {
-        return {
-          ok: true,
-          status: 200,
-          async json() {
-            return {
-              models: [
-                { name: 'models/gemini-2.5-flash', supportedGenerationMethods: ['generateContent'] },
-                { name: 'models/gemini-2.5-flash-preview-05-20', supportedGenerationMethods: ['generateContent'] },
-                { name: 'models/embedding-001', supportedGenerationMethods: ['embedContent'] },
-                { name: 'models/gemini-flash-vision-only', supportedGenerationMethods: ['generateContent'] },
-                { name: 'models/gemini-3.0-flash', supportedGenerationMethods: ['generateContent'] },
-                { name: 'models/gemini-2.0-flash', supportedGenerationMethods: ['generateContent'] },
-              ],
-            };
-          },
-        };
-      }
-      if (url.includes('/models/gemini-3.0-flash:generateContent')) {
-        return { ok: false, status: 503, text: async () => 'Busy' };
-      }
-      if (url.includes('/models/gemini-2.0-flash:generateContent')) {
-        return {
-          ok: true,
-          status: 200,
-          async json() {
-            return {
-              candidates: [{
-                content: {
-                  parts: [{
-                    text: JSON.stringify({
-                      intent: 'SCAM',
-                      confidence_score: 91,
-                      active_agents: ['vani', 'gemini', 'kavach', 'netra'],
-                      summary: 'Discovered model classified phishing message.',
-                      action_draft: 'Dial 1930 immediately.',
-                      checklist: ['Do not click links', 'Call 1930'],
-                    }),
-                  }],
-                },
-              }],
-            };
-          },
-        };
-      }
-      throw new Error(`Unexpected URL ${url}`);
-    };
-
-    const handler = createGeminiHandler({ env: { GEMINI_API_KEY: 'live-secret-value' }, fetchImpl: discoveryFetch });
-    const res = createMockRes();
-    await handler({ method: 'POST', body: { prompt: 'Share OTP now', language: 'en', mode: 'chat' } }, res);
-    assert.equal(res.statusCode, 200);
-    assert.deepEqual(attempted, [
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=live-secret-value',
-      'https://generativelanguage.googleapis.com/v1beta/models?key=live-secret-value',
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.0-flash:generateContent?key=live-secret-value',
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=live-secret-value',
-    ]);
-    assert.ok(!attempted.some((u) => /gemini-2\.5-flash/i.test(u)));
-    assert.ok(loggedErrors.some((msg) => msg.includes('gemini-3.8-flash failed:') && msg.includes('404') && !msg.includes('live-secret-value')));
-    assert.equal(res.body.intent, 'SCAM');
-    assert.equal(res.body.confidence_score, 91);
-    assert.equal(res.body.model, 'gemini-2.0-flash');
-  } finally {
-    console.error = origConsoleError;
-  }
-});
-
-test('POST /api/gemini calls Gemini 3.8 Flash server-side and normalizes SCAM & CIVIC structured JSON', async () => {
+test('POST /api/gemini trims & encodes API key, sends clean gemini-3.8-flash payload, and normalizes SCAM & CIVIC responses', async () => {
   const calls = [];
   const mockFetch = async (url, init) => {
     calls.push({ url, init });
-    const userPayload = JSON.parse(init.body).contents[0].parts[0].text;
+    const parsedBody = JSON.parse(init.body);
+    const userPayload = parsedBody.contents[0].parts[0].text;
     const isCivic = /water pipe/i.test(userPayload);
     return {
       ok: true,
@@ -267,13 +209,22 @@ test('POST /api/gemini calls Gemini 3.8 Flash server-side and normalizes SCAM & 
     };
   };
 
-  const handler = createGeminiHandler({ env: { GEMINI_API_KEY: 'live-secret-value' }, fetchImpl: mockFetch });
+  const handler = createGeminiHandler({ env: { GEMINI_API_KEY: '  live+secret/value  ' }, fetchImpl: mockFetch });
 
   const scamRes = createMockRes();
-  await handler({ method: 'POST', body: { prompt: 'My CBI officer is calling me for digital arrest', language: 'ta', mode: 'auto_demo' } }, scamRes);
+  await handler({ method: 'POST', body: { prompt: '  My CBI officer is calling me for digital arrest  ', language: 'ta', mode: 'auto_demo' } }, scamRes);
   assert.equal(scamRes.statusCode, 200);
   assert.equal(calls.length, 1);
-  assert.equal(calls[0].url, 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=live-secret-value');
+  assert.equal(
+    calls[0].url,
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=live%2Bsecret%2Fvalue',
+  );
+  const sentBody = JSON.parse(calls[0].init.body);
+  assert.deepEqual(Object.keys(sentBody).sort(), ['contents', 'systemInstruction']);
+  assert.deepEqual(sentBody.contents, [
+    { role: 'user', parts: [{ text: 'My CBI officer is calling me for digital arrest' }] },
+  ]);
+  assert.equal(sentBody.generationConfig, undefined);
   assert.deepEqual(Object.keys(scamRes.body).sort(), [
     'active_agents',
     'action_draft',
