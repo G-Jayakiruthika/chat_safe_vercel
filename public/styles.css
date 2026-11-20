@@ -74,7 +74,8 @@ body {
 
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 [hidden] { display: none !important; }
-.skip { position: absolute; inset-inline-start: 0; top: 0; transform: translateY(-120%); background: var(--focus); color: #000; padding: .5rem 1rem; z-index: 10; }
+/* `a.skip[href]` outranks the generic `a[href] { position: relative }` rule so the hidden link takes no space. */
+.skip, a.skip[href] { position: absolute; inset-inline-start: 0; top: 0; transform: translateY(-120%); background: var(--focus); color: #000; padding: .5rem 1rem; z-index: 1000; }
 .skip:focus { transform: none; }
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
 [tabindex="-1"]:focus { outline: none; }
@@ -1897,4 +1898,12 @@ main.app-restricted {
     font-size: .8rem;
     min-height: 40px;
   }
+}
+
+/* Below 1024px the menu wraps onto its own swipeable row. `header.top` is needed to
+   outrank the `[data-theme] .top { flex-wrap: nowrap }` desktop rule above. */
+@media (max-width: 1024px) {
+  header.top, [data-theme] header.top { flex-wrap: wrap; row-gap: .4rem; }
+  header.top .mainnav { order: 3; flex: 1 1 100% !important; width: 100%; justify-content: flex-start !important; overflow-x: auto; scrollbar-width: none; }
+  header.top .mainnav::-webkit-scrollbar { display: none; }
 }

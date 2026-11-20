@@ -477,6 +477,7 @@ html, body, .landing, #morph.bg, .skip { margin-top: 0 !important; padding-top: 
   .phone-3d {
     grid-column: 1 / -1;
     margin-inline: auto; margin-bottom: .35rem;
+    height: clamp(440px, 62vh, 540px);
   }
   .demo-stage-visual .chip-a,
   .demo-stage-visual .chip-b,
@@ -505,3 +506,13 @@ html, body, .landing, #morph.bg, .skip { margin-top: 0 !important; padding-top: 
 
 .stats-source { margin: 1rem 0 0; font-size: .78rem; opacity: .8; }
 .stats-source a { color: inherit; text-decoration: underline; }
+
+/* Mobile: give the main menu its own full-width, swipeable row instead of a 46px sliver. */
+@media (max-width: 767px) {
+  .landing-top { flex-wrap: wrap; row-gap: .35rem; }
+  .landing-top .mainnav {
+    order: 3; flex: 1 1 100% !important; width: 100%; justify-content: flex-start !important;
+    overflow-x: auto; scrollbar-width: none; padding-bottom: 2px;
+  }
+  .landing-top .mainnav::-webkit-scrollbar { display: none; }
+}
